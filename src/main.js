@@ -13,6 +13,8 @@ let activeInterface=null;
 const send = (channel, data) => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(channel, data); };
 function createWindow() {
   mainWindow = new BrowserWindow({ icon: path.join(__dirname, '../assets/branding/turnbit.ico'), width: 380, height: 710, minWidth: 360, minHeight: 700, maxWidth: 460, maxHeight: 800, frame: false, transparent: true, backgroundColor: '#00000000', resizable: true, webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: false } });
+  // Running from the repo, the process is electron.exe; tell Windows which icon and command to use when pinned
+  if(process.platform==='win32'&&!app.isPackaged)mainWindow.setAppDetails({appId:'com.nexez.desktopulanziipod',appIconPath:path.join(__dirname,'../assets/branding/turnbit.ico'),appIconIndex:0,relaunchCommand:`"${process.execPath}" "${app.getAppPath()}"`,relaunchDisplayName:'TurnBit'});
   let clickThrough=false;
   visibility=new VisibilityControl(value=>{if(mainWindow&&!mainWindow.isDestroyed()){const nextClickThrough=value===0;if(nextClickThrough!==clickThrough){mainWindow.setIgnoreMouseEvents(nextClickThrough);clickThrough=nextClickThrough;}mainWindow.setOpacity(value);}});
   wakeGate=new HardwareWakeGate(visibility);

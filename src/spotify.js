@@ -12,7 +12,9 @@ class SpotifyClient {
     this.clientId = options.session?.clientId || ''; this.refreshToken = options.session?.refreshToken || null;
     this.token = null; this.expiresAt = 0; this.deviceId = ''; this.retryAt = 0;
     this.likeStates=new Map();this.playbackRead=0;this.playbackState=null;this.stateRevision=0;
-    this.likeDelays=options.likeDelays||[300,700,1500,3000,5000,8000];
+    this.likeDelays=options.likeDelays||[1000,3000,8000];
+    // Liked status only changes on a new track or a Like press; recheck occasionally for changes made in other Spotify apps.
+    this.likedCache=null;this.likedRecheck=options.likedRecheck??60000;
     this.waitForLike=options.waitForLike||(ms=>new Promise(resolve=>{const timer=setTimeout(resolve,ms);timer.unref();}));
   }
   status() { return { clientId: this.clientId, connected: !!this.refreshToken, authorizing: !!this.server }; }
@@ -87,7 +89,8 @@ class SpotifyClient {
     if(state){state.liked=null;if(!state.item?.is_local&&/^spotify:track:[a-zA-Z0-9]{22}$/.test(state.item?.uri||'')){
       const cached=this.likeStates.get(state.item.uri);
       if(cached&&Date.now()<cached.until)state.liked=cached.liked;
-      else try{const saved=await this.api(`/me/library/contains?${new URLSearchParams({uris:state.item.uri})}`);if(typeof saved?.[0]==='boolean')state.liked=saved[0];}catch{/* Library lookup must not interrupt playback. */}
+      else if(this.likedCache?.uri===state.item.uri&&Date.now()-this.likedCache.at<this.likedRecheck)state.liked=this.likedCache.liked;
+      else try{const saved=await this.api(`/me/library/contains?${new URLSearchParams({uris:state.item.uri})}`);if(typeof saved?.[0]==='boolean'){state.liked=saved[0];this.likedCache={uri:state.item.uri,liked:saved[0],at:Date.now()};}}catch{/* Library lookup must not interrupt playback. */}
       const latest=this.likeStates.get(state.item.uri);if(latest&&Date.now()<latest.until){state.liked=latest.liked;state.likedPending=!latest.confirmed;}
     }}
     if(revision!==this.stateRevision)return this.playbackState;
@@ -109,11 +112,12 @@ class SpotifyClient {
         const saved=await this.api(`/me/library/contains?${new URLSearchParams({uris:uri})}`);
         if(this.likeStates.get(uri)!==entry)return;
         if(typeof saved?.[0]==='boolean')observed=saved[0];
-        if(observed===entry.liked){entry.confirmed=true;entry.until=Date.now()+4000;this.publishLike(uri,entry);return;}
+        if(observed===entry.liked){this.likedCache={uri,liked:observed,at:Date.now()};entry.confirmed=true;entry.until=Date.now()+4000;this.publishLike(uri,entry);return;}
       }catch{/* Retry confirmation reads, never blindly replay a toggle. */}
     }
     if(this.likeStates.get(uri)!==entry)return;
     entry.confirmed=true;entry.until=0;entry.liked=observed;
+    this.likedCache=typeof observed==='boolean'?{uri,liked:observed,at:Date.now()}:null;
     this.publishLike(uri,entry,'Spotify has not confirmed the like change. Its latest state is shown; press Like to retry.');
   }
   library(kind, id, offset = 0) {
@@ -172,6 +176,6 @@ class SpotifyClient {
     }
     await this.api(`/me/player/${command}${params.size ? `?${params}` : ''}`, { method: methods[command] });
   }
-  logout() { this.cancelLogin(); this.token = null; this.refreshToken = null; this.expiresAt = 0; this.deviceId = ''; this.playbackState=null;this.playbackRead=0;this.likeStates.clear();this.stateRevision++;this.save(); this.notify(); return { ok: true }; }
+  logout() { this.cancelLogin(); this.token = null; this.refreshToken = null; this.expiresAt = 0; this.deviceId = ''; this.playbackState=null;this.playbackRead=0;this.likeStates.clear();this.likedCache=null;this.stateRevision++;this.save(); this.notify(); return { ok: true }; }
 }
 module.exports = { SpotifyClient, REDIRECT_URI };

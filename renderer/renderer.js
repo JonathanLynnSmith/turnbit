@@ -46,7 +46,7 @@ function visibilityProtected(){return (preferences.idlePinned&&preferences.visib
 function syncVisibility(){api?.visibility(preferences.visibility,visibilityProtected())?.catch(error=>message(error.message));}
 const volumeControl=new window.VolumeControl(async value=>{
   if(!demo)await api.command('volume',value);
-},{onValue:value=>{volume=value;render();},onError:error=>message(error.message)});
+},{interval:600,settle:1500,onValue:value=>{volume=value;render();},onError:error=>message(error.message)});
 const seekControl=new window.VolumeControl(async value=>{
   if(!demo)await api.command('seek',value);
 },{max:86400000,interval:450,onValue:value=>{progress=value;updated=Date.now();render();},onError:error=>{transportHold.cancel();message(error.message);}});
@@ -218,6 +218,10 @@ function acceptPlayback(data) {
   if(Number.isFinite(data?.device?.volume_percent))volumeControl.acceptRemote(data.device.volume_percent);render();
 }
 async function refresh() { if(demo||polling||!api)return;polling=true;try{await api.state();}catch(e){message(e.message);}finally{polling=false;} }
+// Poll Spotify only as often as the view needs: faster while playing, slower when paused or minimized, and right after a track should end.
+let pollTimer;
+function pollDelay(){if(document.hidden)return 30000;if(!playing)return 15000;const left=duration()-currentProgress();return duration()>0?Math.max(1000,Math.min(5000,left+500)):5000;}
+async function poll(){clearTimeout(pollTimer);await refresh();clearTimeout(pollTimer);pollTimer=setTimeout(poll,pollDelay());}
 const demoLikes=new Set();
 let likeRequests=0;
 let demoShuffle=false,demoRepeat='off';
@@ -239,7 +243,7 @@ async function command(cmd,value) {
   }
   if(cmd==='device'){volumeControl.reset(volume);volumeDeviceId=null;}
   if(cmd==='like'){likeRequests++;message('Updating Liked Songs…');render();}
-  try{const result=await api.command(cmd,value);if(result?.message)message(result.message);clearTimeout(refreshTimer);refreshTimer=setTimeout(refresh,600);return true;}catch(e){message(e.message);return false;}finally{if(cmd==='like'){likeRequests--;render();}}
+  try{const result=await api.command(cmd,value);if(result?.message)message(result.message);clearTimeout(refreshTimer);refreshTimer=setTimeout(poll,600);return true;}catch(e){message(e.message);return false;}finally{if(cmd==='like'){likeRequests--;render();}}
 }
 function changeVolume(value) { noteActivity();message();volumeControl.set(value);if(preferences.interfaceStyle==='zune'){$('#zuneVolumeOverlay').textContent='volume '+volume;$('#zuneVolumeOverlay').hidden=false;clearTimeout(zuneVolumeTimer);zuneVolumeTimer=setTimeout(()=>{$('#zuneVolumeOverlay').hidden=true;},1200);} }
 function seek(value) { noteActivity();seekControl.set(Math.max(0,Math.min(duration(),value))); }
@@ -492,7 +496,7 @@ if(api){
   api.onDeviceEvent(hardwareEvent);api.onBridgeError(message);
   api.status().then(auth=>{$('#clientId').value=auth.clientId;if(auth.connected){demo=false;refresh();}drawNavigation();render();}).catch(e=>message(e.message));
   setInterval(async()=>{try{const h=await api.hardware();$('#hardware').textContent=h.pluginOnline?'D100H plugin online':'D100H plugin offline';if(h.error)message(h.error);}catch(e){message(e.message);}},3000);
-  setInterval(refresh,5000);
+  poll();document.addEventListener('visibilitychange',()=>{if(!document.hidden)poll();});
 }else message('Preview only. Run npm start for Spotify and D100H.');
 setInterval(()=>{if(demo&&playing&&!transportHold.direction&&currentProgress()>=duration())command('next');if(idle.tick(!preferences.idlePinned&&preferences.idleNowPlaying&&!$('#settings').open&&!nav.current.loading&&!nav.current.visibilitySettings)){drawNavigation();}render();},250);
 drawNavigation();render();

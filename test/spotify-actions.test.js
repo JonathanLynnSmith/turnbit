@@ -43,3 +43,9 @@ test('Unconfirmed changes report Spotify actual state instead of claiming succes
  const client=new SpotifyClient(()=>{},{likeDelays:[0],waitForLike:async()=>{},fetch:async(url,options)=>url.includes('/contains')?new Response('[false]'):options.method?new Response(null,{status:204}):new Response(JSON.stringify({item:{uri:'spotify:track:'+'g'.repeat(22)}}))});client.setTokens({access_token:'test',expires_in:3600});
  await client.command('like');await client.likeStates.get('spotify:track:'+'g'.repeat(22)).verification;assert.equal(client.playbackState.liked,false);assert.equal(client.playbackState.likedPending,false);assert.match(client.playbackState.likeError,/not confirmed/);
 });
+test('Polling the same track reuses liked status instead of rechecking the library',async()=>{
+ let checks=0,uri='spotify:track:'+'h'.repeat(22);const client=new SpotifyClient(()=>{},{fetch:async url=>{if(url.includes('/contains')){checks++;return new Response('[true]');}return new Response(JSON.stringify({item:{uri}}));}});client.setTokens({access_token:'test',refresh_token:'test',expires_in:3600});
+ await client.getPlaybackState();await client.getPlaybackState();await client.getPlaybackState();assert.equal(checks,1);assert.equal(client.playbackState.liked,true);
+ uri='spotify:track:'+'i'.repeat(22);await client.getPlaybackState();assert.equal(checks,2);
+ client.likedCache.at-=client.likedRecheck;await client.getPlaybackState();assert.equal(checks,3);
+});
