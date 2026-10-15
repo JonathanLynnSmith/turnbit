@@ -1,0 +1,62 @@
+# Dependencies
+node_modules/
+
+# Build output (electron-builder, packaged plugins)
+dist/
+out/
+release/
+*.exe
+*.msi
+*.dmg
+*.AppImage
+*.blockmap
+*.zip
+*.tgz
+
+# Local reference images and screenshots (not shipped)
+artifacts/
+
+# Agent / AI tool scratch files
+.hermes/
+.claude/settings.local.json
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+spotify-session.json
+
+# Logs and debug output
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+
+# Test and coverage output
+coverage/
+.nyc_output/
+
+# Python (scripts/build-profile.py)
+__pycache__/
+*.pyc
+
+# Caches and temp files
+.cache/
+*.tmp
+*.temp
+
+# Editors
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db

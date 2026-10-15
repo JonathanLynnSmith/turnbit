@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="640" viewBox="0 0 480 640">
+ <defs>
+  <linearGradient id="wash" x2=".6" y2="1"><stop stop-color="#06111e"/><stop offset=".65" stop-color="#16314a"/><stop offset="1" stop-color="#174260"/></linearGradient>
+  <radialGradient id="glow"><stop stop-color="#7392a1" stop-opacity=".26"/><stop offset="1" stop-color="#16314a" stop-opacity="0"/></radialGradient>
+  <pattern id="facets" width="64" height="56" patternUnits="userSpaceOnUse"><path d="M0 0H64L32 56ZM0 0 32 56H-32ZM64 0 96 56H32ZM0 28H64M32 0V56" fill="none" stroke="#a8d8e4" stroke-opacity=".1" stroke-width=".8"/></pattern>
+ </defs>
+ <path fill="url(#wash)" d="M0 0H480V640H0Z"/><ellipse cx="350" cy="450" rx="340" ry="300" fill="url(#glow)"/><path fill="url(#facets)" d="M0 0H480V640H0Z"/>
+</svg>

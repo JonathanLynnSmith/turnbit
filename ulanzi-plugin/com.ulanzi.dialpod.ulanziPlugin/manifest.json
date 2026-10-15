@@ -1,0 +1,260 @@
+{
+  "Name": "DialPod Spotify",
+  "Author": "DialPod",
+  "Description": "iPod-style desktop Spotify controller for Ulanzi D100H.",
+  "Version": "0.2.0",
+  "UUID": "com.ulanzi.ulanzistudio.dialpod",
+  "Type": "JavaScript",
+  "CodePath": "app.html",
+  "Icon": "icon.png",
+  "Category": "Music",
+  "OS": [
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10"
+    },
+    {
+      "Platform": "mac",
+      "MinimumVersion": "10.15"
+    }
+  ],
+  "Software": {
+    "MinVersion": "3.0.11"
+  },
+  "Actions": [
+    {
+      "Name": "DialPod Pin Widget",
+      "UUID": "com.ulanzi.ulanzistudio.dialpod.pin",
+      "Icon": "icon.png",
+      "Controllers": [
+        "Keypad"
+      ],
+      "Devices": [
+        "Dial"
+      ],
+      "PropertyInspectorPath": "pi/index.html",
+      "States": [
+        {
+          "Name": "Default",
+          "Image": "icon.png"
+        }
+      ]
+    },
+    {
+      "Name": "DialPod Like Current Song",
+      "UUID": "com.ulanzi.ulanzistudio.dialpod.like",
+      "Icon": "icon.png",
+      "Controllers": [
+        "Keypad"
+      ],
+      "Devices": [
+        "Dial"
+      ],
+      "PropertyInspectorPath": "pi/index.html",
+      "States": [
+        {
+          "Name": "Default",
+          "Image": "icon.png"
+        }
+      ]
+    },
+    {
+      "Name": "DialPod Shuffle",
+      "UUID": "com.ulanzi.ulanzistudio.dialpod.shuffle",
+      "Icon": "icon.png",
+      "Controllers": [
+        "Keypad"
+      ],
+      "Devices": [
+        "Dial"
+      ],
+      "PropertyInspectorPath": "pi/index.html",
+      "States": [
+        {
+          "Name": "Default",
+          "Image": "icon.png"
+        }
+      ]
+    },
+    {
+      "Name": "DialPod Repeat",
+      "UUID": "com.ulanzi.ulanzistudio.dialpod.repeat",
+      "Icon": "icon.png",
+      "Controllers": [
+        "Keypad"
+      ],
+      "Devices": [
+        "Dial"
+      ],
+      "PropertyInspectorPath": "pi/index.html",
+      "States": [
+        {
+          "Name": "Default",
+          "Image": "icon.png"
+        }
+      ]
+    },
+    {
+      "Name": "DialPod Navigation Wheel",
+      "UUID": "com.ulanzi.ulanzistudio.dialpod.encoder",
+      "Icon": "icon.png",
+      "Controllers": [
+        "Encoder"
+      ],
+      "Devices": [
+        "Dial"
+      ],
+      "PropertyInspectorPath": "pi/index.html",
+      "States": [
+        {
+          "Name": "Default",
+          "Image": "icon.png"
+        }
+      ]
+    },
+    {
+      "Name": "DialPod Play / Pause",
+      "UUID": "com.ulanzi.ulanzistudio.dialpod.toggle",
+      "Icon": "icon.png",
+      "Controllers": [
+        "Keypad"
+      ],
+      "Devices": [
+        "Dial"
+      ],
+      "PropertyInspectorPath": "pi/index.html",
+      "States": [
+        {
+          "Name": "Default",
+          "Image": "icon.png"
+        }
+      ]
+    },
+    {
+      "Name": "DialPod Previous Track",
+      "UUID": "com.ulanzi.ulanzistudio.dialpod.previous",
+      "Icon": "icon.png",
+      "Controllers": [
+        "Keypad"
+      ],
+      "Devices": [
+        "Dial"
+      ],
+      "PropertyInspectorPath": "pi/index.html",
+      "States": [
+        {
+          "Name": "Default",
+          "Image": "icon.png"
+        }
+      ]
+    },
+    {
+      "Name": "DialPod Next Track",
+      "UUID": "com.ulanzi.ulanzistudio.dialpod.next",
+      "Icon": "icon.png",
+      "Controllers": [
+        "Keypad"
+      ],
+      "Devices": [
+        "Dial"
+      ],
+      "PropertyInspectorPath": "pi/index.html",
+      "States": [
+        {
+          "Name": "Default",
+          "Image": "icon.png"
+        }
+      ]
+    },
+    {
+      "Name": "DialPod Volume Up",
+      "UUID": "com.ulanzi.ulanzistudio.dialpod.volume-up",
+      "Icon": "icon.png",
+      "Controllers": [
+        "Keypad"
+      ],
+      "Devices": [
+        "Dial"
+      ],
+      "PropertyInspectorPath": "pi/index.html",
+      "States": [
+        {
+          "Name": "Default",
+          "Image": "icon.png"
+        }
+      ]
+    },
+    {
+      "Name": "DialPod Volume Down",
+      "UUID": "com.ulanzi.ulanzistudio.dialpod.volume-down",
+      "Icon": "icon.png",
+      "Controllers": [
+        "Keypad"
+      ],
+      "Devices": [
+        "Dial"
+      ],
+      "PropertyInspectorPath": "pi/index.html",
+      "States": [
+        {
+          "Name": "Default",
+          "Image": "icon.png"
+        }
+      ]
+    },
+    {
+      "Name": "DialPod Seek Back 10s",
+      "UUID": "com.ulanzi.ulanzistudio.dialpod.seek-back",
+      "Icon": "icon.png",
+      "Controllers": [
+        "Keypad"
+      ],
+      "Devices": [
+        "Dial"
+      ],
+      "PropertyInspectorPath": "pi/index.html",
+      "States": [
+        {
+          "Name": "Default",
+          "Image": "icon.png"
+        }
+      ]
+    },
+    {
+      "Name": "DialPod Seek Forward 10s",
+      "UUID": "com.ulanzi.ulanzistudio.dialpod.seek-forward",
+      "Icon": "icon.png",
+      "Controllers": [
+        "Keypad"
+      ],
+      "Devices": [
+        "Dial"
+      ],
+      "PropertyInspectorPath": "pi/index.html",
+      "States": [
+        {
+          "Name": "Default",
+          "Image": "icon.png"
+        }
+      ]
+    },
+    {
+      "Name": "DialPod Menu / Back",
+      "UUID": "com.ulanzi.ulanzistudio.dialpod.menu",
+      "Icon": "icon.png",
+      "Controllers": [
+        "Keypad"
+      ],
+      "Devices": [
+        "Dial"
+      ],
+      "PropertyInspectorPath": "pi/index.html",
+      "States": [
+        {
+          "Name": "Default",
+          "Image": "icon.png"
+        }
+      ]
+    }
+  ]
+}
