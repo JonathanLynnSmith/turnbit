@@ -49,3 +49,10 @@ test('Polling the same track reuses liked status instead of rechecking the libra
  uri='spotify:track:'+'i'.repeat(22);await client.getPlaybackState();assert.equal(checks,2);
  client.likedCache.at-=client.likedRecheck;await client.getPlaybackState();assert.equal(checks,3);
 });
+test('A rate limit on Liked Songs pauses only library calls, not playback',async()=>{
+ const requests=[];const client=new SpotifyClient(()=>{},{fetch:async url=>{requests.push(url);if(url.includes('/me/tracks')||url.includes('/contains'))return new Response('{}',{status:429,headers:{'retry-after':'70000'}});return new Response(JSON.stringify({item:{uri:'spotify:track:'+'j'.repeat(22),name:'Song'}}));}});client.setTokens({access_token:'test',refresh_token:'test',expires_in:3600});
+ await assert.rejects(client.library('songs'),/Liked Songs and likes paused until/);
+ const before=requests.length;await assert.rejects(client.library('songs'),/paused until/);assert.equal(requests.length,before);
+ const state=await client.getPlaybackState();assert.equal(state.item.name,'Song');assert.equal(state.liked,null);
+ await client.library('playlists');assert.ok(requests.at(-1).includes('/me/playlists'));
+});

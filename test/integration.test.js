@@ -22,8 +22,8 @@ test('Spotify deduplicates refresh and observes Retry-After',async()=>{
   const client=new SpotifyClient(()=>{}, {session:{clientId:'a'.repeat(32),refreshToken:'refresh'},fetch:async()=>{calls++;return response({access_token:'new',expires_in:3600});}});
   assert.deepEqual(await Promise.all([client.ensureToken(),client.ensureToken()]),['new','new']);assert.equal(calls,1);
   client.fetch=async()=>response({},429,{'retry-after':'10'});
-  await assert.rejects(client.getDevices(),/rate limit/);assert.ok(client.retryAt>Date.now()+9000);
-  await assert.rejects(client.getDevices(),/cooldown/);
+  await assert.rejects(client.getDevices(),/rate limit/);assert.ok(client.cooldowns.get('/me/player/devices')>Date.now()+9000);
+  await assert.rejects(client.getDevices(),/paused until/);
 });
 test('PKCE callback verifies state, completes exchange and handles cancellation',async t=>{
   let authorization, exchanged, auth;

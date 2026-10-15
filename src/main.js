@@ -6,7 +6,8 @@ const { SpotifyClient } = require('./spotify');
 const { createBridge } = require('./bridge');
 const { VisibilityControl } = require('./visibility');
 const { HardwareWakeGate } = require('./hardware-wake');
-let mainWindow, spotify, bridge, bridgeError;
+const { MediaSession } = require('./media-session');
+let mainWindow, spotify, bridge, bridgeError, media;
 let visibility,visibilityTimer,wakeGate;
 let commandQueue = Promise.resolve();
 let activeInterface=null;
@@ -73,7 +74,9 @@ else {
   app.on('second-instance', () => { visibility?.wake(true);mainWindow?.restore(); mainWindow?.focus(); });
   app.whenReady().then(() => {
     const file = path.join(app.getPath('userData'), 'spotify-session.json');
-    spotify = new SpotifyClient(state => send('spotify-state', state), { session: readSession(file), persist: data => saveSession(file, data), onAuth: auth => send('spotify-auth', auth) });
+    if (process.platform === 'win32') media = new MediaSession(state => spotify?.localChanged(state));
+    spotify = new SpotifyClient(state => send('spotify-state', state), { media, session: readSession(file), persist: data => saveSession(file, data), onAuth: auth => send('spotify-auth', auth) });
+    media?.start();
     bridge = createBridge(event => {const action=wakeGate?.handle(event)||'forward';if(action==='forward')send('device-event',event);else if(action==='wake')send('device-event',{type:'wake'});}, Number(process.env.DIALPOD_BRIDGE_PORT || 4765));
     bridge.on('error', error => { bridgeError = `D100H bridge unavailable: ${error.message}`; send('bridge-error', bridgeError); });
     createWindow();
@@ -81,5 +84,5 @@ else {
     app.on('activate', () => { if (!BrowserWindow.getAllWindows().length) createWindow(); });
   });
   app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
-  app.on('will-quit', () => { clearInterval(visibilityTimer);globalShortcut.unregisterAll();spotify?.cancelLogin(); bridge?.close(); });
+  app.on('will-quit', () => { clearInterval(visibilityTimer);globalShortcut.unregisterAll();spotify?.cancelLogin(); media?.stop(); bridge?.close(); });
 }

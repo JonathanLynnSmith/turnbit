@@ -9,7 +9,7 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron .",
-    "lint": "node --check src/main.js && node --check src/preload.js && node --check src/spotify.js && node --check src/bridge.js && node --check src/visibility.js && node --check src/hardware-wake.js && node --check renderer/track-transition.js && node --check renderer/radial.js && node --check renderer/renderer.js && node --check renderer/navigation.js && node --check renderer/volume.js && node --check renderer/center-click.js && node --check renderer/transport-hold.js && node --check renderer/themes.js && node --check ulanzi-plugin/com.ulanzi.dialpod.ulanziPlugin/app.js",
+    "lint": "node --check src/main.js && node --check src/preload.js && node --check src/spotify.js && node --check src/media-session.js && node --check src/bridge.js && node --check src/visibility.js && node --check src/hardware-wake.js && node --check renderer/track-transition.js && node --check renderer/radial.js && node --check renderer/renderer.js && node --check renderer/navigation.js && node --check renderer/volume.js && node --check renderer/center-click.js && node --check renderer/transport-hold.js && node --check renderer/themes.js && node --check ulanzi-plugin/com.ulanzi.dialpod.ulanziPlugin/app.js",
     "test": "node --test",
     "check": "npm run lint && npm test",
     "plugin:build": "node scripts/build-plugin.js",
@@ -31,6 +31,9 @@
       "ulanzi-plugin/**/*",
       "package.json",
       "assets/branding/**/*"
+    ],
+    "asarUnpack": [
+      "src/media-session-helper.ps1"
     ],
     "icon": "assets/branding/turnbit.ico",
     "win": {
