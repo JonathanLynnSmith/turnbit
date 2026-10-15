@@ -15,11 +15,19 @@ try {
 
 $propsType = [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionMediaProperties]
 function Find-Spotify { $manager.GetSessions() | Where-Object { $_.SourceAppUserModelId -match '^Spotify\.exe$|SpotifyAB\.SpotifyMusic' } | Select-Object -First 1 }
+# Checked every 100ms, so keep it cheap: the session is re-found every 2s, and title/artist (an async call) are
+# re-read only when Spotify's status or timeline changes (a new track updates both), or once a second as a backstop.
+$session = $null; $sessionAt = [DateTime]::MinValue; $props = $null; $propsKey = ''; $propsAt = [DateTime]::MinValue
 function Read-State {
-  $session = Find-Spotify
+  if (-not $script:session -or ([DateTime]::UtcNow - $script:sessionAt).TotalSeconds -ge 2) { $script:session = Find-Spotify; $script:sessionAt = [DateTime]::UtcNow }
+  $session = $script:session
   if (-not $session) { return @{ type = 'state'; available = $false } }
   $info = $session.GetPlaybackInfo(); $timeline = $session.GetTimelineProperties()
-  $props = Await ($session.TryGetMediaPropertiesAsync()) $propsType
+  $key = "$($session.SourceAppUserModelId)|$($info.PlaybackStatus)|$($timeline.LastUpdatedTime.UtcTicks)|$($timeline.EndTime.Ticks)"
+  if ($key -ne $script:propsKey -or -not $script:props -or ([DateTime]::UtcNow - $script:propsAt).TotalMilliseconds -ge 1000) {
+    $script:props = Await ($session.TryGetMediaPropertiesAsync()) $propsType; $script:propsKey = $key; $script:propsAt = [DateTime]::UtcNow
+  }
+  $props = $script:props
   $playing = $info.PlaybackStatus -eq [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionPlaybackStatus]::Playing
   $duration = [long]($timeline.EndTime - $timeline.StartTime).TotalMilliseconds
   # Spotify reports position as of LastUpdatedTime; project it forward while playing.
@@ -61,7 +69,7 @@ while ($true) {
     $pending = $stdin.ReadLineAsync()
   }
   if ([DateTime]::UtcNow -ge $nextRead) {
-    $nextRead = [DateTime]::UtcNow.AddMilliseconds(400)
+    $nextRead = [DateTime]::UtcNow.AddMilliseconds(100)
     try {
       $state = Read-State
       $key = "$($state.available)|$($state.status)|$($state.title)|$($state.artist)|$($state.album)|$($state.durationMs)|$($state.canSeek)"
@@ -71,7 +79,7 @@ while ($true) {
         $drift = [Math]::Abs($state.positionMs - $expected) -gt 1500
       }
       if ($key -ne $lastKey -or $drift) { Emit $state; $last = $state; $lastKey = $key; $lastAt = [DateTime]::UtcNow }
-    } catch { Emit @{ type = 'state'; available = $false; error = $_.Exception.Message }; $lastKey = '' }
+    } catch { Emit @{ type = 'state'; available = $false; error = $_.Exception.Message }; $lastKey = ''; $session = $null; $props = $null }
   }
-  Start-Sleep -Milliseconds 50
+  Start-Sleep -Milliseconds 20
 }

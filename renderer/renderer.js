@@ -341,6 +341,8 @@ async function playRow(row) {
   if(preferences.keepCurrentSongPosition && isCurrentSong(row)){if(sourcePath)nav.musicPath=sourcePath;finishSongSelection();return;}
   if(demo){demoQueue=row.playlist?.demoIndexes||row.queue||[0,1,2];index=row.demoIndex??demoQueue[0];progress=0;updated=Date.now();playing=true;if(sourcePath)nav.musicPath=sourcePath;finishSongSelection();return;}
   const value=row.action==='play-playlist'?{contextUri:row.playlist.uri}:row.contextUri?{contextUri:row.contextUri,position:row.position}:{uri:row.item.uri};
+  // A known song is shown at once; the main process reverts it if Spotify rejects the request.
+  if(row.action==='song'&&row.item){value.item=row.item;const request=command('play-item',value);if(sourcePath)nav.musicPath=sourcePath;finishSongSelection();await request;return;}
   if(await command('play-item',value)){if(sourcePath)nav.musicPath=sourcePath;finishSongSelection();}
 }
 async function selectItem(fromDial=false) {

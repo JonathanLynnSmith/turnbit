@@ -102,13 +102,22 @@ class SpotifyClient {
   // Local state is trusted only when Spotify reports playback on a computer, so phone or speaker playback stays on the Web API.
   localTrusted(web=this.playbackState){return !!(this.media?.state?.available&&web?.device?.type==='Computer');}
   localMismatch(web=this.playbackState){return this.localTrusted(web)&&!!this.media.state.title&&!sameTrack(web?.item,this.media.state);}
+  // A song picked in TurnBit is shown right away; Spotify's own state replaces it once it reports the new track.
+  pendingActive(){return !!this.pendingPlay&&Date.now()<this.pendingPlay.until;}
+  switching(web=this.playbackState){return this.pendingActive()||this.localMismatch(web);}
   merge(web){
-    if(!this.localTrusted(web))return web;
-    const local=this.media.current();
-    const merged={...web,is_playing:!!local.playing,localSession:true};
-    if(local.durationMs>0)merged.progress_ms=local.positionMs;
-    // The Web API lags a song change; show the local title until it catches up.
-    if(local.title&&!sameTrack(web.item,local)){merged.item={name:local.title,artists:local.artist?[{name:local.artist}]:[],album:{name:local.album||'',images:[]},duration_ms:local.durationMs,uri:`local-session:${local.title}|${local.artist||''}`};merged.liked=null;merged.likedPending=false;merged.provisional=true;}
+    let merged=web;
+    const local=this.localTrusted(web)?this.media.current():null;
+    if(local){
+      merged={...web,is_playing:!!local.playing,localSession:true};
+      if(local.durationMs>0)merged.progress_ms=local.positionMs;
+      // The Web API lags a song change; show the local title until it catches up.
+      if(local.title&&!sameTrack(web.item,local)){merged.item={name:local.title,artists:local.artist?[{name:local.artist}]:[],album:{name:local.album||'',images:[]},duration_ms:local.durationMs,uri:`local-session:${local.title}|${local.artist||''}`};merged.liked=null;merged.likedPending=false;merged.provisional=true;}
+    }
+    if(this.pendingActive()){
+      const item=this.pendingPlay.item,started=!!local&&sameTrack(item,local);
+      merged={...(merged||{}),item,is_playing:started?!!local.playing:true,progress_ms:started&&local.durationMs>0?local.positionMs:0,liked:null,likedPending:false,provisional:true};
+    }
     return merged;
   }
   emit(state){this.onState(this.merge(state));}
@@ -122,7 +131,7 @@ class SpotifyClient {
   }
   scheduleRefresh(ms){clearTimeout(this.refreshTimer);this.refreshTimer=setTimeout(()=>this.getPlaybackState({force:true}).catch(()=>{}),ms);this.refreshTimer.unref?.();}
   async getPlaybackState({force=false}={}) {
-    if(!force&&this.playbackState&&this.localTrusted()&&!this.localMismatch()&&Date.now()-this.playbackRead<this.webCacheMs){this.emit(this.playbackState);return this.playbackState;}
+    if(!force&&this.playbackState&&this.localTrusted()&&!this.switching()&&Date.now()-this.playbackRead<this.webCacheMs){this.emit(this.playbackState);return this.playbackState;}
     const revision=this.stateRevision;
     const state = await this.api('/me/player');
     if(state){state.liked=null;if(!state.item?.is_local&&/^spotify:track:[a-zA-Z0-9]{22}$/.test(state.item?.uri||'')){
@@ -132,8 +141,11 @@ class SpotifyClient {
       else try{const saved=await this.api(`/me/library/contains?${new URLSearchParams({uris:state.item.uri})}`);if(typeof saved?.[0]==='boolean'){state.liked=saved[0];this.likedCache={uri:state.item.uri,liked:saved[0],at:Date.now()};}}catch{/* Library lookup must not interrupt playback. */}
       const latest=this.likeStates.get(state.item.uri);if(latest&&Date.now()<latest.until){state.liked=latest.liked;state.likedPending=!latest.confirmed;}
     }}
+    // Spotify's reads lag volume writes; keep the value TurnBit just set so the dial does not snap back.
+    if(state?.device&&this.volumeWrite&&Date.now()-this.volumeWrite.at<5000)state.device={...state.device,volume_percent:this.volumeWrite.value};
     if(revision!==this.stateRevision)return this.playbackState;
     this.playbackState=state;this.playbackRead=Date.now();
+    if(this.pendingPlay&&state?.item?.uri===this.pendingPlay.item.uri)this.pendingPlay=null;
     if(this.localMismatch(state)){if(this.mismatchRetries++<3)this.scheduleRefresh(1500);}else this.mismatchRetries=0;
     this.emit(state);return state;
   }
@@ -171,9 +183,9 @@ class SpotifyClient {
   }
   async command(command, value) {
     if(['like','shuffle','repeat'].includes(command)) {
-      const state=command==='like'&&this.playbackState&&Date.now()-this.playbackRead<6000&&!this.localMismatch()?this.playbackState:await this.getPlaybackState({force:true});
+      const state=command==='like'&&this.playbackState&&Date.now()-this.playbackRead<6000&&!this.switching()?this.playbackState:await this.getPlaybackState({force:true});
       if(!state)throw new Error('Open Spotify and start a song first.');
-      if(command==='like'&&this.localMismatch(state))throw new Error('Spotify is still switching songs. Try again in a moment.');
+      if(command==='like'&&this.switching(state))throw new Error('Spotify is still switching songs. Try again in a moment.');
       if(command==='like') {
         const item=state.item;
         if(item?.is_local||!/^spotify:track:[a-zA-Z0-9]{22}$/.test(item?.uri||''))throw new Error('The current item is not a Spotify song that can be liked.');
@@ -202,7 +214,11 @@ class SpotifyClient {
         if(value.position!==undefined){if(!Number.isInteger(value.position)||value.position<0)throw new Error('Invalid playlist position.');body.offset={position:value.position};}
       } else if(valid(value?.uri))body={uris:[value.uri]};
       else throw new Error('This item cannot be played through Spotify.');
-      await this.api(`/me/player/play${this.deviceId?`?device_id=${encodeURIComponent(this.deviceId)}`:''}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});return;
+      const pending=valid(value?.item?.uri)?{item:value.item,until:Date.now()+8000}:null;
+      if(pending){this.pendingPlay=pending;this.emit(this.playbackState);}
+      try{await this.api(`/me/player/play${this.deviceId?`?device_id=${encodeURIComponent(this.deviceId)}`:''}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});}
+      catch(error){if(this.pendingPlay===pending&&pending){this.pendingPlay=null;this.emit(this.playbackState);}throw error;}
+      if(pending)this.scheduleRefresh(1500);return;
     }
     if (command === 'device') {
       if (typeof value !== 'string' || !value) throw new Error('Select a playback device.');
@@ -220,7 +236,12 @@ class SpotifyClient {
       params.set(command === 'seek' ? 'position_ms' : 'volume_percent', Math.round(Math.max(0, Math.min(command === 'volume' ? 100 : 86400000, value))));
     }
     await this.api(`/me/player/${command}${params.size ? `?${params}` : ''}`, { method: methods[command] });
+    // Update the cached state too; while the desktop session is trusted it is reused instead of re-read.
+    if (command === 'volume') {
+      const volume = Number(params.get('volume_percent')); this.volumeWrite = { value: volume, at: Date.now() };
+      if (this.playbackState?.device) this.playbackState = { ...this.playbackState, device: { ...this.playbackState.device, volume_percent: volume } };
+    }
   }
-  logout() { this.cancelLogin(); this.token = null; this.refreshToken = null; this.expiresAt = 0; this.deviceId = ''; this.playbackState=null;this.playbackRead=0;this.likeStates.clear();this.likedCache=null;clearTimeout(this.refreshTimer);this.lastLocal=null;this.mismatchRetries=0;this.stateRevision++;this.save(); this.notify(); return { ok: true }; }
+  logout() { this.cancelLogin(); this.token = null; this.refreshToken = null; this.expiresAt = 0; this.deviceId = ''; this.playbackState=null;this.playbackRead=0;this.likeStates.clear();this.likedCache=null;clearTimeout(this.refreshTimer);this.lastLocal=null;this.mismatchRetries=0;this.pendingPlay=null;this.volumeWrite=null;this.stateRevision++;this.save(); this.notify(); return { ok: true }; }
 }
 module.exports = { SpotifyClient, REDIRECT_URI };
