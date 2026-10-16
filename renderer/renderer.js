@@ -44,7 +44,15 @@ function measureMarquee(element) {
 function measureVisibleTitles() {
   document.querySelectorAll('#nowView .marquee,.menurow.selected .rowname').forEach(measureMarquee);
 }
-const root = () => ({title:'turnbit',rows:[{label:'Music',action:'music',branch:true},{label:'Now Playing',action:'now',branch:true},{label:'Settings',action:'settings',branch:true},...(preferences.lastSongList?[lastSongListRow()]:[])]});
+// Home: Now Playing shortcut on top, then Liked Songs and Playlists directly (no Music menu), then Settings.
+// The Zune interface keeps its own Home with a Music screen.
+function homeRows(){
+  const last=preferences.lastSongList?[lastSongListRow()]:[];
+  if(preferences.interfaceStyle==='zune')return [{label:'Music',action:'music',branch:true},{label:'Now Playing',action:'now',branch:true},{label:'Settings',action:'settings',branch:true},...last];
+  return [{label:'Now Playing',action:'now',icon:'now',control:true},{label:'Liked Songs',action:'songs',branch:true},{label:'Playlists',action:'playlists',branch:true},...last,{label:'Settings',action:'settings',branch:true}];
+}
+const homeStart=()=>preferences.interfaceStyle==='zune'?0:1;
+const root = () => ({title:'turnbit',rows:homeRows(),selected:homeStart()});
 const nav = new window.WheelNavigation(root());
 const idle = new window.IdleNowPlaying(nav);
 let silentHardwareActivity=false;
@@ -95,17 +103,13 @@ function startBackHold(){
   };
   backHold={frame:requestAnimationFrame(step)};
 }
-// Home keeps Now Playing on top as a shortcut row (the Zune interface keeps its own Home layout). Moving it keeps the
-// same item highlighted, so Home opens on Music with Now Playing one notch up.
-function ensureHomeShortcut(page){
+// Keep Home matching homeRows() (switching interfaces, or Last Song List appearing), with the same item highlighted.
+function ensureHomeLayout(page){
   if(page!==nav.stack[0]||page===nav.idlePage)return;
-  const index=page.rows.findIndex(row=>row.action==='now'),top=preferences.interfaceStyle!=='zune';if(index<0)return;
-  const onTop=index===0&&!!page.rows[0].control;if(top===onTop)return;
-  const highlighted=page.rows[page.selected],nowSelected=highlighted?.action==='now';
-  page.rows.splice(index,1);
-  const row=top?{label:'Now Playing',action:'now',icon:'now',control:true}:{label:'Now Playing',action:'now',branch:true};
-  page.rows.splice(top?0:Math.min(1,page.rows.length),0,row);
-  page.selected=Math.max(0,page.rows.indexOf(nowSelected?row:highlighted));
+  const want=homeRows(),key=rows=>rows.map(row=>row.action).join();if(key(want)===key(page.rows))return;
+  const swap={music:'songs',songs:'music',playlists:'music'},was=page.rows[page.selected]?.action;
+  page.rows=want;let index=want.findIndex(row=>row.action===was);if(index<0)index=want.findIndex(row=>row.action===swap[was]);
+  page.selected=index>=0?index:homeStart();
 }
 function ensureBackRow(page){
   if(!page||page.kind!=='list'||page===nav.stack[0]||page===nav.idlePage)return;
@@ -118,7 +122,7 @@ function ensureBackRow(page){
   if(page.awaitingFirst&&page.rows.length>1&&!page.rows[1].disabled){page.awaitingFirst=false;if(page.selected===0)page.selected=1;}
 }
 function drawNavigation() {
-  const page=nav.current;ensureBackRow(page);ensureHomeShortcut(page);syncVisibility();drawRadial();if(preferences.interfaceStyle==='radial')return;
+  const page=nav.current;ensureBackRow(page);ensureHomeLayout(page);syncVisibility();drawRadial();if(preferences.interfaceStyle==='radial')return;
   const preview=page.rows[page.selected];
   applyTheme(document.body,preview?.action==='theme'?preview.theme:preferences.appearance);
   $('.case-name').textContent=preferences.interfaceStyle==='zune'?'zune':'turnbit';
@@ -187,7 +191,7 @@ function updateSmokeShape(){
 let miniIndexCache={};
 function currentMiniIndices(page){const key=[demo,index,playback?.item?.uri,demo?(playing||progress>0):!!playback?.item].join(':');if(miniIndexCache.rows!==page.rows||miniIndexCache.key!==key)miniIndexCache={rows:page.rows,key,indices:page.rows.flatMap((row,i)=>radialMiniPlayer(row)?[i]:[])};return miniIndexCache.indices;}
 function drawRadial(){
-  ensureBackRow(nav.current);ensureHomeShortcut(nav.current);
+  ensureBackRow(nav.current);ensureHomeLayout(nav.current);
   if(visibilityState.invisible||visibilityState.minimized)return;
   if(preferences.interfaceStyle!=='radial'){radial.stop();trackTransition.reset();return;}
   const page=nav.current;if(page.kind!=='now')trackTransition.reset();
@@ -364,7 +368,7 @@ function returnToSongList() {
   noteActivity();
   if(nav.returnToMusic()){drawNavigation();selectPlayingSong();return;}
   const uri=playback?.context?.uri;
-  nav.goHome();showMusic();
+  nav.goHome();if(preferences.interfaceStyle==='zune')showMusic();
   if(/^spotify:playlist:[a-zA-Z0-9]{22}$/.test(uri||''))showLibrary('playlist',{id:uri.split(':')[2],uri,name:'Current Playlist'});
   else showLibrary('songs');
   selectPlayingSong();

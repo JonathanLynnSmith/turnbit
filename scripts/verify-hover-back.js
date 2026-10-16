@@ -10,33 +10,33 @@ app.whenReady().then(async()=>{try{
   const turn=delta=>post({type:'dial',delta});
   const click=async()=>{await post({type:'command',command:'center-down'});await post({type:'command',command:'center-up'});await post({type:'command',command:'center-click'});await wait(450);};
   const page=()=>js(`({title:nav.current.title,highlighted:nav.current.rows[nav.current.selected]?.label,first:nav.current.rows[0]?.label,hold:document.body.dataset.backHold,progress:Number(getComputedStyle(document.documentElement).getPropertyValue('--back-hold')||0)})`);
-  const reset=async(style,prefs='')=>{await js(`savePreferences({interfaceStyle:'${style}',backRow:true,hoverBack:true,idleNowPlaying:false,idlePinned:false,dialOnlyWake:false,visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:10}${prefs}});demo=true;nav.reset(root());showMusic();drawNavigation();`);await wait(200);};
+  const reset=async(style,prefs='')=>{await js(`savePreferences({interfaceStyle:'${style}',backRow:true,hoverBack:true,idleNowPlaying:false,idlePinned:false,dialOnlyWake:false,visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:10}${prefs}});demo=true;nav.reset(root());nav.current.selected=nav.current.rows.findIndex(r=>r.action==='songs');showLibrary('songs');drawNavigation();`);await wait(200);};
 
   for(const style of ['radial','ipod']){
     await reset(style);
     await turn(-1);let p=await page();assert.equal(p.highlighted,'Back');assert.equal(p.hold,'true',`${style}: turning onto Back starts the hold`);
-    await wait(450);p=await page();assert.equal(p.title,'Music','still on Music halfway');assert.ok(p.progress>0.25&&p.progress<0.8,`${style}: ring is partly filled (${p.progress})`);
-    await wait(750);p=await page();assert.equal(p.title,'turnbit',`${style}: after 1s it goes back`);assert.equal(p.highlighted,'Music','landing on the item you came from');assert.notEqual(p.hold,'true','ring cleared');
+    await wait(450);p=await page();assert.equal(p.title,'Liked Songs','still on Liked Songs halfway');assert.ok(p.progress>0.25&&p.progress<0.8,`${style}: ring is partly filled (${p.progress})`);
+    await wait(750);p=await page();assert.equal(p.title,'turnbit',`${style}: after 1s it goes back`);assert.equal(p.highlighted,'Liked Songs','landing on the item you came from');assert.notEqual(p.hold,'true','ring cleared');
   }
 
   await reset('radial');await turn(-1);await wait(500);await turn(1);await wait(900);
-  let p=await page();assert.equal(p.title,'Music','Turning away cancels');assert.equal(p.highlighted,'Playlists');assert.notEqual(p.hold,'true');
+  let p=await page();assert.equal(p.title,'Liked Songs','Turning away cancels');assert.equal(p.highlighted,'Night Drive');assert.notEqual(p.hold,'true');
 
   // Turning all the way up sends extra up-ticks after reaching Back; they must keep the countdown going, not cancel it.
   await reset('radial');await turn(-1);await turn(-1);await turn(-1);await turn(-1);p=await page();assert.equal(p.highlighted,'Back');assert.equal(p.hold,'true','Extra up-turns keep the ring');
   await wait(1100);assert.equal((await page()).title,'turnbit','Overshooting still goes back after 1s');
   await reset('radial');
-  // Chain: Liked Songs -> Music -> Home by turning up and resting each time.
-  await js(`nav.current.selected=nav.current.rows.findIndex(r=>r.action==='songs');drawNavigation();`);await click();assert.equal((await page()).title,'Liked Songs');
-  await turn(-1);await wait(1200);p=await page();assert.equal(p.title,'Music');assert.equal(p.highlighted,'Liked Songs');
-  await turn(-2);await wait(1200);assert.equal((await page()).title,'turnbit','Chained hover goes back again');
+  // Chain: a playlist -> Playlists -> Home by turning up and resting each time.
+  await js(`nav.reset(root());nav.current.selected=nav.current.rows.findIndex(r=>r.action==='playlists');drawNavigation();`);await click();await js(`nav.current.selected=nav.current.rows.findIndex(r=>r.action==='playlist');drawNavigation();`);await click();assert.equal((await page()).title,'After Hours');
+  await turn(-1);await wait(1200);p=await page();assert.equal(p.title,'Playlists');assert.equal(p.highlighted,'After Hours');
+  await turn(-2);await wait(1200);p=await page();assert.equal(p.title,'turnbit','Chained hover goes back again');assert.equal(p.highlighted,'Playlists');
 
   // An empty list highlights Back on its own; that must not bounce you out.
   await js(`push({title:'Empty',rows:[{label:'No items found',disabled:true}]});`);await wait(1500);
   p=await page();assert.equal(p.title,'Empty','Empty list does not auto-back');assert.notEqual(p.hold,'true');
 
   // Hover to Go Back off: resting does nothing, pressing still works.
-  await reset('radial',',hoverBack:false');await turn(-1);await wait(1400);p=await page();assert.equal(p.title,'Music','Hover off: no auto-back');assert.notEqual(p.hold,'true');
+  await reset('radial',',hoverBack:false');await turn(-1);await wait(1400);p=await page();assert.equal(p.title,'Liked Songs','Hover off: no auto-back');assert.notEqual(p.hold,'true');
   await click();assert.equal((await page()).title,'turnbit','Pressing Back still works');
 
   // Back in Lists: toggled from Settings without losing the highlighted row.
@@ -51,13 +51,13 @@ app.whenReady().then(async()=>{try{
   // Home: Now Playing sits on top as a shortcut; Home opens on Music; resting on it opens Now Playing.
   const home=async style=>{await js(`savePreferences({interfaceStyle:'${style}',hoverBack:true,idleNowPlaying:false});demo=true;nav.reset(root());drawNavigation();`);await wait(200);};
   for(const style of ['radial','ipod']){
-    await home(style);p=await page();assert.equal(p.first,'Now Playing',`${style}: Now Playing is first on Home`);assert.equal(p.highlighted,'Music','Home opens on Music');
+    await home(style);p=await page();assert.equal(p.first,'Now Playing',`${style}: Now Playing is first on Home`);assert.equal(p.highlighted,'Liked Songs','Home opens on Music');
     await turn(-1);await turn(-1);p=await page();assert.equal(p.highlighted,'Now Playing');assert.equal(p.hold,'true','ring starts on the Home shortcut');
     await wait(1150);assert.equal(await js('nav.current.kind'),'now',`${style}: resting on Now Playing opens it`);
   }
-  await home('radial');await turn(-1);await wait(500);await turn(1);await wait(800);p=await page();assert.equal(p.highlighted,'Music','turning away from the Home shortcut cancels');
+  await home('radial');await turn(-1);await wait(500);await turn(1);await wait(800);p=await page();assert.equal(p.highlighted,'Liked Songs','turning away from the Home shortcut cancels');
   await home('zune');p=await page();assert.equal(p.first,'Music','Zune keeps its own Home order');assert.equal(await js(`nav.current.rows.findIndex(r=>r.action==='now')`),1);
-  await js(`savePreferences({interfaceStyle:'radial'});drawNavigation();`);p=await page();assert.equal(p.first,'Now Playing','switching back moves the shortcut to the top');assert.equal(p.highlighted,'Music','and keeps the highlight');
+  await js(`savePreferences({interfaceStyle:'radial'});drawNavigation();`);p=await page();assert.equal(p.first,'Now Playing','switching back moves the shortcut to the top');assert.equal(p.highlighted,'Liked Songs','and keeps the highlight');
   await js(`savePreferences({hoverBack:false});`);await turn(-1);await wait(1300);assert.equal(await js('nav.current.kind'),'list','Hover Shortcuts off: no auto Now Playing');
   console.log('Hover Shortcuts: resting 1s on Back goes back and on Now Playing (top of Home) opens it, with a filling ring in both interfaces; turning away cancels, chains, skips empty lists; Zune keeps its Home; both settings work.');app.quit();
 }catch(error){console.error(error);app.exit(1);}});

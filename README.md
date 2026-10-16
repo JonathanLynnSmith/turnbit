@@ -11,7 +11,7 @@ turnbit docks a transparent, curved menu along the edge of your screen. Turn the
 ## Features
 
 - **Floating radial menu** that docks to the left or right screen edge, with a soft backdrop you can tune or turn off
-- **Browse your library**: playlists, Liked Songs, and songs within your playlists, with **Last Song List** on Home to jump back to where you were
+- **Browse your library**: Liked Songs and Playlists right on Home, plus **Last Song List** to jump back to where you were
 - **Now Playing** with album art, a seek bar, volume, like, shuffle, and repeat
 - **Hardware control** with the Ulanzi D100H dial and macro buttons, even while turnbit is in the background
 - **Stays out of the way**: optional transparency, idle fade, and a Gaming Mode that pauses animations
@@ -98,7 +98,7 @@ To set this up in one step, import the profile included in the `ulanzi-plugin` f
 | Play / Pause | Pause or resume. From a menu, the first press opens Now Playing. |
 | Previous / Next | Tap to skip. Hold to rewind or fast-forward. |
 
-Every list below Home starts with a **Back** row, so you can get around with the dial alone. Turn up past the first item and press, or just rest on it for a second: a small ring fills and turnbit goes back on its own. Home works the same way: **Now Playing** sits above Music, so turn up and rest on it to open Now Playing. At the end of a long list, rest on **Load more** to load the next songs.
+Every list below Home starts with a **Back** row, so you can get around with the dial alone. Turn up past the first item and press, or just rest on it for a second: a small ring fills and turnbit goes back on its own. Home works the same way: **Now Playing** sits above Liked Songs, so turn up and rest on it to open Now Playing. At the end of a long list, rest on **Load more** to load the next songs.
 
 ### Keyboard
 
