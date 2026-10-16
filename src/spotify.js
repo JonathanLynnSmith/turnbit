@@ -17,6 +17,9 @@ class SpotifyClient {
     this.onAuth = options.onAuth || (() => {}); this.persist = options.persist || (() => {});
     this.clientId = options.session?.clientId || ''; this.refreshToken = options.session?.refreshToken || null;
     this.token = null; this.expiresAt = 0; this.deviceId = ''; this.cooldowns = new Map();
+    // Cooldowns survive restarts so a relaunch does not hit an endpoint Spotify is still throttling (capped at 7 days in case the file is bad).
+    this.onCooldowns = options.onCooldowns || (() => {});
+    for (const [group, at] of Object.entries(options.cooldowns || {})) if (Number.isFinite(at) && at > Date.now() && at < Date.now() + 7 * 86400000) this.cooldowns.set(group, at);
     this.likeStates=new Map();this.playbackRead=0;this.playbackState=null;this.stateRevision=0;
     this.likeDelays=options.likeDelays||[1000,3000,8000];
     // Liked status only changes on a new track or a Like press; recheck occasionally for changes made in other Spotify apps.
@@ -32,7 +35,8 @@ class SpotifyClient {
   configure(clientId) {
     const id = String(clientId || '').trim();
     if (!/^[a-f0-9]{32}$/i.test(id)) throw new Error('Enter the 32-character Spotify Client ID from your dashboard.');
-    if (id !== this.clientId) this.logout();
+    // Rate limits belong to the Spotify app (Client ID), so a different app starts with none.
+    if (id !== this.clientId) { this.logout(); this.cooldowns.clear(); this.saveCooldowns(); }
     this.clientId = id; this.save(); return this.status();
   }
   save() { this.persist({ clientId: this.clientId, refreshToken: this.refreshToken }); }
@@ -91,6 +95,7 @@ class SpotifyClient {
     if (!this.refreshing) this.refreshing = this.request(`${ACCOUNTS}/api/token`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ client_id: this.clientId, grant_type: 'refresh_token', refresh_token: this.refreshToken }) }).then(data => this.setTokens(data)).catch(error => { if (error.status === 400 || error.status === 401) this.logout(); throw error; }).finally(() => { this.refreshing = null; });
     await this.refreshing; return this.token;
   }
+  saveCooldowns() { const now = Date.now(); this.onCooldowns(Object.fromEntries([...this.cooldowns].filter(([, at]) => at > now))); }
   async api(path, options = {}) {
     const group = limitGroup(path), until = this.cooldowns.get(group) || 0;
     if (Date.now() < until) throw cooldownError(group, until);
@@ -98,7 +103,7 @@ class SpotifyClient {
     try {
       try { return await request(); } catch (error) { if (error.status !== 401 || !this.refreshToken) throw error; this.token = null; return await request(); }
     } catch (error) {
-      if (error.status === 429 && error.retryAfter) { const at = Date.now() + error.retryAfter * 1000; this.cooldowns.set(group, at); throw cooldownError(group, at); }
+      if (error.status === 429 && error.retryAfter) { const at = Date.now() + error.retryAfter * 1000; this.cooldowns.set(group, at); this.saveCooldowns(); throw cooldownError(group, at); }
       throw error;
     }
   }

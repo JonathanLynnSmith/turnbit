@@ -241,6 +241,9 @@ function acceptPlayback(data) {
   if(playback?.item?.uri && data?.item?.uri && playback.item.uri!==data.item.uri){transportHold.cancel();seekControl.reset(0);}
   const wasLikePending=!!playback?.likedPending;
   playback=data;playing=!!data?.is_playing;
+  // Keep cached Liked Songs current when the playing song's like flips (in turnbit or on another device).
+  // Only a flip counts: an old liked song reporting liked:true must not jump to the top of the list.
+  if(!demo&&data?.item?.uri&&!data.provisional&&!data.likedPending&&typeof data.liked==='boolean'){if(lastLiked?.uri===data.item.uri&&lastLiked.liked!==data.liked&&likedSongs.setLiked(data.item,data.liked))syncLikedSongPages();lastLiked={uri:data.item.uri,liked:data.liked};}
   if(data?.likeError)message(data.likeError);else if(wasLikePending&&!data?.likedPending&&typeof data?.liked==='boolean')message(data.liked?'Liked · confirmed by Spotify':'Unliked · confirmed by Spotify');
   if(!transportHold.direction&&!seekControl.busy&&seekControl.pending===null&&Date.now()>=seekControl.protectedUntil){progress=data?.progress_ms||0;updated=Date.now();}
   const deviceId=data?.device?.id;
@@ -341,7 +344,32 @@ function demoLibrary(kind,playlist) {
   const indexes=playlist?.demoIndexes||[0,1,2];return {items:indexes.map(i=>({item:demos[i],demoIndex:i})),next:null};
 }
 function playable(item) { return item && !item.is_local && item.is_playable!==false && !item.restrictions && /^spotify:(track|episode):[A-Za-z0-9]{22}$/.test(item.uri||''); }
+const likedSongs=new window.LikedSongsCache();let lastLiked=null;
+function libraryRows(page,items,offset){return items.map((entry,i)=>{
+  if(page.libraryKind==='playlists')return {label:entry.name||'Untitled playlist',action:'playlist',playlist:entry,branch:true};
+  const item=entry.item||entry.track;
+  return {label:item?.name||'Unavailable item',action:'song',item,position:offset+i,contextUri:page.playlist?.uri,demoIndex:entry.demoIndex,queue:page.playlist?.demoIndexes,disabled:!demo&&!playable(item),detail:time(demo?item.duration:item?.duration_ms||0)};
+});}
+// Redraw a Liked Songs page from the cache, keeping the highlighted song selected if it is still there.
+function showCachedSongs(page,data){
+  const selectedUri=page.rows[page.selected]?.item?.uri,items=data.items||[];
+  page.total=data.total;page.rows=libraryRows(page,items,0);
+  if(data.next)page.rows.push({label:'Load more…',action:'more',offset:items.length,branch:true});
+  if(!page.rows.length)page.rows=[{label:'No items found',disabled:true}];
+  const index=selectedUri?page.rows.findIndex(row=>row.item?.uri===selectedUri):-1;
+  page.selected=index>=0?index:Math.min(page.selected,page.rows.length-1);
+  if(nav.current===page)drawNavigation();
+}
+function likedSongPages(){return [...new Set([...nav.stack,...(Array.isArray(nav.musicPath)?nav.musicPath:[]),lastSongListPage].filter(page=>page?.libraryKind==='songs'&&!page.loading))];}
+function syncLikedSongPages(){const data=likedSongs.snapshot();if(data)for(const page of likedSongPages())showCachedSongs(page,data);}
+// Show cached Liked Songs at once, then check Spotify's first page unless it was checked in the last 30 seconds.
+async function refreshLikedSongs(page){
+  if(likedSongs.isFresh()||page.refreshing)return;page.refreshing=true;
+  try{if(likedSongs.applyFirstPage(await api.library('songs',undefined,0)))syncLikedSongPages();}
+  catch(e){if(nav.current===page)message(e.message);}finally{page.refreshing=false;}
+}
 async function loadLibrary(page,offset=0) {
+  if(!demo&&page.libraryKind==='songs'&&!offset){const cached=likedSongs.snapshot();if(cached){showCachedSongs(page,cached);refreshLikedSongs(page);return;}}
   if(page.loading)return;page.loading=true;
   const baseRows=page.rows.filter(row=>row.action!=='more'&&row.action!=='retry'&&row.action!=='placeholder');
   if(!offset)page.rows=[...baseRows,{label:'Loading…',action:'placeholder',disabled:true}];
@@ -349,11 +377,8 @@ async function loadLibrary(page,offset=0) {
   try{
     const data=demo?demoLibrary(page.libraryKind,page.playlist):await api.library(page.libraryKind,page.playlist?.id,offset);
     page.total=data.total;
-    const rows=(data.items||[]).map((entry,i)=>{
-      if(page.libraryKind==='playlists')return {label:entry.name||'Untitled playlist',action:'playlist',playlist:entry,branch:true};
-      const item=entry.item||entry.track;
-      return {label:item?.name||'Unavailable item',action:'song',item,position:offset+i,contextUri:page.playlist?.uri,demoIndex:entry.demoIndex,queue:page.playlist?.demoIndexes,disabled:!demo&&!playable(item),detail:time(demo?item.duration:item?.duration_ms||0)};
-    });
+    if(!demo&&page.libraryKind==='songs'){if(offset)likedSongs.appendPage(offset,data);else likedSongs.applyFirstPage(data);}
+    const rows=libraryRows(page,data.items||[],offset);
     page.rows=[...baseRows,...rows];
     if(data.next)page.rows.push({label:'Load more…',action:'more',offset:offset+(data.items?.length||50),branch:true});
     if(!page.rows.length)page.rows=[{label:'No items found',disabled:true}];
@@ -576,7 +601,7 @@ $('#connectionForm').onsubmit=async e=>{
   $('#login').disabled=true;$('#settingsMessage').textContent='Opening Spotify authorization…';
   try{await api.configure($('#clientId').value);await api.login();}catch(error){$('#settingsMessage').textContent=error.message;}finally{$('#login').disabled=false;}
 };
-$('#logout').onclick=async()=>{try{transportHold.cancel();seekControl.reset(0);volumeControl.reset(volume);volumeDeviceId=null;await api?.logout();demo=true;playing=false;progress=0;updated=Date.now();playback=null;nav.reset(root());drawNavigation();$('#settingsMessage').textContent='Disconnected.';render();}catch(e){$('#settingsMessage').textContent=e.message;}};
+$('#logout').onclick=async()=>{try{likedSongs.clear();lastLiked=null;transportHold.cancel();seekControl.reset(0);volumeControl.reset(volume);volumeDeviceId=null;await api?.logout();demo=true;playing=false;progress=0;updated=Date.now();playback=null;nav.reset(root());drawNavigation();$('#settingsMessage').textContent='Disconnected.';render();}catch(e){$('#settingsMessage').textContent=e.message;}};
 $('#deviceBtn').onclick=showDevices;
 if(api){
   syncRecovery();

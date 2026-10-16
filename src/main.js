@@ -44,6 +44,8 @@ function createWindow() {
 function readSession(file) {
   try { const data = JSON.parse(fs.readFileSync(file, 'utf8')); return { clientId: data.clientId, refreshToken: data.encryptedToken && safeStorage.isEncryptionAvailable() ? safeStorage.decryptString(Buffer.from(data.encryptedToken, 'base64')) : null }; } catch { return {}; }
 }
+function readCooldowns(file) { try { const data = JSON.parse(fs.readFileSync(file, 'utf8')); return data && typeof data === 'object' ? data : {}; } catch { return {}; } }
+function saveCooldowns(file, data) { try { fs.writeFileSync(`${file}.tmp`, JSON.stringify(data)); fs.renameSync(`${file}.tmp`, file); } catch { /* Best effort: a lost file only costs one throttled request. */ } }
 function saveSession(file, data) {
   const saved = { clientId: data.clientId, encryptedToken: data.refreshToken && safeStorage.isEncryptionAvailable() ? safeStorage.encryptString(data.refreshToken).toString('base64') : null };
   fs.writeFileSync(`${file}.tmp`, JSON.stringify(saved)); fs.renameSync(`${file}.tmp`, file);
@@ -92,9 +94,9 @@ if (!app.requestSingleInstanceLock()) app.quit();
 else {
   app.on('second-instance', () => { wakeVisibility(true);mainWindow?.restore(); mainWindow?.focus(); });
   app.whenReady().then(() => {
-    const file = path.join(app.getPath('userData'), 'spotify-session.json');
+    const file = path.join(app.getPath('userData'), 'spotify-session.json'), limits = path.join(app.getPath('userData'), 'rate-limits.json');
     if (process.platform === 'win32') media = new MediaSession(state => spotify?.localChanged(state));
-    spotify = new SpotifyClient(state => send('spotify-state', state), { media, session: readSession(file), persist: data => saveSession(file, data), onAuth: auth => send('spotify-auth', auth) });
+    spotify = new SpotifyClient(state => send('spotify-state', state), { media, session: readSession(file), persist: data => saveSession(file, data), cooldowns: readCooldowns(limits), onCooldowns: data => saveCooldowns(limits, data), onAuth: auth => send('spotify-auth', auth) });
     media?.start();
     bridge = createBridge(event => {const action=wakeGate?.handle(event)||'forward';scheduleVisibility();if(action==='forward')send('device-event',event);else if(action==='wake')send('device-event',{type:'wake'});}, Number(process.env.DIALPOD_BRIDGE_PORT || 4765));
     bridge.on('error', error => { bridgeError = `D100H bridge unavailable: ${error.message}`; send('bridge-error', bridgeError); });
