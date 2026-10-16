@@ -10,13 +10,13 @@ app.whenReady().then(async()=>{
     const command=command=>post({type:'command',command});
     window.blur();await js(`lastMouseActivity=Date.now()+60000;`);
     await js(`savePreferences({reverseDial:false,idleNowPlaying:true,songOpensNowPlaying:true,playOpensNowPlaying:true});`);
-    const sleep=async(setup=true)=>{if(setup)await js(`savePreferences({interfaceStyle:'ipod',visibility:{mode:'idle',opacity:70,idleOpacity:0,timeout:1}});nav.reset(root());showSettings();nav.current.selected=nav.current.rows.findIndex(row=>row.action==='case-theme');drawNavigation();`);await wait(2200);assert.equal(window.getOpacity(),0);};
-    await sleep();await post({type:'dial',delta:1});assert.ok(window.getOpacity()>.99);assert.equal(await js(`nav.current.selected`),6);
-    await post({type:'dial',delta:1});assert.equal(await js(`nav.current.selected`),7);
-    await sleep();await command('center-down');await command('center-up');await command('center-click');await wait(400);assert.equal(await js(`nav.current.title`),'Settings');
+    const sleep=async(setup=true)=>{if(setup)await js(`savePreferences({interfaceStyle:'ipod',visibility:{mode:'idle',opacity:70,idleOpacity:0,timeout:1}});nav.reset(root());showSetting(row=>row.action==='case-theme');`);await wait(2200);assert.equal(window.getOpacity(),0);};
+    await sleep();await post({type:'dial',delta:1});assert.ok(window.getOpacity()>.99);assert.equal(await js(`nav.current.selected`),2);
+    await post({type:'dial',delta:1});assert.equal(await js(`nav.current.selected`),3);
+    await sleep();await command('center-down');await command('center-up');await command('center-click');await wait(400);assert.equal(await js(`nav.current.title`),'Appearance');
     await command('center-down');await command('center-up');await command('center-click');await wait(400);assert.equal(await js(`nav.current.title`),'Case Theme');
-    await sleep();await command('menu-down');await wait(600);await command('menu-up');assert.equal(await js(`nav.current.title`),'Settings');
-    await command('menu-down');await command('menu-up');assert.equal(await js(`nav.current.title`),'turnbit');
+    await sleep();await command('menu-down');await wait(600);await command('menu-up');assert.equal(await js(`nav.current.title`),'Appearance');
+    await command('menu-down');await command('menu-up');assert.equal(await js(`nav.current.title`),'Settings');
     await sleep();await command('toggle');assert.equal(await js(`nav.current.kind`),'now');
     await js(`window.startIndex=index;`);await sleep(false);await command('next-down');await command('next-up');assert.equal(await js(`index!==window.startIndex`),true);
     await sleep(false);await command('previous-down');await command('previous-up');assert.equal(await js(`index===window.startIndex`),true);
@@ -31,13 +31,13 @@ app.whenReady().then(async()=>{
     // Direct playback mode toggles from menus, including when faded out.
     await js(`savePreferences({playOpensNowPlaying:false});nav.reset(root());playing=true;`);await sleep(false);await command('toggle');assert.equal(await js(`nav.current.kind==='list'&&!playing`),true);
     // All three switches are real menu actions and survive reload.
-    await js(`showSettings();`);
+    await js(`showSettings();showSettingsGroup('now-playing');`);
     for(const key of ['idleNowPlaying','songOpensNowPlaying','playOpensNowPlaying']){
       await js(`nav.current.selected=nav.current.rows.findIndex(row=>row.key==='${key}');drawNavigation();`);await command('select');assert.equal(await js(`preferences.${key}`),true);
     }
     await js(`nav.reset(root());idle.lastActivity=Date.now()-11000;`);await wait(350);assert.equal(await js(`nav.current.kind`),'now');
     await js(`savePreferences({visibility:{mode:'off',opacity:70,idleOpacity:20,timeout:10},idleNowPlaying:false,songOpensNowPlaying:false,playOpensNowPlaying:false});`);
-    await js(`showSettings();nav.current.selected=nav.current.rows.findIndex(row=>row.key==='reverseDial');drawNavigation();`);await command('select');assert.equal(await js(`preferences.reverseDial`),true);
+    await js(`showSetting(row=>row.key==='reverseDial');`);await command('select');assert.equal(await js(`preferences.reverseDial`),true);
     await js(`nav.current.selected=3;drawNavigation();`);await post({type:'dial',delta:1});assert.equal(await js(`nav.current.selected`),2);
     await post({type:'dial',delta:-1});assert.equal(await js(`nav.current.selected`),3);
     await js(`showNow();volume=50;volumeControl.reset(50);`);await post({type:'dial',delta:1});assert.equal(await js(`volume`),48);

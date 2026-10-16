@@ -17,7 +17,7 @@ app.whenReady().then(async()=>{try{
     await js(`savePreferences({interfaceStyle:'${style}',doublePress:'back',hoverBack:true,idleNowPlaying:false,idlePinned:false,songOpensNowPlaying:true,visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:10}});demo=true;`);
     await intoPlaylist();await doublePress();assert.equal((await page()).title,'Playlists',`${style}: Back mode goes back one level`);
     // Switch the setting from Settings.
-    await js(`nav.reset(root());showSettings();nav.current.selected=nav.current.rows.findIndex(r=>r.action==='double-press');drawNavigation();`);
+    await js(`nav.reset(root());showSetting(r=>r.action==='double-press');`);
     assert.equal((await page()).highlighted,'Dial Double-Press');await click();
     assert.equal(await js(`nav.current.rows[nav.current.selected].detail`),'Home','setting shows Home');
     assert.deepEqual(await js(`[preferences.doublePress,JSON.parse(localStorage.getItem('dialpod-preferences')).doublePress]`),['home','home'],'setting is saved');

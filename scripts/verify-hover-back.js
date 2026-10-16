@@ -40,12 +40,12 @@ app.whenReady().then(async()=>{try{
   await click();assert.equal((await page()).title,'turnbit','Pressing Back still works');
 
   // Back in Lists: toggled from Settings without losing the highlighted row.
-  await reset('radial');await js(`nav.reset(root());showSettings();nav.current.selected=nav.current.rows.findIndex(r=>r.key==='backRow');drawNavigation();`);await wait(150);
+  await reset('radial');await js(`nav.reset(root());showSetting(r=>r.key==='backRow');`);await wait(150);
   assert.equal((await page()).first,'Back');await click();p=await page();
   assert.notEqual(p.first,'Back','Back in Lists off removes the row');assert.equal(p.highlighted,'Back in Lists','highlight stays on the setting');
   await js(`nav.reset(root());showMusic();drawNavigation();`);await wait(100);p=await page();assert.equal(p.first,'Playlists','Lists have no Back row');assert.equal(p.highlighted,'Playlists');
   await turn(-1);await wait(1300);assert.equal((await page()).title,'Music','No Back row means no hover back');
-  await js(`nav.reset(root());showSettings();nav.current.selected=nav.current.rows.findIndex(r=>r.key==='backRow');drawNavigation();`);await click();p=await page();
+  await js(`nav.reset(root());showSetting(r=>r.key==='backRow');`);await click();p=await page();
   assert.equal(p.first,'Back','Back in Lists on restores the row');assert.equal(p.highlighted,'Back in Lists');
   assert.deepEqual(await js(`[preferences.backRow,JSON.parse(localStorage.getItem('dialpod-preferences')).backRow]`),[true,true],'setting is saved');
   // Home: Now Playing sits on top as a shortcut; Home opens on Music; resting on it opens Now Playing.

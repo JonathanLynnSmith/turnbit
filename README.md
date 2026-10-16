@@ -50,7 +50,7 @@ To build a standalone app, run `npm run package`. The app is created as `turnbit
 1. In the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard), create an app and select **Web API**.
 2. Add this redirect URI exactly: `http://127.0.0.1:43821/callback`
 3. Under **User Management**, add the Spotify account you will use.
-4. In turnbit, open **Settings > Spotify Connection**, paste your app's **Client ID**, and select **Connect Spotify**.
+4. In turnbit, open **Settings > Playback > Spotify Connection**, paste your app's **Client ID**, and select **Connect Spotify**.
 5. Approve access in your browser, then start a song in Spotify.
 
 No client secret is needed. Your login is saved encrypted with Windows (DPAPI), and **Disconnect** deletes it.
@@ -119,31 +119,38 @@ If turnbit is fully transparent and you lose track of it, press **Ctrl + Alt + S
 
 All settings are saved between restarts.
 
-| Setting | What it does | Default |
-| --- | --- | --- |
-| Volume | Opens a dedicated volume page | |
-| Playback Device | Moves playback to another Spotify device | |
-| Preferred Device | The device turnbit reconnects to when playback has gone idle | Automatic |
-| Open Spotify Automatically | Starts the Spotify desktop app if no device is available | Off |
-| Keep Song Position | Selecting the song that is already playing opens Now Playing instead of restarting it | On |
-| Screen edge | Docks the menu on the left or right | Left |
-| Smoky Background | Strength of the dark backdrop behind the menu | 24% |
-| Primary Color | Color of the menu text | |
-| Accent Color | Color of the current song, progress, and Now Playing controls | |
-| Transparency | Off, Always, or Idle Fade, with opacity and idle timeout | Off |
-| Keep on Top | Keeps turnbit above other windows | Off |
-| Idle to Now Playing | Switches to Now Playing after 10 seconds without input | On |
-| Open Song in Now Playing | Choosing a song opens Now Playing | On |
-| Play Opens Now Playing | Pressing Play on any other screen opens Now Playing without playing or pausing. Off: Play plays or pauses and you stay on the current screen | On |
-| Follow Playing Song | Recenters the playing song with a quick, smooth animation on wake after the idle fade timeout (10 seconds when idle fading is off) | On |
-| Mouse Click Through | Mouse input passes through the whole widget to windows behind it, even while visible. Use the D100H to navigate and turn this setting off. | Off |
-| Dial Only Wake | While turnbit is faded out, media buttons control playback without waking it or changing screens; turn or press the dial to wake it | Off |
-| Reverse Dial Direction | Flips the dial's direction | Off |
-| Dial Double-Press | What a double-press of the dial does: go Back one level, or go Home | Back |
-| Back in Lists | Shows a Back row at the top of every list below Home | On |
-| Hover Shortcuts | Resting for a second on Back, Now Playing (top of Home), or Load more (end of a long list) runs it, with a ring showing the countdown | On |
-| Pin Widget | Pauses idle fading and the switch to Now Playing | Off |
-| Gaming Mode | Pauses decorative animations when you are not using turnbit | Off |
+Settings are grouped into five categories. On/off settings sit inside a category; rows marked › open one more screen to pick a value.
+
+| Category | Setting | What it does | Default |
+| --- | --- | --- | --- |
+| Playback | Volume | Opens a dedicated volume page |  |
+| Playback | Playback Device | Moves playback to another Spotify device |  |
+| Playback | Preferred Device | The device turnbit reconnects to when playback has gone idle | Automatic |
+| Playback | Open Spotify Automatically | Starts the Spotify desktop app if no device is available | Off |
+| Playback | Keep Song Position | Selecting the song that is already playing opens Now Playing instead of restarting it | On |
+| Playback | Spotify Connection | Connect or disconnect your Spotify account |  |
+| Appearance | Interface | turnbit, or the iPod and Zune extras | turnbit |
+| Appearance | Screen Edge | Docks the menu on the left or right | Left |
+| Appearance | Smoky Background | Strength of the dark backdrop behind the menu | 24% |
+| Appearance | Text Color | Color of the menu text |  |
+| Appearance | Accent Color | Color of the current song, progress, and Now Playing controls |  |
+| Appearance | Case Color | Case finish (iPod and Zune interfaces) | Silver |
+| Appearance | Screen Theme | Light or dark screen (iPod and Zune interfaces) | Light |
+| Navigation | Reverse Dial Direction | Flips the dial's direction | Off |
+| Navigation | Dial Double-Press | What a double-press of the dial does: go Back one level, or go Home | Back |
+| Navigation | Back in Lists | Shows a Back row at the top of every list below Home | On |
+| Navigation | Hover Shortcuts | Resting for a second on Back, Now Playing (top of Home), or Load more (end of a long list) runs it, with a ring showing the countdown | On |
+| Navigation | Click Sounds | Soft clicks while browsing | Off |
+| Now Playing | Play Opens Now Playing | Pressing Play on any other screen opens Now Playing without playing or pausing. Off: Play plays or pauses and you stay on the current screen | On |
+| Now Playing | Open Song in Now Playing | Choosing a song opens Now Playing | On |
+| Now Playing | Idle to Now Playing | Switches to Now Playing after 10 seconds without input | On |
+| Now Playing | Follow Playing Song | Recenters the playing song with a quick, smooth animation on wake after the idle fade timeout (10 seconds when idle fading is off) | On |
+| Window | Transparency | Off, Always, or Idle Fade, with opacity and idle timeout | Off |
+| Window | Keep on Top | Keeps turnbit above other windows | Off |
+| Window | Pin Widget | Pauses idle fading and the switch to Now Playing | Off |
+| Window | Dial Only Wake | While turnbit is faded out, media buttons control playback without waking it or changing screens; turn or press the dial to wake it | Off |
+| Window | Mouse Click Through | Mouse input passes through the whole widget to windows behind it, even while visible. Use the D100H to navigate and turn this setting off. | Off |
+| Window | Gaming Mode | Pauses decorative animations when you are not using turnbit | Off |
 
 Next and Previous animate the current song list to the newly playing song. Idle centering uses a short, eased animation when the widget wakes.
 
@@ -167,7 +174,7 @@ When turnbit has faded out with Idle Fade, the first dial turn or press only wak
 | "Retry loading" on Liked Songs | Spotify may be rate-limiting your library. The message shows when it will clear. |
 | A playlist's songs will not load | Spotify only lets apps list songs in playlists you own or collaborate on. **Play this playlist** still works. |
 | The D100H does nothing | Make sure Ulanzi Studio is running and the device is paired, then run `npm run studio:restart`. |
-| Like asks for permission | Reconnect in **Settings > Spotify Connection** to grant the newer library permissions. |
+| Like asks for permission | Reconnect in **Settings > Playback > Spotify Connection** to grant the newer library permissions. |
 
 To see every Spotify API call and any rate-limit wait, start turnbit with logging on:
 

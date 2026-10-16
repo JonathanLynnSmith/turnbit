@@ -9,7 +9,7 @@ app.whenReady().then(async()=>{try{
   await js(`savePreferences({mousePassthrough:false,dialOnlyWake:false,idlePinned:false,idleNowPlaying:false,interfaceStyle:'radial',visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:1}});`);
   assert.equal(window.isFocusable(),true);
   await js(`savePreferences({mousePassthrough:true});`);await wait(80);assert.equal(ignored,true);assert.equal(window.isFocusable(),false);assert.equal(await js(`visibilityState.invisible`),false);
-  await js(`showSettings();nav.current.selected=nav.current.rows.findIndex(row=>row.key==='mousePassthrough');drawNavigation();`);
+  await js(`showSetting(row=>row.key==='mousePassthrough');`);
   const post=async event=>{const response=await fetch('http://127.0.0.1:4777/device/event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(event)});assert.equal(response.status,204);await wait(100);};
   const before=await js(`nav.current.selected`);await post({type:'dial',delta:1});assert.equal(await js(`nav.current.selected`),before+1);
   await js(`nav.current.selected=nav.current.rows.findIndex(row=>row.key==='mousePassthrough');drawNavigation();`);await post({type:'command',command:'select'});assert.equal(await js(`preferences.mousePassthrough`),false);assert.equal(ignored,false);assert.equal(window.isFocusable(),true);
