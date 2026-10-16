@@ -37,8 +37,8 @@ class SpotifyClient {
   cancelLogin() { clearTimeout(this.authTimer); this.server?.close(); this.server = null; }
   async request(url, options = {}) {
     const response = await this.fetch(url, { ...options, signal: AbortSignal.timeout(15000) });
-    // DIALPOD_DEBUG_API=1 logs every Spotify call, so throttling (429 + Retry-After) and call volume are visible.
-    if (process.env.DIALPOD_DEBUG_API) { this.debugCalls = (this.debugCalls || []).filter(at => Date.now() - at < 60000).concat(Date.now()); const retry = response.headers.get('retry-after'); console.log(`[spotify] ${new Date().toLocaleTimeString()} ${options.method || 'GET'} ${new URL(url).pathname} -> ${response.status}${retry ? ` retry-after=${retry}s` : ''} (${this.debugCalls.length} calls/min)`); }
+    // TURNBIT_DEBUG_API=1 (or the older DIALPOD_DEBUG_API) logs every Spotify call, so throttling (429 + Retry-After) and call volume are visible.
+    if (process.env.TURNBIT_DEBUG_API || process.env.DIALPOD_DEBUG_API) { this.debugCalls = (this.debugCalls || []).filter(at => Date.now() - at < 60000).concat(Date.now()); const retry = response.headers.get('retry-after'); console.log(`[spotify] ${new Date().toLocaleTimeString()} ${options.method || 'GET'} ${new URL(url).pathname} -> ${response.status}${retry ? ` retry-after=${retry}s` : ''} (${this.debugCalls.length} calls/min)`); }
     const text = await response.text(); let data;
     try { data = text ? JSON.parse(text) : null; } catch { data = null; }
     if (!response.ok) {
