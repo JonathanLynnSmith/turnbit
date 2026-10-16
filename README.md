@@ -8,6 +8,10 @@
 
 turnbit docks a transparent, curved menu along the edge of your screen. Turn the Ulanzi D100H dial to browse playlists and songs, press to play, and keep album art and playback controls one turn away. Your music keeps playing in Spotify; turnbit is the remote.
 
+<p align="center">
+  <img src="assets/demo/turnbit-demo.gif" alt="turnbit demo: browsing a long song list on the curved menu, playing a song, adjusting volume on Now Playing, and the hover shortcuts on Back and Now Playing" width="420">
+</p>
+
 ## Features
 
 - **Floating radial menu** that docks to the left or right screen edge, with a soft backdrop you can tune or turn off
@@ -193,6 +197,7 @@ $env:TURNBIT_DEBUG_API=1; npm start
 | `npm run plugin:build` | Build the Ulanzi plugin |
 | `npm run plugin:install` | Install the plugin into Ulanzi Studio |
 | `npm run studio:restart` | Restart Ulanzi Studio's background process |
+| `npm run demo:gif` | Rebuild the README demo GIF (`assets/demo/turnbit-demo.gif`) from a scripted demo-mode run |
 
 The smoke test uses its own session and port, so it can run while turnbit is open. Tests simulate Spotify and the dial; they do not use a real account or device.
 

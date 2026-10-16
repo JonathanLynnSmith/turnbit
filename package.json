@@ -16,11 +16,13 @@
     "plugin:install": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-plugin.ps1",
     "studio:restart": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/restart-studio.ps1",
     "smoke": "electron scripts/smoke.js",
-    "package": "electron-builder --dir"
+    "package": "electron-builder --dir",
+    "demo:gif": "electron scripts/make-demo-gif.js"
   },
   "devDependencies": {
     "electron": "^44.7.2",
-    "electron-builder": "^26.15.3"
+    "electron-builder": "^26.15.3",
+    "gifenc": "^1.0.3"
   },
   "build": {
     "appId": "com.turnbit.app",
