@@ -76,10 +76,12 @@ function message(text='') {
 }
 // Lists below Home start with a Back row, so the dial alone can go back without a Menu button. Inserting it keeps
 // the same item highlighted, so entering a list still lands on its first real item.
+// A small inline icon drawn in the text color (see .row-icon in styles.css), e.g. the Back row's arrow.
+function rowIcon(row){if(!row.icon)return [];const icon=document.createElement('span');icon.className=`row-icon row-icon-${row.icon}`;icon.setAttribute('aria-hidden','true');return [icon];}
 function ensureBackRow(page){
   if(!page||page.kind!=='list'||page===nav.stack[0]||page===nav.idlePage)return;
   if(page.rows[0]?.action!=='nav-back'){
-    page.rows.unshift({label:'Back',action:'nav-back'});page.selected=Math.min(page.rows.length-1,page.selected+1);
+    page.rows.unshift({label:'Back',action:'nav-back',icon:'back'});page.selected=Math.min(page.rows.length-1,page.selected+1);
     if(page.rows.length<2||page.rows[1].disabled)page.awaitingFirst=true;
   }
   // Lists that load later (Liked Songs, devices) would otherwise open on Back: highlight the first item when it arrives.
@@ -112,7 +114,7 @@ function drawNavigation() {
     const label=document.createElement('span');label.className='rowlabel';
     if(row.swatch){const swatch=document.createElement('span');swatch.className='theme-swatch';swatch.style.backgroundColor=row.swatch;swatch.setAttribute('aria-hidden','true');label.append(swatch);}
     if(row.action==='song'){const marker=document.createElement('span');marker.className='track-indicator';marker.setAttribute('aria-hidden','true');label.append(marker);}
-    const name=document.createElement('span');name.className=`rowname${i===page.selected?' marquee':''}`;const text=document.createElement('span');text.textContent=row.label;name.append(text);name.title=row.label;label.append(name);button.append(label);
+    const name=document.createElement('span');name.className=`rowname${i===page.selected?' marquee':''}`;const text=document.createElement('span');text.append(...rowIcon(row),row.label);name.append(text);name.title=row.label;label.append(name);button.append(label);
     if(nav.stack.length===1){const caption=document.createElement('span');caption.className='zune-caption';caption.textContent={music:'playlists + liked songs',now:'your current track',settings:'make it yours'}[row.action]||'';label.append(caption);}
     const suffix=document.createElement('span');suffix.className='suffix';suffix.textContent=row.branch?(row.showDetail?row.detail+' ›':'›'):row.detail||'';button.append(suffix);
     button.onclick=()=>{page.selected=i;drawNavigation();selectItem();};list.append(button);
@@ -170,7 +172,7 @@ function drawRadial(){
     page.kind==='now'?`${playing?'PLAYING':'PAUSED'}  ·  ${time(currentProgress())} / ${time(duration())}  ·  VOL ${volume}`:'TURN TO ADJUST · PRESS TO SAVE';
   if($('#message').textContent)$('#radialStatus').textContent=$('#message').textContent;
   if(page.kind==='color'){radial.stop();$('#radialColorLabel').textContent=page.title;$('#radialHue').value=page.value;$('#radialColorValue').textContent=radialColorName(page.value);$('#radialColorSwatch').style.background=radialColor(page.value,page.key==='accentHue');}
-  else if(page.kind==='list')radial.update(page,page.rows,page.selected,{resolve:row=>({label:row.label,detail:radialRowDetail(row),disabled:row.disabled,mini:radialMiniPlayer(row)}),miniIndices:currentMiniIndices(page)});
+  else if(page.kind==='list')radial.update(page,page.rows,page.selected,{resolve:row=>({label:row.label,icon:row.icon,detail:radialRowDetail(row),disabled:row.disabled,mini:radialMiniPlayer(row)}),miniIndices:currentMiniIndices(page)});
   else if(page.kind==='now'){
     radial.stop();trackTransition.update([demo?'demo:'+index:playback?.item?.uri,$('#title').textContent,$('#artist').textContent,$('#album').textContent,$('#art').hidden?'':$('#art').src].join('|'));
     $('#radialTitle').textContent=$('#title').textContent;$('#radialArtist').textContent=$('#artist').textContent;$('#radialAlbum').textContent=$('#album').textContent;

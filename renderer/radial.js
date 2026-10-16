@@ -21,9 +21,11 @@ class RadialCarousel {
       if(!node){node=document.createElement('button');node.type='button';node.className='radial-label';node.id=`radial-item-${i}`;node.setAttribute('role','option');node.append(document.createElement('span'),document.createElement('small'));node.onclick=()=>{if(this.page.kind==='list')this.activate(i);};this.nodes.set(i,node);this.element.append(node);}
       node.title=[row.label,row.detail].filter(Boolean).join(' — ');
       const label=node.firstChild;
-      if(label.dataset.text!==row.label){
+      const key=(row.icon?row.icon+':':'')+row.label;
+      if(label.dataset.text!==key){
         const track=document.createElement('span'),text=document.createElement('span'),copy=document.createElement('span');
-        text.textContent=row.label;copy.textContent=row.label;copy.setAttribute('aria-hidden','true');track.append(text,copy);label.replaceChildren(track);label.dataset.text=row.label;
+        const icon=()=>{if(!row.icon)return [];const el=document.createElement('span');el.className=`row-icon row-icon-${row.icon}`;el.setAttribute('aria-hidden','true');return [el];};
+        text.append(...icon(),row.label);copy.append(...icon(),row.label);copy.setAttribute('aria-hidden','true');track.append(text,copy);label.replaceChildren(track);label.dataset.text=key;
       }
       if(node.children[1].textContent!==(row.detail||''))node.children[1].textContent=row.detail||'';this.renderMini(node,row.mini);
       const textWidth=label.firstChild.firstChild.scrollWidth,overflow=Math.max(0,textWidth-label.clientWidth);
