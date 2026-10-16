@@ -254,8 +254,14 @@ function acceptPlayback(data) {
 async function refresh() { if(demo||polling||!api)return;polling=true;try{await api.state();}catch(e){message(e.message);}finally{polling=false;} }
 // Poll Spotify only as often as the view needs: faster while playing, slower when paused or minimized, and right after a track should end.
 let pollTimer;
-function pollDelay(){if(visibilityState.invisible||visibilityState.minimized||document.hidden)return 30000;if(!playing)return 15000;const left=duration()-currentProgress();return duration()>0?Math.max(1000,Math.min(5000,left+500)):5000;}
-async function poll(){clearTimeout(pollTimer);await refresh();clearTimeout(pollTimer);pollTimer=setTimeout(poll,pollDelay());}
+// Phone or speaker playback has no local shortcut, so every poll is a Web API call. Poll quickly only while someone is
+// using turnbit, and check once at the end of each song (not repeatedly, if Spotify is slow to move on).
+function pollDelay(){
+  if(visibilityState.invisible||visibilityState.minimized||document.hidden)return 30000;if(!playing)return 15000;
+  const base=playback?.localSession||Date.now()-lastVisualActivity<30000?5000:15000,uri=playback?.item?.uri,left=duration()-currentProgress();
+  return duration()>0&&uri&&poll.endChecked!==uri&&left+500<base?Math.max(1000,left+500):base;
+}
+async function poll(){clearTimeout(pollTimer);if(playing&&duration()>0&&duration()-currentProgress()<1500)poll.endChecked=playback?.item?.uri;await refresh();clearTimeout(pollTimer);pollTimer=setTimeout(poll,pollDelay());}
 const demoLikes=new Set();
 let likeRequests=0;
 let demoShuffle=false,demoRepeat='off';
