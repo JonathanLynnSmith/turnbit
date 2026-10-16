@@ -74,8 +74,19 @@ function message(text='') {
   clearTimeout(noticeTimer);notice.textContent=text;notice.hidden=!text||preferences.interfaceStyle!=='radial';
   if(text)noticeTimer=setTimeout(()=>{notice.hidden=true;},5000);
 }
+// Lists below Home start with a Back row, so the dial alone can go back without a Menu button. Inserting it keeps
+// the same item highlighted, so entering a list still lands on its first real item.
+function ensureBackRow(page){
+  if(!page||page.kind!=='list'||page===nav.stack[0]||page===nav.idlePage)return;
+  if(page.rows[0]?.action!=='nav-back'){
+    page.rows.unshift({label:'Back',action:'nav-back'});page.selected=Math.min(page.rows.length-1,page.selected+1);
+    if(page.rows.length<2||page.rows[1].disabled)page.awaitingFirst=true;
+  }
+  // Lists that load later (Liked Songs, devices) would otherwise open on Back: highlight the first item when it arrives.
+  if(page.awaitingFirst&&page.rows.length>1&&!page.rows[1].disabled){page.awaitingFirst=false;if(page.selected===0)page.selected=1;}
+}
 function drawNavigation() {
-  const page=nav.current;syncVisibility();drawRadial();if(preferences.interfaceStyle==='radial')return;
+  const page=nav.current;ensureBackRow(page);syncVisibility();drawRadial();if(preferences.interfaceStyle==='radial')return;
   const preview=page.rows[page.selected];
   applyTheme(document.body,preview?.action==='theme'?preview.theme:preferences.appearance);
   $('.case-name').textContent=preferences.interfaceStyle==='zune'?'zune':'turnbit';
@@ -144,6 +155,7 @@ function updateSmokeShape(){
 let miniIndexCache={};
 function currentMiniIndices(page){const key=[demo,index,playback?.item?.uri,demo?(playing||progress>0):!!playback?.item].join(':');if(miniIndexCache.rows!==page.rows||miniIndexCache.key!==key)miniIndexCache={rows:page.rows,key,indices:page.rows.flatMap((row,i)=>radialMiniPlayer(row)?[i]:[])};return miniIndexCache.indices;}
 function drawRadial(){
+  ensureBackRow(nav.current);
   if(visibilityState.invisible||visibilityState.minimized)return;
   if(preferences.interfaceStyle!=='radial'){radial.stop();trackTransition.reset();return;}
   const page=nav.current;if(page.kind!=='now')trackTransition.reset();
@@ -310,7 +322,7 @@ function rotate(delta) {
   if(nav.current.kind==='color'){nav.current.value=(nav.current.value+delta%361+361)%361;drawNavigation();return;}
   if(nav.current.kind==='visibility'){const page=nav.current;page.value=Math.max(page.key==='timeout'?1:0,Math.min(page.key==='timeout'?600:100,page.value+delta));drawNavigation();return;}
   if(nav.current.kind==='volume'||nav.current.kind==='now')return changeVolume(volume+delta*2);
-  const previous=nav.current.selected;nav.move(delta);if(nav.current.selected!==previous)clickSound();drawNavigation();
+  nav.current.awaitingFirst=false;const previous=nav.current.selected;nav.move(delta);if(nav.current.selected!==previous)clickSound();drawNavigation();
 }
 function push(page) { noteActivity();const result=nav.push(page);drawNavigation();return result; }
 function showNow() { if(nav.current.kind!=='now')push({title:'Now Playing',kind:'now'});render(); }
@@ -329,11 +341,11 @@ function showSettings() { push({title:'Settings',rows:[{label:'Volume',action:'v
 function showTransparency(){const value=preferences.visibility;push({title:'Transparency',visibilitySettings:true,rows:[{label:'Mode',action:'visibility-mode',detail:{off:'Off',always:'Always',idle:'Idle Fade'}[value.mode]},{label:'Opacity',action:'visibility-adjust',key:'opacity',detail:value.opacity+'%',branch:true,showDetail:true},{label:'Idle Opacity',action:'visibility-adjust',key:'idleOpacity',detail:value.idleOpacity+'%',branch:true,showDetail:true},{label:'Idle Timeout',action:'visibility-adjust',key:'timeout',detail:value.timeout+' sec',branch:true,showDetail:true}],hint:value.mode==='idle'?'Solid while active · fades after idle':value.mode==='always'?'Fixed opacity · 0% wakes on D100H input':'Select Mode to enable transparency'});}
 function showZunePlaybackOptions() {push({title:'Playback',rows:[{label:'Song list',action:'song-list',branch:true},{label:'Volume',action:'volume',branch:true},{label:'Playback device',action:'devices',branch:true},{label:'Now playing',action:'back-now',branch:true}]});}
 function interfaceName(style){return {radial:'turnbit',ipod:'iPod',zune:'Zune'}[style]||'turnbit';}
-function showInterfaces() {const styles=['radial','ipod','zune'];push({title:'Interface',rows:styles.map(style=>({label:interfaceName(style),action:'set-interface',style,detail:preferences.interfaceStyle===style?'✓':''})),hint:'Select an interface · Menu to return'});nav.current.selected=styles.indexOf(preferences.interfaceStyle);drawNavigation();}
+function showInterfaces() {const styles=['radial','ipod','zune'];push({title:'Interface',rows:styles.map(style=>({label:interfaceName(style),action:'set-interface',style,detail:preferences.interfaceStyle===style?'✓':''})),hint:'Select an interface · Menu to return'});nav.current.selected=nav.current.rows.findIndex(row=>row.style===preferences.interfaceStyle);drawNavigation();}
 
 function showCaseThemes() {
   push({title:'Case Theme',rows:themes.map(theme=>({label:theme.name,action:'theme',theme:theme.id,swatch:theme.color,detail:theme.id===preferences.appearance?'✓':''})),hint:'Turn to preview · Select to save'});
-  nav.current.selected=themes.findIndex(theme=>theme.id===preferences.appearance);drawNavigation();
+  nav.current.selected=nav.current.rows.findIndex(row=>row.theme===preferences.appearance);drawNavigation();
 }
 function savePreferences(patch) {
   try {const next={...preferences,...patch};localStorage.setItem('dialpod-preferences',JSON.stringify(next));Object.assign(preferences,next);applyTheme(document.body,preferences.appearance);document.body.dataset.screen=preferences.screenTheme;document.body.dataset.interface=preferences.interfaceStyle;document.body.dataset.edge=preferences.radialSide;api?.setInterface?.(preferences.interfaceStyle,preferences.radialSide)?.catch(error=>message(error.message));syncVisibility();syncRecovery();return true;}
@@ -479,6 +491,7 @@ async function selectItem(fromDial=false) {
   if(nav.current.kind!=='list'){menuBack();return;}
   const row=nav.select();if(!row)return;message();
   switch(row.action){
+    case 'nav-back':nav.back();drawNavigation();break;
     case 'song-list':returnToSongList();break;
     case 'last-song-list':openLastSongList();break;
     case 'back-now':nav.back();drawNavigation();render();break;

@@ -10,9 +10,9 @@ app.whenReady().then(async()=>{
     const command=command=>post({type:'command',command});
     window.blur();await js(`lastMouseActivity=Date.now()+60000;`);
     await js(`savePreferences({reverseDial:false,idleNowPlaying:true,songOpensNowPlaying:true,playOpensNowPlaying:true});`);
-    const sleep=async(setup=true)=>{if(setup)await js(`savePreferences({interfaceStyle:'ipod',visibility:{mode:'idle',opacity:70,idleOpacity:0,timeout:1}});nav.reset(root());showSettings();nav.current.selected=5;drawNavigation();`);await wait(2200);assert.equal(window.getOpacity(),0);};
-    await sleep();await post({type:'dial',delta:1});assert.ok(window.getOpacity()>.99);assert.equal(await js(`nav.current.selected`),5);
-    await post({type:'dial',delta:1});assert.equal(await js(`nav.current.selected`),6);
+    const sleep=async(setup=true)=>{if(setup)await js(`savePreferences({interfaceStyle:'ipod',visibility:{mode:'idle',opacity:70,idleOpacity:0,timeout:1}});nav.reset(root());showSettings();nav.current.selected=nav.current.rows.findIndex(row=>row.action==='case-theme');drawNavigation();`);await wait(2200);assert.equal(window.getOpacity(),0);};
+    await sleep();await post({type:'dial',delta:1});assert.ok(window.getOpacity()>.99);assert.equal(await js(`nav.current.selected`),6);
+    await post({type:'dial',delta:1});assert.equal(await js(`nav.current.selected`),7);
     await sleep();await command('center-down');await command('center-up');await command('center-click');await wait(400);assert.equal(await js(`nav.current.title`),'Settings');
     await command('center-down');await command('center-up');await command('center-click');await wait(400);assert.equal(await js(`nav.current.title`),'Case Theme');
     await sleep();await command('menu-down');await wait(600);await command('menu-up');assert.equal(await js(`nav.current.title`),'Settings');
@@ -24,9 +24,9 @@ app.whenReady().then(async()=>{
     await js(`playing=true;showNow();`);await sleep(false);await command('toggle');assert.equal(await js(`playing`),false);
     // Idle navigation and opacity are independent; waking preserves the list.
     await js(`savePreferences({idleNowPlaying:false,songOpensNowPlaying:false});nav.reset(root());showLibrary('songs');`);await wait(200);
-    await js(`nav.current.selected=1;drawNavigation();`);await command('select');assert.equal(await js(`nav.current.libraryKind==='songs'&&index===1&&playing`),true);
+    await js(`nav.current.selected=2;drawNavigation();`);await command('select');assert.equal(await js(`nav.current.libraryKind==='songs'&&index===1&&playing`),true);
     await js(`idle.lastActivity=Date.now()-11000;`);await sleep(false);assert.equal(await js(`nav.current.libraryKind`),'songs');
-    await post({type:'dial',delta:1});assert.equal(await js(`nav.current.selected`),1);
+    await post({type:'dial',delta:1});assert.equal(await js(`nav.current.selected`),2);
     await command('toggle');assert.equal(await js(`nav.current.kind==='now'&&playing`),true);await command('toggle');assert.equal(await js(`playing`),false);
     // Direct playback mode toggles from menus, including when faded out.
     await js(`savePreferences({playOpensNowPlaying:false});nav.reset(root());playing=true;`);await sleep(false);await command('toggle');assert.equal(await js(`nav.current.kind==='list'&&!playing`),true);

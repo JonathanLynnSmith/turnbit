@@ -10,7 +10,7 @@ app.whenReady().then(async()=>{
     const command=async payload=>{const r=await fetch('http://127.0.0.1:4771/device/event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});assert.equal(r.status,204);await wait(100);};
     const turn=delta=>command({type:'dial',delta}),select=()=>command({type:'command',command:'select'}),back=()=>command({type:'command',command:'menu'});
     const check=async code=>assert.equal(await js(code),true,code);
-    await js(`savePreferences({visibility:{mode:'off',opacity:70,idleOpacity:20,timeout:10},interfaceStyle:'ipod',radialSide:'left',radialBackground:24,idlePinned:false,keepOnTop:false,primaryHue:360,accentHue:145});nav.reset(root());showSettings();nav.current.selected=8;drawNavigation();`);
+    await js(`savePreferences({visibility:{mode:'off',opacity:70,idleOpacity:20,timeout:10},interfaceStyle:'ipod',radialSide:'left',radialBackground:24,idlePinned:false,keepOnTop:false,primaryHue:360,accentHue:145});nav.reset(root());showSettings();nav.current.selected=nav.current.rows.findIndex(row=>row.action==='interface');drawNavigation();`);
     await js(`pinned=false;api.pin(false);`);
     await select();await turn(-1);await select();await wait(400);
     await check(`preferences.interfaceStyle==='radial' && getComputedStyle(document.querySelector('.ipod')).display==='none' && getComputedStyle(document.querySelector('#radial')).display==='block'`);
@@ -22,10 +22,10 @@ app.whenReady().then(async()=>{
     await check(`preferences.radialSide==='right' && document.body.dataset.edge==='right'`);
     const bounds=window.getBounds(),area=screen.getDisplayMatching(bounds).bounds;assert.equal(bounds.x+bounds.width,area.x+area.width);
     await js(`nav.reset(root());showLibrary('songs');`);await wait(400);await turn(1);
-    await check(`radial.nodes.get(1).lastChild.textContent==='turnbit demo · 3:07'`);
-    await js(`nav.current.rows[1].item.artists=[{name:'First artist'},{name:'Second artist'}];drawNavigation();`);
-    await check(`radial.nodes.get(1).lastChild.textContent==='First artist, Second artist · 3:07'`);
-    await js(`delete nav.current.rows[1].item.artists;drawNavigation();`);await select();
+    await check(`radial.nodes.get(2).lastChild.textContent==='turnbit demo · 3:07'`);
+    await js(`nav.current.rows[2].item.artists=[{name:'First artist'},{name:'Second artist'}];drawNavigation();`);
+    await check(`radial.nodes.get(2).lastChild.textContent==='First artist, Second artist · 3:07'`);
+    await js(`delete nav.current.rows[2].item.artists;drawNavigation();`);await select();
     await check(`nav.current.kind==='now' && index===1 && playing`);
     await wait(350);
     await check(`(()=>{const host=document.querySelector('#radial').getBoundingClientRect(),bar=document.querySelector('#radialSeek').getBoundingClientRect(),text=document.querySelector('.radial-track').getBoundingClientRect(),art=document.querySelector('.radial-art').getBoundingClientRect();return Math.abs(bar.left-host.left-30)<2 && Math.abs(text.left-bar.left)<2 && Math.abs(art.right-bar.right)<2 && bar.width>370;})()`);
@@ -44,28 +44,28 @@ app.whenReady().then(async()=>{
     await check(`!document.querySelector('#radialArt').hidden && document.querySelector('#radialArt').src===document.querySelector('#art').src && document.querySelector('#radialTitle').textContent==='Artwork check'`);
     await js(`demo=true;playback=null;volume=50;render();`);
     await turn(1);await check(`volume===52`);await select();await check(`nav.current.libraryKind==='songs'`);
-    await check(`document.querySelectorAll('.radial-label.has-mini').length===1 && radial.nodes.get(1).classList.contains('has-mini') && radial.nodes.get(1).querySelector('.mini-times').lastChild.textContent==='3:07' && !radial.nodes.get(1).querySelector('small').textContent.includes('Playing')`);
-    await check(`getComputedStyle(radial.nodes.get(1).children[0]).fontSize===getComputedStyle(radial.nodes.get(0).children[0]).fontSize && getComputedStyle(radial.nodes.get(1).children[0]).display!=='none' && radial.nodes.get(1).querySelector('.mini-cover').offsetHeight===62 && getComputedStyle(radial.nodes.get(1).querySelector('.mini-times')).display!=='none'`);
-    await check(`getComputedStyle(radial.nodes.get(1).querySelector('.mini-info small')).display==='none' && Math.abs(radial.nodes.get(1).querySelector('.mini-info').getBoundingClientRect().right-radial.nodes.get(1).firstChild.getBoundingClientRect().right)<2`);
-    await check(`Math.abs(radial.nodes.get(1).querySelector('.mini-info').getBoundingClientRect().left-radial.nodes.get(1).firstChild.getBoundingClientRect().left)<2 && radial.nodes.get(1).querySelector('.mini-times').getBoundingClientRect().top>radial.nodes.get(1).querySelector('.mini-progress').getBoundingClientRect().bottom`);
-    await js(`window.savedMiniTitle=nav.current.rows[1].label;window.savedMiniWidth=radial.nodes.get(1).querySelector('.mini-progress').getBoundingClientRect().width;nav.current.rows[1].label='A very long song title that should scroll smoothly without changing the playback timeline width';drawNavigation();`);
-    await check(`radial.nodes.get(1).firstChild.classList.contains('scrolling-title') && Math.abs(radial.nodes.get(1).querySelector('.mini-progress').getBoundingClientRect().width-window.savedMiniWidth)<2`);
-    await check(`getComputedStyle(radial.nodes.get(1).firstChild.firstChild).animationDirection==='normal' && radial.nodes.get(1).firstChild.querySelector('[aria-hidden=true]').textContent===nav.current.rows[1].label`);
-    await js(`playing=false;nav.current.selected=0;drawNavigation();`);
-    await check(`!radial.nodes.get(1).firstChild.classList.contains('scrolling-title')`);
-    await js(`nav.current.selected=1;drawNavigation();`);
-    await check(`radial.nodes.get(1).firstChild.classList.contains('scrolling-title')`);
+    await check(`document.querySelectorAll('.radial-label.has-mini').length===1 && radial.nodes.get(2).classList.contains('has-mini') && radial.nodes.get(2).querySelector('.mini-times').lastChild.textContent==='3:07' && !radial.nodes.get(2).querySelector('small').textContent.includes('Playing')`);
+    await check(`getComputedStyle(radial.nodes.get(2).children[0]).fontSize===getComputedStyle(radial.nodes.get(1).children[0]).fontSize && getComputedStyle(radial.nodes.get(2).children[0]).display!=='none' && radial.nodes.get(2).querySelector('.mini-cover').offsetHeight===62 && getComputedStyle(radial.nodes.get(2).querySelector('.mini-times')).display!=='none'`);
+    await check(`getComputedStyle(radial.nodes.get(2).querySelector('.mini-info small')).display==='none' && Math.abs(radial.nodes.get(2).querySelector('.mini-info').getBoundingClientRect().right-radial.nodes.get(2).firstChild.getBoundingClientRect().right)<2`);
+    await check(`Math.abs(radial.nodes.get(2).querySelector('.mini-info').getBoundingClientRect().left-radial.nodes.get(2).firstChild.getBoundingClientRect().left)<2 && radial.nodes.get(2).querySelector('.mini-times').getBoundingClientRect().top>radial.nodes.get(2).querySelector('.mini-progress').getBoundingClientRect().bottom`);
+    await js(`window.savedMiniTitle=nav.current.rows[2].label;window.savedMiniWidth=radial.nodes.get(2).querySelector('.mini-progress').getBoundingClientRect().width;nav.current.rows[2].label='A very long song title that should scroll smoothly without changing the playback timeline width';drawNavigation();`);
+    await check(`radial.nodes.get(2).firstChild.classList.contains('scrolling-title') && Math.abs(radial.nodes.get(2).querySelector('.mini-progress').getBoundingClientRect().width-window.savedMiniWidth)<2`);
+    await check(`getComputedStyle(radial.nodes.get(2).firstChild.firstChild).animationDirection==='normal' && radial.nodes.get(2).firstChild.querySelector('[aria-hidden=true]').textContent===nav.current.rows[2].label`);
+    await js(`playing=false;nav.current.selected=1;drawNavigation();`);
+    await check(`!radial.nodes.get(2).firstChild.classList.contains('scrolling-title')`);
+    await js(`nav.current.selected=2;drawNavigation();`);
+    await check(`radial.nodes.get(2).firstChild.classList.contains('scrolling-title')`);
     await js(`playing=true;drawNavigation();`);
-    await js(`nav.current.rows[1].label=window.savedMiniTitle;drawNavigation();`);
-    await js(`playing=false;render();`);await check(`radial.nodes.get(1).querySelector('.radial-mini small').textContent.includes('Paused')`);
-    await js(`playing=true;command('next');`);await check(`!radial.nodes.get(1).classList.contains('has-mini') && radial.nodes.get(2).classList.contains('has-mini') && document.querySelectorAll('.radial-label.has-mini').length===1`);
+    await js(`nav.current.rows[2].label=window.savedMiniTitle;drawNavigation();`);
+    await js(`playing=false;render();`);await check(`radial.nodes.get(2).querySelector('.radial-mini small').textContent.includes('Paused')`);
+    await js(`playing=true;command('next');`);await check(`!radial.nodes.get(2).classList.contains('has-mini') && radial.nodes.get(3).classList.contains('has-mini') && document.querySelectorAll('.radial-label.has-mini').length===1`);
     await js(`index=1;progress=42000;updated=Date.now();render();`);await wait(300);
     try{fs.writeFileSync(path.join(__dirname,'../artifacts/dialpod-song-list-mini.png'),(await window.webContents.capturePage()).toPNG());}catch{}
 
     // Large libraries retain only the nearby labels and keep exact selection.
     await js(`push({title:'Long library',rows:Array.from({length:1000},(_,i)=>({label:'Song '+i,action:'placeholder'}))});`);
     for(let i=0;i<12;i++)await turn(20);await wait(600);
-    await check(`nav.current.selected===240 && radial.position===240 && radial.nodes.size<=2*Math.ceil(radial.reach)+5`);
+    await check(`nav.current.selected===241 && radial.position===241 && radial.nodes.size<=2*Math.ceil(radial.reach)+5`);
     await back();await js(`showSettings();nav.current.selected=nav.current.rows.findIndex(row=>row.action==='interface');drawNavigation();`);await select();await turn(1);await select();
     await check(`preferences.interfaceStyle==='ipod' && !nav.current.rows.some(row=>row.action==='radial-side')`);
     await js(`savePreferences({interfaceStyle:'radial',radialSide:'left'});nav.reset(root());push({title:'Playlists',rows:['After Hours','Night Drive','On Repeat','Discover Weekly','Daily Mix 01','Liked Songs','Release Radar','Focus','Sunday Morning','Slow Days','New discoveries'].map(label=>({label,action:'placeholder'})),selected:5});`);await wait(700);
@@ -111,7 +111,7 @@ app.whenReady().then(async()=>{
     await check(`nav.current.value===0 && preferences.primaryHue===360`);await select();await check(`preferences.primaryHue===0`);
     window.webContents.reload();await new Promise(resolve=>window.webContents.once('did-finish-load',resolve));await wait(400);await check(`preferences.primaryHue===0 && preferences.accentHue===165`);
     await js(`nav.reset(root());showLibrary('songs');`);await wait(200);await js(`index=1;playing=true;render();`);await wait(100);
-    await check(`getComputedStyle(radial.nodes.get(1).children[0]).color!==getComputedStyle(radial.nodes.get(0).children[0]).color && radial.nodes.get(1).classList.contains('has-mini')`);
+    await check(`getComputedStyle(radial.nodes.get(2).children[0]).color!==getComputedStyle(radial.nodes.get(1).children[0]).color && radial.nodes.get(2).classList.contains('has-mini')`);
     await js(`showSettings();nav.current.selected=nav.current.rows.findIndex(row=>row.key==='accentHue');drawNavigation();`);await select();await wait(300);
     try{fs.writeFileSync(path.join(__dirname,'../artifacts/dialpod-color-picker.png'),(await window.webContents.capturePage()).toPNG());}catch{}
     await back();await js(`savePreferences({primaryHue:360,accentHue:145});drawNavigation();`);

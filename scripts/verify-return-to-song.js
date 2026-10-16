@@ -9,7 +9,7 @@ app.whenReady().then(async()=>{try{
   const post=async event=>{const response=await fetch('http://127.0.0.1:4779/device/event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(event)});assert.equal(response.status,204);await wait(120);};
   const click=async()=>{await post({type:'command',command:'center-down'});await post({type:'command',command:'center-up'});await post({type:'command',command:'center-click'});await wait(450);};
   const selectedSong=()=>js(`({kind:nav.current.kind,title:nav.current.title,selected:nav.current.rows[nav.current.selected]?.demoIndex,playing:index})`);
-  const reset=async style=>{await js(`savePreferences({interfaceStyle:'${style}',dialOnlyWake:false,idleNowPlaying:false,idlePinned:false,songOpensNowPlaying:true,keepCurrentSongPosition:true,visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:10}});demo=true;nav.reset(root());showMusic();showLibrary('songs');nav.current.selected=0;drawNavigation();`);await wait(250);};
+  const reset=async style=>{await js(`savePreferences({interfaceStyle:'${style}',dialOnlyWake:false,idleNowPlaying:false,idlePinned:false,songOpensNowPlaying:true,keepCurrentSongPosition:true,visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:10}});demo=true;nav.reset(root());showMusic();showLibrary('songs');drawNavigation();`);await wait(250);};
 
   await reset('radial');
   await click();let s=await selectedSong();assert.equal(s.kind,'now','Choosing a song opens Now Playing');assert.equal(s.playing,0);
