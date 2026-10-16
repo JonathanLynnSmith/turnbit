@@ -216,4 +216,4 @@ body[data-render-suspended=true] *{animation-play-state:paused!important}
 #radial .radial-label.radial-control>span{font-size:13px;font-weight:500;letter-spacing:2.5px;text-transform:uppercase;opacity:calc(.6 + .4*var(--light,0))}
 #radial .radial-label.radial-control .row-icon{width:1.1em;height:1.1em;margin-right:.55em;vertical-align:-.18em;background:var(--radial-accent)}
 /* Hover to Go Back: the accent ring fills while the hold counts down. */
-body[data-back-hold=true] #radial .radial-label.radial-control :is(.row-icon-back,.row-icon-now){background:conic-gradient(var(--radial-accent) calc(var(--back-hold,0)*1turn),color-mix(in srgb,var(--radial-accent) 28%,transparent) 0)}
+body[data-back-hold=true] #radial .radial-label.radial-control :is(.row-icon-back,.row-icon-now,.row-icon-more){background:conic-gradient(var(--radial-accent) calc(var(--back-hold,0)*1turn),color-mix(in srgb,var(--radial-accent) 28%,transparent) 0)}

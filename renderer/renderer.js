@@ -90,7 +90,7 @@ function startBackHold(){
     if(!backHold)return;
     if(nav.current!==page||shortcutRow(page)!==row||$('#settings').open){cancelBackHold();return;}
     const progress=Math.min(1,(now-start)/BACK_HOLD_MS);document.documentElement.style.setProperty('--back-hold',progress.toFixed(3));
-    if(progress>=1){cancelBackHold();if(row.action==='nav-back'){nav.back();drawNavigation();}else if(row.action==='now')showNow();return;}
+    if(progress>=1){cancelBackHold();if(row.action==='nav-back'){nav.back();drawNavigation();}else if(row.action==='now')showNow();else if(row.action==='more'&&!page.loading)loadLibrary(page,row.offset);return;}
     backHold.frame=requestAnimationFrame(step);
   };
   backHold={frame:requestAnimationFrame(step)};
@@ -140,7 +140,7 @@ function drawNavigation() {
   const list=$('#menuList');const scroll=list.scrollTop;list.replaceChildren();
   list.setAttribute('aria-label',page.title);list.setAttribute('aria-activedescendant',`row-${page.selected}`);
   page.rows.forEach((row,i)=>{
-    const button=document.createElement('button');button.className=`menurow${i===page.selected?' selected':''}${row.control?' control-row':''}`;button.id=`row-${i}`;button.type='button';button.setAttribute('role','option');button.setAttribute('aria-selected',String(i===page.selected));button.setAttribute('aria-disabled',String(!!row.disabled));button.tabIndex=-1;
+    const button=document.createElement('button');button.className=`menurow${i===page.selected?' selected':''}${row.control?' control-row':''}${row.action==='more'?' control-row-end':''}`;button.id=`row-${i}`;button.type='button';button.setAttribute('role','option');button.setAttribute('aria-selected',String(i===page.selected));button.setAttribute('aria-disabled',String(!!row.disabled));button.tabIndex=-1;
     const label=document.createElement('span');label.className='rowlabel';
     if(row.swatch){const swatch=document.createElement('span');swatch.className='theme-swatch';swatch.style.backgroundColor=row.swatch;swatch.setAttribute('aria-hidden','true');label.append(swatch);}
     if(row.action==='song'){const marker=document.createElement('span');marker.className='track-indicator';marker.setAttribute('aria-hidden','true');label.append(marker);}
@@ -356,7 +356,7 @@ function rotate(delta) {
   if(nav.current.kind==='volume'||nav.current.kind==='now')return changeVolume(volume+delta*2);
   nav.current.awaitingFirst=false;const previous=nav.current.selected;nav.move(delta);if(nav.current.selected!==previous)clickSound();drawNavigation();
   // Extra up-turns at the top of the list are normal when turning all the way up: keep counting (or start) instead of cancelling.
-  if(!shortcutRow(nav.current))cancelBackHold();else if(!backHold&&(nav.current.selected!==previous||delta<0))startBackHold();
+  if(!shortcutRow(nav.current))cancelBackHold();else if(!backHold)startBackHold();
 }
 function push(page) { noteActivity();const result=nav.push(page);drawNavigation();return result; }
 function showNow() { if(nav.current.kind!=='now')push({title:'Now Playing',kind:'now'});render(); }
@@ -402,6 +402,8 @@ function demoLibrary(kind,playlist) {
 }
 function playable(item) { return item && !item.is_local && item.is_playable!==false && !item.restrictions && /^spotify:(track|episode):[A-Za-z0-9]{22}$/.test(item.uri||''); }
 const likedSongs=new window.LikedSongsCache();let lastLiked=null;
+// Load more is a shortcut row: press it, or rest on it (Hover Shortcuts) to load the next page.
+function moreRow(offset){return {label:'Load more',action:'more',offset,icon:'more',control:true};}
 function libraryRows(page,items,offset){return items.map((entry,i)=>{
   if(page.libraryKind==='playlists')return {label:entry.name||'Untitled playlist',action:'playlist',playlist:entry,branch:true};
   const item=entry.item||entry.track;
@@ -411,7 +413,7 @@ function libraryRows(page,items,offset){return items.map((entry,i)=>{
 function showCachedSongs(page,data){
   const selectedUri=page.rows[page.selected]?.item?.uri,items=data.items||[];
   page.total=data.total;page.rows=libraryRows(page,items,0);
-  if(data.next)page.rows.push({label:'Load more…',action:'more',offset:items.length,branch:true});
+  if(data.next)page.rows.push(moreRow(items.length));
   if(!page.rows.length)page.rows=[{label:'No items found',disabled:true}];
   const index=selectedUri?page.rows.findIndex(row=>row.item?.uri===selectedUri):-1;
   page.selected=index>=0?index:Math.min(page.selected,page.rows.length-1);
@@ -430,6 +432,7 @@ async function loadLibrary(page,offset=0) {
   if(page.loading)return;page.loading=true;
   const baseRows=page.rows.filter(row=>row.action!=='more'&&row.action!=='retry'&&row.action!=='placeholder');
   if(!offset)page.rows=[...baseRows,{label:'Loading…',action:'placeholder',disabled:true}];
+  else{const more=page.rows.find(row=>row.action==='more');if(more)more.label='Loading…';}
   if(nav.current===page)drawNavigation();
   try{
     const data=demo?demoLibrary(page.libraryKind,page.playlist):await api.library(page.libraryKind,page.playlist?.id,offset);
@@ -437,7 +440,7 @@ async function loadLibrary(page,offset=0) {
     if(!demo&&page.libraryKind==='songs'){if(offset)likedSongs.appendPage(offset,data);else likedSongs.applyFirstPage(data);}
     const rows=libraryRows(page,data.items||[],offset);
     page.rows=[...baseRows,...rows];
-    if(data.next)page.rows.push({label:'Load more…',action:'more',offset:offset+(data.items?.length||50),branch:true});
+    if(data.next)page.rows.push(moreRow(offset+(data.items?.length||50)));
     // The Back row is not an item: an empty list still says so.
     if(!page.rows.some(row=>row.action!=='nav-back'))page.rows=[...page.rows,{label:'No items found',disabled:true}];
   }catch(e){

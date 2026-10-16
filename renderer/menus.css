@@ -2,3 +2,4 @@
 .rowlabel{display:flex;align-items:center;gap:6px;flex:1;min-width:0}.rowname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}.track-indicator{width:12px;flex:0 0 12px;font-size:10px;font-weight:700;color:#34769e;text-align:center}.menurow.selected .track-indicator{color:#fff}
 /* Control rows (Back): a muted label with a divider beneath, like a list header. Highlighting restores the normal look. */
 .menurow.control-row{border-bottom:1px solid #00000038}.menurow.control-row:not(.selected) .rowlabel{opacity:.72}
+.menurow.control-row-end{border-bottom:0;border-top:1px solid #00000038}
