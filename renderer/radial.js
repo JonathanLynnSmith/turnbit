@@ -1,7 +1,7 @@
 // Move retained labels along a circular path, rather than tweening straight chords.
 class RadialCarousel {
-  constructor(element,{activate,reducedMotion}){
-    Object.assign(this,{element,activate,reducedMotion});this.nodes=new Map();this.page=null;this.position=0;this.target=0;this.frame=0;
+  constructor(element,{activate,reducedMotion,curved=()=>true}){
+    Object.assign(this,{element,activate,reducedMotion,curved});this.nodes=new Map();this.page=null;this.position=0;this.target=0;this.frame=0;
   }
   stop(){cancelAnimationFrame(this.frame);this.frame=0;}
   snapTo(index){this.stop();this.motion=null;this.position=this.target=index;}
@@ -74,7 +74,8 @@ class RadialCarousel {
       const distance=i-this.position,depth=Math.abs(distance),offset=rowY(i)-center;
       if(depth>this.reach+.15){node.style.opacity=0;node.style.pointerEvents='none';if(Math.abs(i-this.target)>this.reach+1){node.remove();this.nodes.delete(i);}continue;}
       const normalized=Math.min(1,Math.abs(offset)/radiusY);
-      const x=30+radiusX*(1-Math.sqrt(1-normalized*normalized)),y=height/2+offset;
+      // Curved Menu: labels bow along the oval; off, they stay in a straight column at the highlighted row's position.
+      const x=30+(this.curved()?radiusX*(1-Math.sqrt(1-normalized*normalized)):0),y=height/2+offset;
       node.style.left=right?'auto':x+'px';node.style.right=right?x+'px':'auto';
       node.style.top=y+'px';node.style.transform=`translateY(-50%) scale(${1.12-Math.min(depth,5)*.075})`;
       node.style.opacity=Math.max(0,.98*Math.pow(Math.max(0,1-depth/(this.reach+1)),1.4));node.style.pointerEvents=depth<this.reach-.3?'auto':'none';

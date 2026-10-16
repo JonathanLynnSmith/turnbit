@@ -132,6 +132,7 @@ Settings are grouped into five categories. On/off settings sit inside a category
 | Playback | Keep Song Position | Selecting the song that is already playing opens Now Playing instead of restarting it | On |
 | Playback | Spotify Connection | Connect or disconnect your Spotify account |  |
 | Appearance | Interface | turnbit, or the iPod and Zune extras | turnbit |
+| Appearance | Curved Menu | Lays the turnbit menu out along a curve; off shows a straight list | On |
 | Appearance | Screen Edge | Docks the menu on the left or right | Left |
 | Appearance | Smoky Background | Strength of the dark backdrop behind the menu | 24% |
 | Appearance | Text Color | Color of the menu text |  |
