@@ -22,6 +22,10 @@ app.whenReady().then(async()=>{try{
   await reset('radial');await turn(-1);await wait(500);await turn(1);await wait(900);
   let p=await page();assert.equal(p.title,'Music','Turning away cancels');assert.equal(p.highlighted,'Playlists');assert.notEqual(p.hold,'true');
 
+  // Turning all the way up sends extra up-ticks after reaching Back; they must keep the countdown going, not cancel it.
+  await reset('radial');await turn(-1);await turn(-1);await turn(-1);await turn(-1);p=await page();assert.equal(p.highlighted,'Back');assert.equal(p.hold,'true','Extra up-turns keep the ring');
+  await wait(1100);assert.equal((await page()).title,'turnbit','Overshooting still goes back after 1s');
+  await reset('radial');
   // Chain: Liked Songs -> Music -> Home by turning up and resting each time.
   await js(`nav.current.selected=nav.current.rows.findIndex(r=>r.action==='songs');drawNavigation();`);await click();assert.equal((await page()).title,'Liked Songs');
   await turn(-1);await wait(1200);p=await page();assert.equal(p.title,'Music');assert.equal(p.highlighted,'Liked Songs');

@@ -342,7 +342,8 @@ function rotate(delta) {
   if(nav.current.kind==='visibility'){const page=nav.current;page.value=Math.max(page.key==='timeout'?1:0,Math.min(page.key==='timeout'?600:100,page.value+delta));drawNavigation();return;}
   if(nav.current.kind==='volume'||nav.current.kind==='now')return changeVolume(volume+delta*2);
   nav.current.awaitingFirst=false;const previous=nav.current.selected;nav.move(delta);if(nav.current.selected!==previous)clickSound();drawNavigation();
-  if(nav.current.selected!==previous&&nav.current.rows[nav.current.selected]?.action==='nav-back')startBackHold();else cancelBackHold();
+  // Extra up-turns at the top of the list are normal when turning all the way up: keep counting (or start) instead of cancelling.
+  if(nav.current.rows[nav.current.selected]?.action!=='nav-back')cancelBackHold();else if(!backHold&&(nav.current.selected!==previous||delta<0))startBackHold();
 }
 function push(page) { noteActivity();const result=nav.push(page);drawNavigation();return result; }
 function showNow() { if(nav.current.kind!=='now')push({title:'Now Playing',kind:'now'});render(); }
