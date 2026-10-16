@@ -49,6 +49,8 @@ const nav = new window.WheelNavigation(root());
 const idle = new window.IdleNowPlaying(nav);
 let silentHardwareActivity=false;
 function noteActivity(){if(silentHardwareActivity)return;followIdleSong.last=null;lastVisualActivity=Date.now();idle.noteActivity();syncGamingMode();api?.activity();}
+// Asleep = faded out by Idle Fade (past its timeout) or fully transparent. Dial Only Wake only changes behavior while asleep.
+function widgetAsleep(){return visibilityState.invisible||(preferences.visibility.mode==='idle'&&!visibilityProtected()&&Date.now()-lastVisualActivity>=preferences.visibility.timeout*1000);}
 function visibilityProtected(){return (preferences.idlePinned&&preferences.visibility.mode==='idle')||!!nav.current.visibilitySettings||$('#settings').open;}
 let visibilitySyncKey;
 function syncRecovery(){const value={preferredDevice:preferences.preferredDevice,autoLaunchSpotify:preferences.autoLaunchSpotify},key=JSON.stringify(value);if(syncRecovery.key===key)return;syncRecovery.key=key;api?.recovery?.(value)?.catch(error=>{syncRecovery.key=null;message(error.message);});}
@@ -266,9 +268,10 @@ const demoLikes=new Set();
 let likeRequests=0;
 let demoShuffle=false,demoRepeat='off';
 async function command(cmd,value) {
-  if(!preferences.dialOnlyWake||!['toggle','next','previous','seek','like','shuffle','repeat','volume'].includes(cmd))noteActivity();
-  // Dial-only wake overrides Play Opens Now Playing, including during a fade.
-  const quietPlay=preferences.dialOnlyWake;
+  // While asleep with Dial Only Wake on, media commands act without waking turnbit or changing screens.
+  // While visible, Play Opens Now Playing applies as usual.
+  const quietPlay=preferences.dialOnlyWake&&widgetAsleep();
+  if(!quietPlay||!['toggle','next','previous','seek','like','shuffle','repeat','volume'].includes(cmd))noteActivity();
   if(['next','previous'].includes(cmd))pendingSkipFollow={page:nav.current,key:demo?'demo:'+index:playback?.item?.uri,until:Date.now()+20000};
   message();
   if(cmd==='pin'){toggleIdlePin();return true;}
@@ -506,7 +509,7 @@ const centerClick=new window.CenterClick(()=>selectItem(true),()=>menuBack());
 const transportHold=new window.TransportHold(direction=>command(direction>0?'next':'previous'),delta=>{if(!preferences.dialOnlyWake)noteActivity();seek(currentProgress()+delta);});
 function hardwareEvent(event){
   const previous=silentHardwareActivity;
-  silentHardwareActivity=preferences.dialOnlyWake&&event.type!=='dial'&&!['center-down','center-up','center-click','select'].includes(event.command)&&event.type!=='wake';
+  silentHardwareActivity=preferences.dialOnlyWake&&widgetAsleep()&&event.type!=='dial'&&!['center-down','center-up','center-click','select'].includes(event.command)&&event.type!=='wake';
   try{return handleHardwareEvent(event);}finally{silentHardwareActivity=previous;}
 }
 function handleHardwareEvent(event) {
