@@ -9,18 +9,32 @@ const { HardwareWakeGate } = require('./hardware-wake');
 const { MediaSession } = require('./media-session');
 let mainWindow, spotify, bridge, bridgeError, media;
 let visibility,visibilityTimer,wakeGate;
+let mousePassthrough=false,mouseIgnored=false,mouseFocusable=true;
+function syncMousePassthrough(){
+  if(!mainWindow||mainWindow.isDestroyed())return;
+  const ignore=mousePassthrough||visibility?.opacity===0;
+  if(ignore!==mouseIgnored){mainWindow.setIgnoreMouseEvents(ignore);mouseIgnored=ignore;}
+  if(mouseFocusable===mousePassthrough){mouseFocusable=!mousePassthrough;mainWindow.setFocusable(mouseFocusable);}
+}
 let commandQueue = Promise.resolve();
 let activeInterface=null;
 const send = (channel, data) => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(channel, data); };
+function scheduleVisibility(){
+  clearTimeout(visibilityTimer);const delay=visibility?.nextDelay();
+  if(delay==null)return;
+  visibilityTimer=setTimeout(()=>{visibility?.tick();scheduleVisibility();},Math.max(1,delay));visibilityTimer.unref();
+}
+function wakeVisibility(force=false){visibility?.wake(force);scheduleVisibility();}
 function createWindow() {
   mainWindow = new BrowserWindow({ icon: path.join(__dirname, '../assets/branding/turnbit.ico'), width: 380, height: 710, minWidth: 360, minHeight: 700, maxWidth: 460, maxHeight: 800, frame: false, transparent: true, backgroundColor: '#00000000', resizable: true, webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: false } });
   // Running from the repo, the process is electron.exe; tell Windows which icon and command to use when pinned
   if(process.platform==='win32'&&!app.isPackaged)mainWindow.setAppDetails({appId:'com.nexez.desktopulanziipod',appIconPath:path.join(__dirname,'../assets/branding/turnbit.ico'),appIconIndex:0,relaunchCommand:`"${process.execPath}" "${app.getAppPath()}"`,relaunchDisplayName:'TurnBit'});
-  let clickThrough=false;
-  visibility=new VisibilityControl(value=>{if(mainWindow&&!mainWindow.isDestroyed()){const nextClickThrough=value===0;if(nextClickThrough!==clickThrough){mainWindow.setIgnoreMouseEvents(nextClickThrough);clickThrough=nextClickThrough;}mainWindow.setOpacity(value);}});
+  let invisible=false;
+  visibility=new VisibilityControl(value=>{if(mainWindow&&!mainWindow.isDestroyed()){const nextInvisible=value===0;if(nextInvisible!==invisible){invisible=nextInvisible;send('app-visibility',{invisible});}syncMousePassthrough();mainWindow.setOpacity(value);}});
   wakeGate=new HardwareWakeGate(visibility);
-  clearInterval(visibilityTimer);visibilityTimer=setInterval(()=>visibility?.tick(),1000/120);visibilityTimer.unref();
-  mainWindow.on('focus',()=>visibility?.wake());
+  scheduleVisibility();
+  mainWindow.on('focus',()=>wakeVisibility());
+  mainWindow.on('minimize',()=>send('app-visibility',{minimized:true}));mainWindow.on('restore',()=>send('app-visibility',{minimized:false}));
   mainWindow.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   mainWindow.webContents.on('will-navigate', event => event.preventDefault());
@@ -38,6 +52,7 @@ ipcMain.handle('spotify:logout', () => spotify.logout());
 ipcMain.handle('spotify:status', () => spotify.status());
 ipcMain.handle('spotify:state', () => spotify.getPlaybackState());
 ipcMain.handle('spotify:devices', () => spotify.getDevices());
+ipcMain.handle('spotify:recovery',(_,value)=>spotify.configureRecovery(value));
 ipcMain.handle('spotify:library', (_, kind, id, offset) => spotify.library(kind, id, offset));
 ipcMain.handle('spotify:command', (_, command, value) => {
   // Renderer controllers limit volume and seek to one write each. Do not make
@@ -47,8 +62,8 @@ ipcMain.handle('spotify:command', (_, command, value) => {
   commandQueue = next.catch(() => {}); return next;
 });
 ipcMain.handle('app:hardware', () => ({ ...bridge?.status(), error: bridgeError }));
-ipcMain.handle('app:visibility',(_,value,protectedView)=>visibility?.configure(value,protectedView===true));
-ipcMain.on('app:activity',()=>visibility?.wake());
+ipcMain.handle('app:visibility',(_,value,protectedView,dialOnlyWake,ignoreMouse)=>{mousePassthrough=ignoreMouse===true;syncMousePassthrough();if(wakeGate)wakeGate.dialOnlyWake=dialOnlyWake===true;const result=visibility?.configure(value,protectedView===true);scheduleVisibility();return result;});
+ipcMain.on('app:activity',()=>wakeVisibility());
 ipcMain.handle('app:pin', (_, pinned) => { mainWindow.setAlwaysOnTop(!!pinned); return mainWindow.isAlwaysOnTop(); });
 ipcMain.handle('app:interface',(_,style,side='left')=>{
   if(!['ipod','zune','radial'].includes(style))throw new Error('Unknown interface');
@@ -71,18 +86,18 @@ ipcMain.handle('app:minimize', () => mainWindow?.minimize());
 ipcMain.handle('app:close', () => mainWindow?.close());
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
-  app.on('second-instance', () => { visibility?.wake(true);mainWindow?.restore(); mainWindow?.focus(); });
+  app.on('second-instance', () => { wakeVisibility(true);mainWindow?.restore(); mainWindow?.focus(); });
   app.whenReady().then(() => {
     const file = path.join(app.getPath('userData'), 'spotify-session.json');
     if (process.platform === 'win32') media = new MediaSession(state => spotify?.localChanged(state));
     spotify = new SpotifyClient(state => send('spotify-state', state), { media, session: readSession(file), persist: data => saveSession(file, data), onAuth: auth => send('spotify-auth', auth) });
     media?.start();
-    bridge = createBridge(event => {const action=wakeGate?.handle(event)||'forward';if(action==='forward')send('device-event',event);else if(action==='wake')send('device-event',{type:'wake'});}, Number(process.env.DIALPOD_BRIDGE_PORT || 4765));
+    bridge = createBridge(event => {const action=wakeGate?.handle(event)||'forward';scheduleVisibility();if(action==='forward')send('device-event',event);else if(action==='wake')send('device-event',{type:'wake'});}, Number(process.env.DIALPOD_BRIDGE_PORT || 4765));
     bridge.on('error', error => { bridgeError = `D100H bridge unavailable: ${error.message}`; send('bridge-error', bridgeError); });
     createWindow();
-    if(!process.env.DIALPOD_BRIDGE_PORT)globalShortcut.register('Control+Alt+Shift+D',()=>{visibility?.wake(true);mainWindow?.restore();mainWindow?.focus();});
+    if(!process.env.DIALPOD_BRIDGE_PORT)globalShortcut.register('Control+Alt+Shift+D',()=>{wakeVisibility(true);mainWindow?.restore();mainWindow?.focus();});
     app.on('activate', () => { if (!BrowserWindow.getAllWindows().length) createWindow(); });
   });
   app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
-  app.on('will-quit', () => { clearInterval(visibilityTimer);globalShortcut.unregisterAll();spotify?.cancelLogin(); media?.stop(); bridge?.close(); });
+  app.on('will-quit', () => { clearTimeout(visibilityTimer);globalShortcut.unregisterAll();spotify?.cancelLogin(); media?.stop(); bridge?.close(); });
 }

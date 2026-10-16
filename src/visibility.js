@@ -31,6 +31,16 @@ class VisibilityControl {
     if(force||(this.settings.mode==='always'&&this.settings.opacity===0))this.revealUntil=this.now()+Math.max(10000,this.settings.timeout*1000);
     this.immediate(this.destination());
   }
+  nextDelay(){
+    const now=this.now();
+    if(this.destination()!==this.target)return 0;
+    if(this.opacity!==this.target)return 1000/120;
+    if(this.protected||this.settings.mode==='off')return null;
+    const deadlines=[this.revealUntil];
+    if(this.settings.mode==='idle')deadlines.push(this.lastActivity+this.settings.timeout*1000);
+    const future=deadlines.filter(time=>time>now);
+    return future.length?Math.min(...future)-now:null;
+  }
   tick(){
     const target=this.destination(),now=this.now();
     if(target!==this.target){this.from=this.opacity;this.target=target;this.started=now;}

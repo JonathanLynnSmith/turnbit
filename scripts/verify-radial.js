@@ -11,6 +11,7 @@ app.whenReady().then(async()=>{
     const turn=delta=>command({type:'dial',delta}),select=()=>command({type:'command',command:'select'}),back=()=>command({type:'command',command:'menu'});
     const check=async code=>assert.equal(await js(code),true,code);
     await js(`savePreferences({visibility:{mode:'off',opacity:70,idleOpacity:20,timeout:10},interfaceStyle:'ipod',radialSide:'left',radialBackground:24,idlePinned:false,keepOnTop:false,primaryHue:360,accentHue:145});nav.reset(root());showSettings();nav.current.selected=8;drawNavigation();`);
+    await js(`pinned=false;api.pin(false);`);
     await select();await turn(2);await select();await wait(400);
     await check(`preferences.interfaceStyle==='radial' && getComputedStyle(document.querySelector('.ipod')).display==='none' && getComputedStyle(document.querySelector('#radial')).display==='block'`);
     const leftBounds=window.getBounds(),leftArea=screen.getDisplayMatching(leftBounds).bounds;assert.equal(leftBounds.x,leftArea.x);assert.equal(leftBounds.y,leftArea.y);assert.equal(leftBounds.height,leftArea.height);
@@ -96,6 +97,7 @@ app.whenReady().then(async()=>{
     await select();await turn(-20);await turn(-4);await select();await check(`preferences.radialBackground===0 && document.querySelector('#radial').style.getPropertyValue('--smoke-opacity')==='0'`);
     window.webContents.reload();await wait(1200);await check(`preferences.interfaceStyle==='radial' && preferences.radialSide==='left' && preferences.radialBackground===0`);
     await js(`savePreferences({radialBackground:24});`);
+    await js(`pinned=false;savePreferences({keepOnTop:false});api.pin(false);`);await wait(200);
     await js(`showSettings();nav.current.selected=nav.current.rows.findIndex(row=>row.action==='pin');drawNavigation();`);await select();
     await wait(400);assert.equal(window.isAlwaysOnTop(),true,JSON.stringify(await js(`({pinned,keep:preferences.keepOnTop,page:nav.current.title,selected:nav.current.selected,row:nav.current.rows[nav.current.selected],message:document.querySelector('#message').textContent})`)));await check(`preferences.keepOnTop && nav.current.rows.find(row=>row.action==='pin').detail==='On'`);
     window.webContents.reload();await new Promise(resolve=>window.webContents.once('did-finish-load',resolve));await wait(400);assert.equal(window.isAlwaysOnTop(),true,JSON.stringify(await js(`({pinned,keep:preferences.keepOnTop,page:nav.current.title,stored:localStorage.getItem('dialpod-preferences')})`)));await check(`preferences.keepOnTop && pinned`);

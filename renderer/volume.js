@@ -27,7 +27,7 @@ class VolumeControl {
   acceptRemote(value) {
     if(!Number.isFinite(value)||this.busy||this.pending!==null)return false;
     if(this.now()<this.protectedUntil&&Math.round(value)!==this.value)return false;
-    this.value=Math.max(0,Math.min(this.max,Math.round(value)));this.onValue(this.value);return true;
+    const next=Math.max(0,Math.min(this.max,Math.round(value)));if(next===this.value)return false;this.value=next;this.onValue(this.value);return true;
   }
   reset(value=this.value) {
     clearTimeout(this.timer);this.timer=null;this.pending=null;this.protectedUntil=0;this.started=-Infinity;this.generation++;

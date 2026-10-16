@@ -205,3 +205,10 @@ body[data-edge=right] #radialNow .playback-indicators,body[data-edge=right] .rad
 .playback-indicators [data-pending=true]{animation:like-pending .7s ease-in-out infinite alternate}
 @keyframes like-pending{from{opacity:.35}to{opacity:1}}
 @media(prefers-reduced-motion:reduce){.playback-indicators [data-pending=true]{animation:none;opacity:.6}}
+
+/* Gaming Mode pauses decorative motion at rest; input immediately resumes it. */
+body[data-gaming-idle=true] .scrolling>span,
+body[data-gaming-idle=true] .scrolling-title>span,
+body[data-gaming-idle=true] .radial-mini,
+body[data-gaming-idle=true] .playback-indicators [data-pending=true]{animation-play-state:paused!important}
+body[data-render-suspended=true] *{animation-play-state:paused!important}
