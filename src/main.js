@@ -26,15 +26,17 @@ function scheduleVisibility(){
 }
 function wakeVisibility(force=false){visibility?.wake(force);scheduleVisibility();}
 function createWindow() {
-  mainWindow = new BrowserWindow({ icon: path.join(__dirname, '../assets/branding/turnbit.ico'), width: 380, height: 710, minWidth: 360, minHeight: 700, maxWidth: 460, maxHeight: 800, frame: false, transparent: true, backgroundColor: '#00000000', resizable: true, webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: false } });
+  mainWindow = new BrowserWindow({ show: false, icon: path.join(__dirname, '../assets/branding/turnbit.ico'), width: 380, height: 710, minWidth: 360, minHeight: 700, maxWidth: 460, maxHeight: 800, frame: false, transparent: true, backgroundColor: '#00000000', resizable: true, webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: false } });
   // Running from the repo, the process is electron.exe; tell Windows which icon and command to use when pinned
-  if(process.platform==='win32'&&!app.isPackaged)mainWindow.setAppDetails({appId:'com.nexez.desktopulanziipod',appIconPath:path.join(__dirname,'../assets/branding/turnbit.ico'),appIconIndex:0,relaunchCommand:`"${process.execPath}" "${app.getAppPath()}"`,relaunchDisplayName:'TurnBit'});
+  if(process.platform==='win32'&&!app.isPackaged)mainWindow.setAppDetails({appId:'com.nexez.desktopulanziipod',appIconPath:path.join(__dirname,'../assets/branding/turnbit.ico'),appIconIndex:0,relaunchCommand:`"${process.execPath}" "${app.getAppPath()}"`,relaunchDisplayName:'turnbit'});
   let invisible=false;
   visibility=new VisibilityControl(value=>{if(mainWindow&&!mainWindow.isDestroyed()){const nextInvisible=value===0;if(nextInvisible!==invisible){invisible=nextInvisible;send('app-visibility',{invisible});}syncMousePassthrough();mainWindow.setOpacity(value);}});
   wakeGate=new HardwareWakeGate(visibility);
   scheduleVisibility();
   mainWindow.on('focus',()=>wakeVisibility());
   mainWindow.on('minimize',()=>send('app-visibility',{minimized:true}));mainWindow.on('restore',()=>send('app-visibility',{minimized:false}));
+  // Stay hidden until the renderer applies its interface, so the default turnbit layout does not flash at the compact size first.
+  mainWindow.once('ready-to-show',()=>{const fallback=setTimeout(revealWindow,1500);fallback.unref();});
   mainWindow.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   mainWindow.webContents.on('will-navigate', event => event.preventDefault());
@@ -65,7 +67,9 @@ ipcMain.handle('app:hardware', () => ({ ...bridge?.status(), error: bridgeError 
 ipcMain.handle('app:visibility',(_,value,protectedView,dialOnlyWake,ignoreMouse)=>{mousePassthrough=ignoreMouse===true;syncMousePassthrough();if(wakeGate)wakeGate.dialOnlyWake=dialOnlyWake===true;const result=visibility?.configure(value,protectedView===true);scheduleVisibility();return result;});
 ipcMain.on('app:activity',()=>wakeVisibility());
 ipcMain.handle('app:pin', (_, pinned) => { mainWindow.setAlwaysOnTop(!!pinned); return mainWindow.isAlwaysOnTop(); });
+function revealWindow(){if(mainWindow&&!mainWindow.isDestroyed()&&!mainWindow.isVisible())mainWindow.show();}
 ipcMain.handle('app:interface',(_,style,side='left')=>{
+  setImmediate(revealWindow);
   if(!['ipod','zune','radial'].includes(style))throw new Error('Unknown interface');
   side=side==='right'?'right':'left';
   if(!mainWindow||`${style}:${side}`===activeInterface)return;

@@ -16,7 +16,7 @@ app.whenReady().then(async()=>{
     await sleep();await command('center-down');await command('center-up');await command('center-click');await wait(400);assert.equal(await js(`nav.current.title`),'Settings');
     await command('center-down');await command('center-up');await command('center-click');await wait(400);assert.equal(await js(`nav.current.title`),'Case Theme');
     await sleep();await command('menu-down');await wait(600);await command('menu-up');assert.equal(await js(`nav.current.title`),'Settings');
-    await command('menu-down');await command('menu-up');assert.equal(await js(`nav.current.title`),'DialPod');
+    await command('menu-down');await command('menu-up');assert.equal(await js(`nav.current.title`),'turnbit');
     await sleep();await command('toggle');assert.equal(await js(`nav.current.kind`),'now');
     await js(`window.startIndex=index;`);await sleep(false);await command('next-down');await command('next-up');assert.equal(await js(`index!==window.startIndex`),true);
     await sleep(false);await command('previous-down');await command('previous-up');assert.equal(await js(`index===window.startIndex`),true);

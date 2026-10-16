@@ -12,7 +12,7 @@ app.whenReady().then(async()=>{
     const check=async code=>assert.equal(await js(code),true,code);
     await js(`savePreferences({visibility:{mode:'off',opacity:70,idleOpacity:20,timeout:10},interfaceStyle:'ipod',radialSide:'left',radialBackground:24,idlePinned:false,keepOnTop:false,primaryHue:360,accentHue:145});nav.reset(root());showSettings();nav.current.selected=8;drawNavigation();`);
     await js(`pinned=false;api.pin(false);`);
-    await select();await turn(2);await select();await wait(400);
+    await select();await turn(-1);await select();await wait(400);
     await check(`preferences.interfaceStyle==='radial' && getComputedStyle(document.querySelector('.ipod')).display==='none' && getComputedStyle(document.querySelector('#radial')).display==='block'`);
     const leftBounds=window.getBounds(),leftArea=screen.getDisplayMatching(leftBounds).bounds;assert.equal(leftBounds.x,leftArea.x);assert.equal(leftBounds.y,leftArea.y);assert.equal(leftBounds.height,leftArea.height);
     await js(`nav.reset(root());drawNavigation();`);await turn(2);await wait(60);
@@ -22,7 +22,7 @@ app.whenReady().then(async()=>{
     await check(`preferences.radialSide==='right' && document.body.dataset.edge==='right'`);
     const bounds=window.getBounds(),area=screen.getDisplayMatching(bounds).bounds;assert.equal(bounds.x+bounds.width,area.x+area.width);
     await js(`nav.reset(root());showLibrary('songs');`);await wait(400);await turn(1);
-    await check(`radial.nodes.get(1).lastChild.textContent==='DialPod demo · 3:07'`);
+    await check(`radial.nodes.get(1).lastChild.textContent==='turnbit demo · 3:07'`);
     await js(`nav.current.rows[1].item.artists=[{name:'First artist'},{name:'Second artist'}];drawNavigation();`);
     await check(`radial.nodes.get(1).lastChild.textContent==='First artist, Second artist · 3:07'`);
     await js(`delete nav.current.rows[1].item.artists;drawNavigation();`);await select();
@@ -66,7 +66,7 @@ app.whenReady().then(async()=>{
     await js(`push({title:'Long library',rows:Array.from({length:1000},(_,i)=>({label:'Song '+i,action:'placeholder'}))});`);
     for(let i=0;i<12;i++)await turn(20);await wait(600);
     await check(`nav.current.selected===240 && radial.position===240 && radial.nodes.size<=2*Math.ceil(radial.reach)+5`);
-    await back();await js(`showSettings();nav.current.selected=nav.current.rows.findIndex(row=>row.action==='interface');drawNavigation();`);await select();await turn(-2);await select();
+    await back();await js(`showSettings();nav.current.selected=nav.current.rows.findIndex(row=>row.action==='interface');drawNavigation();`);await select();await turn(1);await select();
     await check(`preferences.interfaceStyle==='ipod' && !nav.current.rows.some(row=>row.action==='radial-side')`);
     await js(`savePreferences({interfaceStyle:'radial',radialSide:'left'});nav.reset(root());push({title:'Playlists',rows:['After Hours','Night Drive','On Repeat','Discover Weekly','Daily Mix 01','Liked Songs','Release Radar','Focus','Sunday Morning','Slow Days','New discoveries'].map(label=>({label,action:'placeholder'})),selected:5});`);await wait(700);
     await check(`getComputedStyle(document.body).backgroundColor==='rgba(0, 0, 0, 0)' && getComputedStyle(document.querySelector('.radial-label')).backgroundColor==='rgba(0, 0, 0, 0)'`);
