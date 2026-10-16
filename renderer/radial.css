@@ -212,3 +212,6 @@ body[data-gaming-idle=true] .scrolling-title>span,
 body[data-gaming-idle=true] .radial-mini,
 body[data-gaming-idle=true] .playback-indicators [data-pending=true]{animation-play-state:paused!important}
 body[data-render-suspended=true] *{animation-play-state:paused!important}
+/* Control rows (Back) use the header's small spaced capitals so they read as navigation, not music; full brightness when highlighted. */
+#radial .radial-label.radial-control>span{font-size:13px;font-weight:500;letter-spacing:2.5px;text-transform:uppercase;opacity:calc(.6 + .4*var(--light,0))}
+#radial .radial-label.radial-control .row-icon{width:1.1em;height:1.1em;margin-right:.55em;vertical-align:-.18em;background:var(--radial-accent)}

@@ -19,7 +19,7 @@ class RadialCarousel {
       const row=resolve(rows[i]);
       let node=this.nodes.get(i);
       if(!node){node=document.createElement('button');node.type='button';node.className='radial-label';node.id=`radial-item-${i}`;node.setAttribute('role','option');node.append(document.createElement('span'),document.createElement('small'));node.onclick=()=>{if(this.page.kind==='list')this.activate(i);};this.nodes.set(i,node);this.element.append(node);}
-      node.title=[row.label,row.detail].filter(Boolean).join(' — ');
+      node.title=[row.label,row.detail].filter(Boolean).join(' — ');node.classList.toggle('radial-control',!!row.control);
       const label=node.firstChild;
       const key=(row.icon?row.icon+':':'')+row.label;
       if(label.dataset.text!==key){

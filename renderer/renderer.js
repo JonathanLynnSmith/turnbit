@@ -81,7 +81,7 @@ function rowIcon(row){if(!row.icon)return [];const icon=document.createElement('
 function ensureBackRow(page){
   if(!page||page.kind!=='list'||page===nav.stack[0]||page===nav.idlePage)return;
   if(page.rows[0]?.action!=='nav-back'){
-    page.rows.unshift({label:'Back',action:'nav-back',icon:'back'});page.selected=Math.min(page.rows.length-1,page.selected+1);
+    page.rows.unshift({label:'Back',action:'nav-back',icon:'back',control:true});page.selected=Math.min(page.rows.length-1,page.selected+1);
     if(page.rows.length<2||page.rows[1].disabled)page.awaitingFirst=true;
   }
   // Lists that load later (Liked Songs, devices) would otherwise open on Back: highlight the first item when it arrives.
@@ -110,7 +110,7 @@ function drawNavigation() {
   const list=$('#menuList');const scroll=list.scrollTop;list.replaceChildren();
   list.setAttribute('aria-label',page.title);list.setAttribute('aria-activedescendant',`row-${page.selected}`);
   page.rows.forEach((row,i)=>{
-    const button=document.createElement('button');button.className=`menurow${i===page.selected?' selected':''}`;button.id=`row-${i}`;button.type='button';button.setAttribute('role','option');button.setAttribute('aria-selected',String(i===page.selected));button.setAttribute('aria-disabled',String(!!row.disabled));button.tabIndex=-1;
+    const button=document.createElement('button');button.className=`menurow${i===page.selected?' selected':''}${row.control?' control-row':''}`;button.id=`row-${i}`;button.type='button';button.setAttribute('role','option');button.setAttribute('aria-selected',String(i===page.selected));button.setAttribute('aria-disabled',String(!!row.disabled));button.tabIndex=-1;
     const label=document.createElement('span');label.className='rowlabel';
     if(row.swatch){const swatch=document.createElement('span');swatch.className='theme-swatch';swatch.style.backgroundColor=row.swatch;swatch.setAttribute('aria-hidden','true');label.append(swatch);}
     if(row.action==='song'){const marker=document.createElement('span');marker.className='track-indicator';marker.setAttribute('aria-hidden','true');label.append(marker);}
@@ -172,7 +172,7 @@ function drawRadial(){
     page.kind==='now'?`${playing?'PLAYING':'PAUSED'}  ·  ${time(currentProgress())} / ${time(duration())}  ·  VOL ${volume}`:'TURN TO ADJUST · PRESS TO SAVE';
   if($('#message').textContent)$('#radialStatus').textContent=$('#message').textContent;
   if(page.kind==='color'){radial.stop();$('#radialColorLabel').textContent=page.title;$('#radialHue').value=page.value;$('#radialColorValue').textContent=radialColorName(page.value);$('#radialColorSwatch').style.background=radialColor(page.value,page.key==='accentHue');}
-  else if(page.kind==='list')radial.update(page,page.rows,page.selected,{resolve:row=>({label:row.label,icon:row.icon,detail:radialRowDetail(row),disabled:row.disabled,mini:radialMiniPlayer(row)}),miniIndices:currentMiniIndices(page)});
+  else if(page.kind==='list')radial.update(page,page.rows,page.selected,{resolve:row=>({label:row.label,icon:row.icon,control:row.control,detail:radialRowDetail(row),disabled:row.disabled,mini:radialMiniPlayer(row)}),miniIndices:currentMiniIndices(page)});
   else if(page.kind==='now'){
     radial.stop();trackTransition.update([demo?'demo:'+index:playback?.item?.uri,$('#title').textContent,$('#artist').textContent,$('#album').textContent,$('#art').hidden?'':$('#art').src].join('|'));
     $('#radialTitle').textContent=$('#title').textContent;$('#radialArtist').textContent=$('#artist').textContent;$('#radialAlbum').textContent=$('#album').textContent;
