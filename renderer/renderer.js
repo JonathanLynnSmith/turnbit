@@ -1,14 +1,20 @@
 const $ = selector => document.querySelector(selector);
 const api = window.dialpod;
-const demos = [{name:'Night Drive',artist:'DialPod demo',album:'After Hours',duration:214000},{name:'A Little Further',artist:'DialPod demo',album:'Click wheel sessions',duration:187000},{name:'Sunday Morning',artist:'DialPod demo',album:'Slow days',duration:245000}];
+const demos = [{name:'Night Drive',artist:'turnbit demo',album:'After Hours',duration:214000},{name:'A Little Further',artist:'turnbit demo',album:'Click wheel sessions',duration:187000},{name:'Sunday Morning',artist:'turnbit demo',album:'Slow days',duration:245000}];
+let lastVisualActivity=Date.now();
 let demo=true, index=0, playing=false, progress=0, volume=50, playback=null, updated=Date.now(), pinned=false, polling=false;
 let zuneVolumeTimer,refreshTimer, demoQueue=[0,1,2], volumeDeviceId=null;
 const {themes,applyTheme}=window.DialPodThemes;
 const themeName=id=>themes.find(theme=>theme.id===id)?.name||'Silver';
 const visibilityDefaults={mode:'off',opacity:70,idleOpacity:20,timeout:10};
 function cleanVisibility(value={}){const number=(key,min,max)=>Number.isFinite(value[key])?Math.max(min,Math.min(max,Math.round(value[key]))):visibilityDefaults[key];return {mode:['off','always','idle'].includes(value.mode)?value.mode:'off',opacity:number('opacity',0,100),idleOpacity:number('idleOpacity',0,100),timeout:number('timeout',1,600)};}
-const preferences = { idlePinned:false, reverseDial:false, idleNowPlaying:true, songOpensNowPlaying:true, playOpensNowPlaying:true, keepOnTop:false, keepCurrentSongPosition: true, appearance:'silver', screenTheme:'light', interfaceStyle:'ipod', radialSide:'left', radialBackground:24, primaryHue:360, accentHue:145, visibility:{...visibilityDefaults}, clicker:false };
-try { const saved=JSON.parse(localStorage.getItem('dialpod-preferences')||'{}');if(saved.appearance==='spotify-center')saved.appearance='spotify';for(const key of ['idlePinned','reverseDial','idleNowPlaying','songOpensNowPlaying','playOpensNowPlaying'])if(typeof saved[key]==='boolean')preferences[key]=saved[key];if(typeof saved.keepOnTop==='boolean')preferences.keepOnTop=saved.keepOnTop;if(typeof saved.keepCurrentSongPosition==='boolean')preferences.keepCurrentSongPosition=saved.keepCurrentSongPosition;if(themes.some(theme=>theme.id===saved.appearance))preferences.appearance=saved.appearance;if(['light','dark'].includes(saved.screenTheme))preferences.screenTheme=saved.screenTheme;else if(preferences.appearance==='spotify')preferences.screenTheme='dark';if(['ipod','zune','radial'].includes(saved.interfaceStyle))preferences.interfaceStyle=saved.interfaceStyle;if(['left','right'].includes(saved.radialSide))preferences.radialSide=saved.radialSide;if(Number.isFinite(saved.radialBackground))preferences.radialBackground=Math.max(0,Math.min(100,Math.round(saved.radialBackground)));for(const key of ['primaryHue','accentHue'])if(Number.isFinite(saved[key]))preferences[key]=Math.max(0,Math.min(360,Math.round(saved[key])));if(saved.visibility&&typeof saved.visibility==='object')preferences.visibility=cleanVisibility(saved.visibility);if(typeof saved.clicker==='boolean')preferences.clicker=saved.clicker; } catch {}
+function cleanLastSongList(value){
+  if(value?.kind==='songs')return {kind:'songs',name:'Liked Songs'};
+  if(value?.kind==='playlist'&&typeof value.playlist?.id==='string'&&/^[A-Za-z0-9-]{1,64}$/.test(value.playlist.id)&&typeof value.name==='string')return {kind:'playlist',name:value.name.slice(0,256),playlist:{id:value.playlist.id,name:value.name.slice(0,256),uri:value.playlist.uri,demoIndexes:Array.isArray(value.playlist.demoIndexes)?value.playlist.demoIndexes.filter(i=>Number.isInteger(i)&&i>=0&&i<demos.length):undefined}};
+  return null;
+}
+const preferences = { lastSongList:null, idleFollowSong:true, dialOnlyWake:false, mousePassthrough:false, preferredDevice:null, autoLaunchSpotify:false, gamingMode:false, idlePinned:false, reverseDial:false, doublePress:'back', backRow:true, hoverBack:true, idleNowPlaying:true, songOpensNowPlaying:true, playOpensNowPlaying:true, keepOnTop:false, keepCurrentSongPosition: true, appearance:'silver', screenTheme:'light', interfaceStyle:'radial', radialSide:'left', radialBackground:24, primaryHue:360, accentHue:145, visibility:{...visibilityDefaults}, clicker:false };
+try { const saved=JSON.parse(localStorage.getItem('dialpod-preferences')||'{}');if(saved.appearance==='spotify-center')saved.appearance='spotify';for(const key of ['mousePassthrough','dialOnlyWake','idleFollowSong','autoLaunchSpotify','gamingMode','idlePinned','reverseDial','backRow','hoverBack','idleNowPlaying','songOpensNowPlaying','playOpensNowPlaying'])if(typeof saved[key]==='boolean')preferences[key]=saved[key];preferences.lastSongList=cleanLastSongList(saved.lastSongList);if(saved.preferredDevice&&typeof saved.preferredDevice.id==='string'&&saved.preferredDevice.id.length>0&&saved.preferredDevice.id.length<=256&&typeof saved.preferredDevice.name==='string'&&saved.preferredDevice.name.length<=256)preferences.preferredDevice={id:saved.preferredDevice.id,name:saved.preferredDevice.name,type:String(saved.preferredDevice.type||'').slice(0,64)};if(['back','home'].includes(saved.doublePress))preferences.doublePress=saved.doublePress;if(typeof saved.keepOnTop==='boolean')preferences.keepOnTop=saved.keepOnTop;if(typeof saved.keepCurrentSongPosition==='boolean')preferences.keepCurrentSongPosition=saved.keepCurrentSongPosition;if(themes.some(theme=>theme.id===saved.appearance))preferences.appearance=saved.appearance;if(['light','dark'].includes(saved.screenTheme))preferences.screenTheme=saved.screenTheme;else if(preferences.appearance==='spotify')preferences.screenTheme='dark';if(['ipod','zune','radial'].includes(saved.interfaceStyle))preferences.interfaceStyle=saved.interfaceStyle;if(['left','right'].includes(saved.radialSide))preferences.radialSide=saved.radialSide;if(Number.isFinite(saved.radialBackground))preferences.radialBackground=Math.max(0,Math.min(100,Math.round(saved.radialBackground)));for(const key of ['primaryHue','accentHue'])if(Number.isFinite(saved[key]))preferences[key]=Math.max(0,Math.min(360,Math.round(saved[key])));if(saved.visibility&&typeof saved.visibility==='object')preferences.visibility=cleanVisibility(saved.visibility);if(typeof saved.clicker==='boolean')preferences.clicker=saved.clicker; } catch {}
 applyTheme(document.body,preferences.appearance);document.body.dataset.screen=preferences.screenTheme;document.body.dataset.interface=preferences.interfaceStyle;document.body.dataset.edge=preferences.radialSide;api?.setInterface?.(preferences.interfaceStyle,preferences.radialSide)?.catch(error=>message(error.message));
 let audioContext, feedbackTimer, pressTimer, displayedPage, displayedDepth=1;
 const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -38,12 +44,25 @@ function measureMarquee(element) {
 function measureVisibleTitles() {
   document.querySelectorAll('#nowView .marquee,.menurow.selected .rowname').forEach(measureMarquee);
 }
-const root = () => ({title:'DialPod',rows:[{label:'Music',action:'music',branch:true},{label:'Now Playing',action:'now',branch:true},{label:'Settings',action:'settings',branch:true}]});
+// Home: Now Playing shortcut on top, then Liked Songs and Playlists directly (no Music menu), then Settings.
+// The Zune interface keeps its own Home with a Music screen.
+function homeRows(){
+  const last=preferences.lastSongList?[lastSongListRow()]:[];
+  if(preferences.interfaceStyle==='zune')return [{label:'Music',action:'music',branch:true},{label:'Now Playing',action:'now',branch:true},{label:'Settings',action:'settings',branch:true},...last];
+  return [{label:'Now Playing',action:'now',icon:'now',control:true},{label:'Liked Songs',action:'songs',branch:true},{label:'Playlists',action:'playlists',branch:true},...last,{label:'Settings',action:'settings',branch:true}];
+}
+const homeStart=()=>preferences.interfaceStyle==='zune'?0:1;
+const root = () => ({title:'turnbit',rows:homeRows(),selected:homeStart()});
 const nav = new window.WheelNavigation(root());
 const idle = new window.IdleNowPlaying(nav);
-function noteActivity(){idle.noteActivity();api?.activity();}
+let silentHardwareActivity=false;
+function noteActivity(){if(silentHardwareActivity)return;followIdleSong.last=null;lastVisualActivity=Date.now();idle.noteActivity();syncGamingMode();api?.activity();}
+// Asleep = faded out by Idle Fade (past its timeout) or fully transparent. Dial Only Wake only changes behavior while asleep.
+function widgetAsleep(){return visibilityState.invisible||(preferences.visibility.mode==='idle'&&!visibilityProtected()&&Date.now()-lastVisualActivity>=preferences.visibility.timeout*1000);}
 function visibilityProtected(){return (preferences.idlePinned&&preferences.visibility.mode==='idle')||!!nav.current.visibilitySettings||$('#settings').open;}
-function syncVisibility(){api?.visibility(preferences.visibility,visibilityProtected())?.catch(error=>message(error.message));}
+let visibilitySyncKey;
+function syncRecovery(){const value={preferredDevice:preferences.preferredDevice,autoLaunchSpotify:preferences.autoLaunchSpotify},key=JSON.stringify(value);if(syncRecovery.key===key)return;syncRecovery.key=key;api?.recovery?.(value)?.catch(error=>{syncRecovery.key=null;message(error.message);});}
+function syncVisibility(){const key=JSON.stringify([preferences.visibility,visibilityProtected(),preferences.dialOnlyWake,preferences.mousePassthrough]);if(key===visibilitySyncKey)return;visibilitySyncKey=key;api?.visibility(preferences.visibility,visibilityProtected(),preferences.dialOnlyWake,preferences.mousePassthrough)?.catch(error=>{visibilitySyncKey=null;message(error.message);});}
 const volumeControl=new window.VolumeControl(async value=>{
   if(!demo)await api.command('volume',value);
 },{interval:600,settle:1500,onValue:value=>{volume=value;render();},onError:error=>message(error.message)});
@@ -63,11 +82,50 @@ function message(text='') {
   clearTimeout(noticeTimer);notice.textContent=text;notice.hidden=!text||preferences.interfaceStyle!=='radial';
   if(text)noticeTimer=setTimeout(()=>{notice.hidden=true;},5000);
 }
+// Lists below Home start with a Back row, so the dial alone can go back without a Menu button. Inserting it keeps
+// the same item highlighted, so entering a list still lands on its first real item.
+// A small inline icon drawn in the text color (see .row-icon in styles.css), e.g. the Back row's arrow.
+function rowIcon(row){if(!row.icon)return [];const icon=document.createElement('span');icon.className=`row-icon row-icon-${row.icon}`;icon.setAttribute('aria-hidden','true');return [icon];}
+// Hover Shortcuts: resting on a shortcut row (Back in lists, Now Playing on Home) after turning onto it runs it after a
+// short hold. Its icon turns into a ring that fills while it counts (driven by --back-hold, so it survives redraws).
+const BACK_HOLD_MS=1000;let backHold=null;
+function shortcutRow(page){const row=page?.rows[page.selected];return row?.control&&(row.action!=='nav-back'||preferences.backRow)?row:null;}
+function cancelBackHold(){if(!backHold)return;cancelAnimationFrame(backHold.frame);backHold=null;document.body.dataset.backHold='false';document.documentElement.style.removeProperty('--back-hold');}
+function startBackHold(){
+  cancelBackHold();const page=nav.current,row=shortcutRow(page);if(!preferences.hoverBack||!row)return;
+  const start=performance.now();document.body.dataset.backHold='true';
+  const step=now=>{
+    if(!backHold)return;
+    if(nav.current!==page||shortcutRow(page)!==row||$('#settings').open){cancelBackHold();return;}
+    const progress=Math.min(1,(now-start)/BACK_HOLD_MS);document.documentElement.style.setProperty('--back-hold',progress.toFixed(3));
+    if(progress>=1){cancelBackHold();if(row.action==='nav-back'){nav.back();drawNavigation();}else if(row.action==='now')showNow();else if(row.action==='more'&&!page.loading)loadLibrary(page,row.offset);return;}
+    backHold.frame=requestAnimationFrame(step);
+  };
+  backHold={frame:requestAnimationFrame(step)};
+}
+// Keep Home matching homeRows() (switching interfaces, or Last Song List appearing), with the same item highlighted.
+function ensureHomeLayout(page){
+  if(page!==nav.stack[0]||page===nav.idlePage)return;
+  const want=homeRows(),key=rows=>rows.map(row=>row.action).join();if(key(want)===key(page.rows))return;
+  const swap={music:'songs',songs:'music',playlists:'music'},was=page.rows[page.selected]?.action;
+  page.rows=want;let index=want.findIndex(row=>row.action===was);if(index<0)index=want.findIndex(row=>row.action===swap[was]);
+  page.selected=index>=0?index:homeStart();
+}
+function ensureBackRow(page){
+  if(!page||page.kind!=='list'||page===nav.stack[0]||page===nav.idlePage)return;
+  if(!preferences.backRow){if(page.rows[0]?.action==='nav-back'){page.rows.shift();page.selected=Math.max(0,page.selected-1);page.awaitingFirst=false;}return;}
+  if(page.rows[0]?.action!=='nav-back'){
+    page.rows.unshift({label:'Back',action:'nav-back',icon:'back',control:true});page.selected=Math.min(page.rows.length-1,page.selected+1);
+    if(page.rows.length<2||page.rows[1].disabled)page.awaitingFirst=true;
+  }
+  // Lists that load later (Liked Songs, devices) would otherwise open on Back: highlight the first item when it arrives.
+  if(page.awaitingFirst&&page.rows.length>1&&!page.rows[1].disabled){page.awaitingFirst=false;if(page.selected===0)page.selected=1;}
+}
 function drawNavigation() {
-  const page=nav.current;syncVisibility();drawRadial();
+  const page=nav.current;ensureBackRow(page);ensureHomeLayout(page);syncVisibility();drawRadial();if(preferences.interfaceStyle==='radial')return;
   const preview=page.rows[page.selected];
   applyTheme(document.body,preview?.action==='theme'?preview.theme:preferences.appearance);
-  $('.case-name').textContent=preferences.interfaceStyle==='zune'?'zune':'DialPod';
+  $('.case-name').textContent=preferences.interfaceStyle==='zune'?'zune':'turnbit';
   const musicTab=preferences.interfaceStyle==='zune'&&['playlists','songs'].includes(page.libraryKind);
   $('.screen').dataset.music=String(musicTab);
   document.querySelectorAll('[data-zune-tab]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.zuneTab===page.libraryKind)));
@@ -86,11 +144,11 @@ function drawNavigation() {
   const list=$('#menuList');const scroll=list.scrollTop;list.replaceChildren();
   list.setAttribute('aria-label',page.title);list.setAttribute('aria-activedescendant',`row-${page.selected}`);
   page.rows.forEach((row,i)=>{
-    const button=document.createElement('button');button.className=`menurow${i===page.selected?' selected':''}`;button.id=`row-${i}`;button.type='button';button.setAttribute('role','option');button.setAttribute('aria-selected',String(i===page.selected));button.setAttribute('aria-disabled',String(!!row.disabled));button.tabIndex=-1;
+    const button=document.createElement('button');button.className=`menurow${i===page.selected?' selected':''}${row.control?' control-row':''}${row.action==='more'?' control-row-end':''}`;button.id=`row-${i}`;button.type='button';button.setAttribute('role','option');button.setAttribute('aria-selected',String(i===page.selected));button.setAttribute('aria-disabled',String(!!row.disabled));button.tabIndex=-1;
     const label=document.createElement('span');label.className='rowlabel';
     if(row.swatch){const swatch=document.createElement('span');swatch.className='theme-swatch';swatch.style.backgroundColor=row.swatch;swatch.setAttribute('aria-hidden','true');label.append(swatch);}
     if(row.action==='song'){const marker=document.createElement('span');marker.className='track-indicator';marker.setAttribute('aria-hidden','true');label.append(marker);}
-    const name=document.createElement('span');name.className=`rowname${i===page.selected?' marquee':''}`;const text=document.createElement('span');text.textContent=row.label;name.append(text);name.title=row.label;label.append(name);button.append(label);
+    const name=document.createElement('span');name.className=`rowname${i===page.selected?' marquee':''}`;const text=document.createElement('span');text.append(...rowIcon(row),row.label);name.append(text);name.title=row.label;label.append(name);button.append(label);
     if(nav.stack.length===1){const caption=document.createElement('span');caption.className='zune-caption';caption.textContent={music:'playlists + liked songs',now:'your current track',settings:'make it yours'}[row.action]||'';label.append(caption);}
     const suffix=document.createElement('span');suffix.className='suffix';suffix.textContent=row.branch?(row.showDetail?row.detail+' ›':'›'):row.detail||'';button.append(suffix);
     button.onclick=()=>{page.selected=i;drawNavigation();selectItem();};list.append(button);
@@ -130,7 +188,11 @@ function updateSmokeShape(){
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><defs><filter id="soft" filterUnits="userSpaceOnUse" x="-300" y="0" width="${width+600}" height="${height}"><feGaussianBlur stdDeviation="90 0"/></filter></defs><path d="M-300,0 L${points.join(' L')} L-300,${height} Z" fill="black" filter="url(#soft)"/></svg>`;
   host.style.setProperty('--smoke-shape',`url("data:image/svg+xml,${encodeURIComponent(svg)}")`);
 }
+let miniIndexCache={};
+function currentMiniIndices(page){const key=[demo,index,playback?.item?.uri,demo?(playing||progress>0):!!playback?.item].join(':');if(miniIndexCache.rows!==page.rows||miniIndexCache.key!==key)miniIndexCache={rows:page.rows,key,indices:page.rows.flatMap((row,i)=>radialMiniPlayer(row)?[i]:[])};return miniIndexCache.indices;}
 function drawRadial(){
+  ensureBackRow(nav.current);ensureHomeLayout(nav.current);
+  if(visibilityState.invisible||visibilityState.minimized)return;
   if(preferences.interfaceStyle!=='radial'){radial.stop();trackTransition.reset();return;}
   const page=nav.current;if(page.kind!=='now')trackTransition.reset();
   $('#radial').dataset.page=page.kind;applyRadialColors();
@@ -139,12 +201,12 @@ function drawRadial(){
   $('#radial').style.setProperty('--smoke-opacity',haze/100);updateSmokeShape();
   $('#radialStatus').dataset.playing=String(page.kind==='now'&&playing);
   $('#radialNow').hidden=page.kind!=='now';$('#radialLabels').hidden=['now','color'].includes(page.kind);
-  $('#radialContext').textContent=page.title==='DialPod'?'SPOTIFY / DIALPOD':page.title.toUpperCase();
+  $('#radialContext').textContent=page.title==='turnbit'?'SPOTIFY / TURNBIT':page.title.toUpperCase();
   $('#radialStatus').textContent=page.kind==='list'?(page.rows.length?`${String(page.selected+1).padStart(2,'0')} / ${String(page.rows.length).padStart(2,'0')}`:''):
     page.kind==='now'?`${playing?'PLAYING':'PAUSED'}  ·  ${time(currentProgress())} / ${time(duration())}  ·  VOL ${volume}`:'TURN TO ADJUST · PRESS TO SAVE';
   if($('#message').textContent)$('#radialStatus').textContent=$('#message').textContent;
   if(page.kind==='color'){radial.stop();$('#radialColorLabel').textContent=page.title;$('#radialHue').value=page.value;$('#radialColorValue').textContent=radialColorName(page.value);$('#radialColorSwatch').style.background=radialColor(page.value,page.key==='accentHue');}
-  else if(page.kind==='list')radial.update(page,page.rows.map(row=>({label:row.label,detail:radialRowDetail(row),disabled:row.disabled,mini:radialMiniPlayer(row)})),page.selected);
+  else if(page.kind==='list')radial.update(page,page.rows,page.selected,{resolve:row=>({label:row.label,icon:row.icon,control:row.control,detail:radialRowDetail(row),disabled:row.disabled,mini:radialMiniPlayer(row)}),miniIndices:currentMiniIndices(page)});
   else if(page.kind==='now'){
     radial.stop();trackTransition.update([demo?'demo:'+index:playback?.item?.uri,$('#title').textContent,$('#artist').textContent,$('#album').textContent,$('#art').hidden?'':$('#art').src].join('|'));
     $('#radialTitle').textContent=$('#title').textContent;$('#radialArtist').textContent=$('#artist').textContent;$('#radialAlbum').textContent=$('#album').textContent;
@@ -166,7 +228,7 @@ function isCurrentSong(row) {
   return [row.item?.uri,row.item?.linked_from?.uri].some(uri=>uri&&uris.includes(uri));
 }
 function updateTrackIndicators() {
-  if(nav.current.kind!=='list')return;
+  if(preferences.interfaceStyle==='radial'||nav.current.kind!=='list')return;
   nav.current.rows.forEach((row,i)=>{
     const button=$('#menuList').children[i];if(!button)return;
     const matches=isCurrentSong(row);
@@ -185,7 +247,24 @@ function renderPlaybackIndicators(){
     for(const icon of bar.children){const key=icon.dataset.mode,active=key==='like'?liked===true:key==='shuffle'?shuffle:repeat!=='off';const label=key==='like'?(liked===true?'Liked song':liked===false?'Not liked':'Like status unavailable'):key==='shuffle'?'Shuffle '+(shuffle?'on':'off'):'Repeat '+({off:'off',context:'all',track:'one song'}[repeat]||'off');icon.dataset.pending=String(key==='like'&&(likeRequests>0||(!demo&&!!playback?.likedPending)));icon.dataset.active=String(active);icon.dataset.repeat=repeat;icon.title=label;icon.setAttribute('aria-label',label);}
   }
 }
+const visibilityState={invisible:false,minimized:false};
+let renderStamp=null;
+function syncGamingMode(){document.body.dataset.gamingIdle=String(preferences.gamingMode&&Date.now()-lastVisualActivity>1500);}
+function renderProgress(force=false){
+  if((!playing&&!force)||visibilityState.invisible||visibilityState.minimized)return;
+  const position=currentProgress(),length=Math.max(1,duration());
+  const text=(selector,value)=>{const node=$(selector);if(node.textContent!==value)node.textContent=value;};
+  if(preferences.interfaceStyle!=='radial'&&nav.current.kind==='now'){$('#seek').value=position;$('#seek').style.setProperty('--fill',position/length*100+'%');text('#elapsed',time(position));text('#duration','−'+time(Math.max(0,length-position)));}
+  if(preferences.interfaceStyle==='radial'){
+    if(nav.current.kind==='now'){const input=$('#radialSeek');if(document.activeElement!==input){input.value=position;input.style.setProperty('--fill',position/length*100+'%');}text('#radialElapsed',time(position));}
+    else if(nav.current.kind==='list'){for(const [i,node] of radial.nodes){if(node.classList.contains('has-mini'))radial.renderMini(node,radialMiniPlayer(nav.current.rows[i]));}}
+  }
+}
 function render() {
+  if(visibilityState.invisible||visibilityState.minimized)return;
+  const stamp=[demo,index,demos[index]?.name,demos[index]?.artist,demos[index]?.album,playing,volume,playback?.item?.uri,playback?.item?.name,playback?.item?.album?.name,playback?.item?.album?.images?.[0]?.url,playback?.item?.artists?.map(a=>a.name).join(', '),playback?.item?.duration_ms,playback?.device?.name,playback?.liked,playback?.likedPending,playback?.shuffle_state,playback?.repeat_state,demoShuffle,demoRepeat,demoLikes.has(index),likeRequests,nav.current,nav.current.rows,nav.current.selected,nav.current.value,preferences.interfaceStyle,preferences.primaryHue,preferences.accentHue,innerWidth,innerHeight];
+  if(renderStamp&&stamp.every((value,i)=>value===renderStamp[i])){renderProgress(true);return;}
+  renderStamp=stamp;
   renderPlaybackIndicators();
   const track=demo?demos[index]:playback?.item;
   const name=track?.name||'Nothing playing',artist=demo?track.artist:track?.artists?.map(a=>a.name).join(', ')||'Open Spotify to start listening';
@@ -206,30 +285,45 @@ function render() {
   updateTrackIndicators();drawRadial();
 }
 function acceptPlayback(data) {
+  if(data?.recoveredDevice){if(preferences.preferredDevice?.id!==data.recoveredDevice.id)savePreferences({preferredDevice:data.recoveredDevice});return;}
+  if(data?.recoveryMessage)return message(data.recoveryMessage);
   if(data?.error)return message(data.error);
   if(playback?.item?.uri && data?.item?.uri && playback.item.uri!==data.item.uri){transportHold.cancel();seekControl.reset(0);}
   const wasLikePending=!!playback?.likedPending;
   playback=data;playing=!!data?.is_playing;
+  // Keep cached Liked Songs current when the playing song's like flips (in turnbit or on another device).
+  // Only a flip counts: an old liked song reporting liked:true must not jump to the top of the list.
+  if(!demo&&data?.item?.uri&&!data.provisional&&!data.likedPending&&typeof data.liked==='boolean'){if(lastLiked?.uri===data.item.uri&&lastLiked.liked!==data.liked&&likedSongs.setLiked(data.item,data.liked))syncLikedSongPages();lastLiked={uri:data.item.uri,liked:data.liked};}
   if(data?.likeError)message(data.likeError);else if(wasLikePending&&!data?.likedPending&&typeof data?.liked==='boolean')message(data.liked?'Liked · confirmed by Spotify':'Unliked · confirmed by Spotify');
   if(!transportHold.direction&&!seekControl.busy&&seekControl.pending===null&&Date.now()>=seekControl.protectedUntil){progress=data?.progress_ms||0;updated=Date.now();}
   const deviceId=data?.device?.id;
   if(deviceId&&volumeDeviceId&&deviceId!==volumeDeviceId)volumeControl.reset(volume);
   if(deviceId)volumeDeviceId=deviceId;
-  if(Number.isFinite(data?.device?.volume_percent))volumeControl.acceptRemote(data.device.volume_percent);render();
+  if(Number.isFinite(data?.device?.volume_percent))volumeControl.acceptRemote(data.device.volume_percent);followSkippedSong();render();
 }
 async function refresh() { if(demo||polling||!api)return;polling=true;try{await api.state();}catch(e){message(e.message);}finally{polling=false;} }
 // Poll Spotify only as often as the view needs: faster while playing, slower when paused or minimized, and right after a track should end.
 let pollTimer;
-function pollDelay(){if(document.hidden)return 30000;if(!playing)return 15000;const left=duration()-currentProgress();return duration()>0?Math.max(1000,Math.min(5000,left+500)):5000;}
-async function poll(){clearTimeout(pollTimer);await refresh();clearTimeout(pollTimer);pollTimer=setTimeout(poll,pollDelay());}
+// Phone or speaker playback has no local shortcut, so every poll is a Web API call. Poll quickly only while someone is
+// using turnbit, and check once at the end of each song (not repeatedly, if Spotify is slow to move on).
+function pollDelay(){
+  if(visibilityState.invisible||visibilityState.minimized||document.hidden)return 30000;if(!playing)return 15000;
+  const base=playback?.localSession||Date.now()-lastVisualActivity<30000?5000:15000,uri=playback?.item?.uri,left=duration()-currentProgress();
+  return duration()>0&&uri&&poll.endChecked!==uri&&left+500<base?Math.max(1000,left+500):base;
+}
+async function poll(){clearTimeout(pollTimer);if(playing&&duration()>0&&duration()-currentProgress()<1500)poll.endChecked=playback?.item?.uri;await refresh();clearTimeout(pollTimer);pollTimer=setTimeout(poll,pollDelay());}
 const demoLikes=new Set();
 let likeRequests=0;
 let demoShuffle=false,demoRepeat='off';
 async function command(cmd,value) {
-  noteActivity();
+  // While asleep with Dial Only Wake on, media commands act without waking turnbit or changing screens.
+  // While visible, Play Opens Now Playing applies as usual.
+  const quietPlay=preferences.dialOnlyWake&&widgetAsleep();
+  if(!quietPlay||!['toggle','next','previous','seek','like','shuffle','repeat','volume'].includes(cmd))noteActivity();
+  if(['next','previous'].includes(cmd))pendingSkipFollow={page:nav.current,key:demo?'demo:'+index:playback?.item?.uri,until:Date.now()+20000};
   message();
-  if(cmd==='pin'){if(savePreferences({idlePinned:!preferences.idlePinned})){noteActivity();drawNavigation();message(preferences.idlePinned?'Widget pinned · idle paused':'Widget unpinned · idle resumed');}return true;}
-  if(cmd==='toggle' && preferences.playOpensNowPlaying && (nav.current.kind!=='now'||$('#settings').open)){
+  if(cmd==='pin'){toggleIdlePin();return true;}
+  if(cmd==='toggle' && !quietPlay && preferences.playOpensNowPlaying && (nav.current.kind!=='now'||$('#settings').open)){
     // From any menu/form, the first Play press only opens the player.
     if($('#settings').open)$('#settings').close();
     showNow();return true;
@@ -238,7 +332,7 @@ async function command(cmd,value) {
   if(demo){
     if(['like','shuffle','repeat'].includes(cmd)){if(cmd==='like'){if(demoLikes.has(index))demoLikes.delete(index);else demoLikes.add(index);}if(cmd==='shuffle')demoShuffle=!demoShuffle;if(cmd==='repeat')demoRepeat={off:'context',context:'track',track:'off'}[demoRepeat];message(cmd==='like'?(demoLikes.has(index)?'Demo: saved to Liked Songs':'Demo: removed from Liked Songs'):cmd==='shuffle'?'Shuffle '+(demoShuffle?'on':'off'):'Repeat: '+({off:'off',context:'all',track:'one song'}[demoRepeat]));render();return true;}
     progress=currentProgress();updated=Date.now();if(cmd==='toggle')playing=!playing;
-    if(cmd==='next'||cmd==='previous'){const position=Math.max(0,demoQueue.indexOf(index));index=demoQueue[(position+(cmd==='next'?1:demoQueue.length-1))%demoQueue.length];progress=0;}
+    if(cmd==='next'||cmd==='previous'){const position=Math.max(0,demoQueue.indexOf(index));index=demoQueue[(position+(cmd==='next'?1:demoQueue.length-1))%demoQueue.length];progress=0;followSkippedSong();}
     if(cmd==='volume')volume=value;if(cmd==='seek')progress=Math.max(0,Math.min(duration(),value));render();return true;
   }
   if(cmd==='device'){volumeControl.reset(volume);volumeDeviceId=null;}
@@ -246,15 +340,17 @@ async function command(cmd,value) {
   try{const result=await api.command(cmd,value);if(result?.message)message(result.message);clearTimeout(refreshTimer);refreshTimer=setTimeout(poll,600);return true;}catch(e){message(e.message);return false;}finally{if(cmd==='like'){likeRequests--;render();}}
 }
 function changeVolume(value) { noteActivity();message();volumeControl.set(value);if(preferences.interfaceStyle==='zune'){$('#zuneVolumeOverlay').textContent='volume '+volume;$('#zuneVolumeOverlay').hidden=false;clearTimeout(zuneVolumeTimer);zuneVolumeTimer=setTimeout(()=>{$('#zuneVolumeOverlay').hidden=true;},1200);} }
-function seek(value) { noteActivity();seekControl.set(Math.max(0,Math.min(duration(),value))); }
+function seek(value) { if(!preferences.dialOnlyWake)noteActivity();seekControl.set(Math.max(0,Math.min(duration(),value))); }
 function openSettings() { wakeIdle();if(!$('#settings').open)$('#settings').showModal(); }
+// Dial Double-Press set to Home: straight to Home from anywhere (closing the settings form first if it is open).
+function dialHome(){noteActivity();wheelFeedback();clickSound();if($('#settings').open){$('#settings').close();return;}nav.goHome();drawNavigation();message();}
 function menuBack() {
   noteActivity();
   wheelFeedback();clickSound();
   if($('#settings').open){$('#settings').close();return;}
   if(preferences.interfaceStyle==='zune'&&nav.stack.length===1&&!nav.idlePage){showNow();return;}
   if(nav.current.kind==='now'&&preferences.interfaceStyle==='ipod'){nav.goHome();drawNavigation();message();return;}
-  nav.back();drawNavigation();message();
+  const fromNow=nav.current.kind==='now';nav.back();drawNavigation();message();if(fromNow)selectPlayingSong();
 }
 function dialogControls() { return [...$('#settings').querySelectorAll('button:not(:disabled),input,a,summary')]; }
 function rotate(delta) {
@@ -264,32 +360,62 @@ function rotate(delta) {
   if(nav.current.kind==='color'){nav.current.value=(nav.current.value+delta%361+361)%361;drawNavigation();return;}
   if(nav.current.kind==='visibility'){const page=nav.current;page.value=Math.max(page.key==='timeout'?1:0,Math.min(page.key==='timeout'?600:100,page.value+delta));drawNavigation();return;}
   if(nav.current.kind==='volume'||nav.current.kind==='now')return changeVolume(volume+delta*2);
-  const previous=nav.current.selected;nav.move(delta);if(nav.current.selected!==previous)clickSound();drawNavigation();
+  nav.current.awaitingFirst=false;const previous=nav.current.selected;nav.move(delta);if(nav.current.selected!==previous)clickSound();drawNavigation();
+  // Extra up-turns at the top of the list are normal when turning all the way up: keep counting (or start) instead of cancelling.
+  if(!shortcutRow(nav.current))cancelBackHold();else if(!backHold)startBackHold();
 }
 function push(page) { noteActivity();const result=nav.push(page);drawNavigation();return result; }
 function showNow() { if(nav.current.kind!=='now')push({title:'Now Playing',kind:'now'});render(); }
 function returnToSongList() {
   noteActivity();
-  if(nav.returnToMusic()){drawNavigation();return;}
+  if(nav.returnToMusic()){drawNavigation();selectPlayingSong();return;}
   const uri=playback?.context?.uri;
-  nav.goHome();showMusic();
+  nav.goHome();if(preferences.interfaceStyle==='zune')showMusic();
   if(/^spotify:playlist:[a-zA-Z0-9]{22}$/.test(uri||''))showLibrary('playlist',{id:uri.split(':')[2],uri,name:'Current Playlist'});
   else showLibrary('songs');
+  selectPlayingSong();
 }
 function showMusic() { if(preferences.interfaceStyle==='zune'){showLibrary('playlists');return;}push({title:'Music',rows:[{label:'Playlists',action:'playlists',branch:true},{label:'Liked Songs',action:'songs',branch:true}],hint:demo?'Demo library · no audio':'Songs are your Spotify Liked Songs'}); }
-function radialSettingsRows(){return [{label:'Screen edge',action:'radial-side',detail:preferences.radialSide==='left'?'Left':'Right'},{label:'Smoky Background',action:'radial-background',detail:preferences.radialBackground?preferences.radialBackground+'%':'Off',branch:true,showDetail:true},{label:'Primary Color',action:'radial-color',key:'primaryHue',detail:radialColorName(preferences.primaryHue),branch:true},{label:'Accent Color',action:'radial-color',key:'accentHue',detail:radialColorName(preferences.accentHue),branch:true}];}
-function showSettings() { push({title:'Settings',rows:[{label:'Volume',action:'volume',branch:true},{label:'Playback Device',action:'devices',branch:true},{label:'Spotify Connection',action:'connect',branch:true},{label:'Keep on Top',action:'pin',detail:pinned?'On':'Off'},{label:'Keep Song Position',action:'current-song',detail:preferences.keepCurrentSongPosition?'On':'Off'},{label:'Apperance',action:'case-theme',detail:themeName(preferences.appearance),branch:true},{label:'Screen',action:'screen-theme',detail:preferences.screenTheme==='dark'?'Dark':'Light'},{label:'Clicker',action:'clicker',detail:preferences.clicker?'On':'Off'},{label:'Interface',action:'interface',detail:interfaceName(preferences.interfaceStyle),branch:true},{label:'Transparency',action:'visibility',branch:true},...(preferences.interfaceStyle==='radial'?radialSettingsRows():[]),{label:'Idle to Now Playing',action:'playback-preference',key:'idleNowPlaying',detail:preferences.idleNowPlaying?'On':'Off'},{label:'Open Song in Now Playing',action:'playback-preference',key:'songOpensNowPlaying',detail:preferences.songOpensNowPlaying?'On':'Off'},{label:'Play Opens Now Playing',action:'playback-preference',key:'playOpensNowPlaying',detail:preferences.playOpensNowPlaying?'On':'Off'},{label:'Reverse Dial Direction',action:'playback-preference',key:'reverseDial',detail:preferences.reverseDial?'On':'Off'}]}); }
+function radialSettingsRows(){return [{label:'Screen Edge',action:'radial-side',detail:preferences.radialSide==='left'?'Left':'Right'},{label:'Smoky Background',action:'radial-background',detail:preferences.radialBackground?preferences.radialBackground+'%':'Off',branch:true,showDetail:true},{label:'Text Color',action:'radial-color',key:'primaryHue',detail:radialColorName(preferences.primaryHue),branch:true},{label:'Accent Color',action:'radial-color',key:'accentHue',detail:radialColorName(preferences.accentHue),branch:true}];}
+// Settings are grouped by task: Settings > category > setting. Rows marked with › open one more screen to pick a
+// value (volume, colors, devices, interface). Each category's subtitle says what is inside.
+const settingsGroups=[
+  {id:'playback',label:'Playback',detail:'Volume and devices'},
+  {id:'appearance',label:'Appearance',detail:'Interface and colors'},
+  {id:'navigation',label:'Navigation',detail:'Dial and shortcuts'},
+  {id:'now-playing',label:'Now Playing',detail:'When it opens'},
+  {id:'window',label:'Window',detail:'Visibility and focus'}
+];
+function settingsRows(group){
+  const toggle=(label,key)=>({label,action:'playback-preference',key,detail:preferences[key]?'On':'Off'});
+  switch(group){
+    case 'playback':return [{label:'Volume',action:'volume',branch:true},{label:'Playback Device',action:'devices',branch:true},{label:'Preferred Device',action:'preferred-devices',detail:preferences.preferredDevice?.name||'Automatic',branch:true,showDetail:true},toggle('Open Spotify Automatically','autoLaunchSpotify'),{label:'Keep Song Position',action:'current-song',detail:preferences.keepCurrentSongPosition?'On':'Off'},{label:'Spotify Connection',action:'connect',branch:true}];
+    case 'appearance':return [{label:'Interface',action:'interface',detail:interfaceName(preferences.interfaceStyle),branch:true},...(preferences.interfaceStyle==='radial'?radialSettingsRows():[{label:'Case Color',action:'case-theme',detail:themeName(preferences.appearance),branch:true},{label:'Screen Theme',action:'screen-theme',detail:preferences.screenTheme==='dark'?'Dark':'Light'}])];
+    case 'navigation':return [toggle('Reverse Dial Direction','reverseDial'),{label:'Dial Double-Press',action:'double-press',detail:preferences.doublePress==='home'?'Home':'Back'},toggle('Back in Lists','backRow'),toggle('Hover Shortcuts','hoverBack'),{label:'Click Sounds',action:'clicker',detail:preferences.clicker?'On':'Off'}];
+    case 'now-playing':return [toggle('Play Opens Now Playing','playOpensNowPlaying'),toggle('Open Song in Now Playing','songOpensNowPlaying'),toggle('Idle to Now Playing','idleNowPlaying'),toggle('Follow Playing Song','idleFollowSong')];
+    case 'window':return [{label:'Transparency',action:'visibility',branch:true},{label:'Keep on Top',action:'pin',detail:pinned?'On':'Off'},{label:'Pin Widget',action:'idle-pin',detail:preferences.idlePinned?'On':'Off'},toggle('Dial Only Wake','dialOnlyWake'),toggle('Mouse Click Through','mousePassthrough'),toggle('Gaming Mode','gamingMode')];
+  }
+  return [];
+}
+function showSettings() { push({title:'Settings',rows:settingsGroups.map(group=>({label:group.label,action:'settings-group',group:group.id,detail:group.detail,branch:true})),hint:'Choose a category · Menu to return'}); }
+function showSettingsGroup(id) { const group=settingsGroups.find(item=>item.id===id);if(group)push({title:group.label,settingsGroup:id,rows:settingsRows(id)}); }
+// Open Settings at the category holding a matching row, with that row highlighted (used by tests and shortcuts).
+function showSetting(match) {
+  showSettings();const group=settingsGroups.find(item=>settingsRows(item.id).some(match));if(!group)return false;
+  nav.current.selected=nav.current.rows.findIndex(row=>row.group===group.id);drawNavigation();showSettingsGroup(group.id);
+  nav.current.selected=nav.current.rows.findIndex(match);drawNavigation();return true;
+}
 function showTransparency(){const value=preferences.visibility;push({title:'Transparency',visibilitySettings:true,rows:[{label:'Mode',action:'visibility-mode',detail:{off:'Off',always:'Always',idle:'Idle Fade'}[value.mode]},{label:'Opacity',action:'visibility-adjust',key:'opacity',detail:value.opacity+'%',branch:true,showDetail:true},{label:'Idle Opacity',action:'visibility-adjust',key:'idleOpacity',detail:value.idleOpacity+'%',branch:true,showDetail:true},{label:'Idle Timeout',action:'visibility-adjust',key:'timeout',detail:value.timeout+' sec',branch:true,showDetail:true}],hint:value.mode==='idle'?'Solid while active · fades after idle':value.mode==='always'?'Fixed opacity · 0% wakes on D100H input':'Select Mode to enable transparency'});}
 function showZunePlaybackOptions() {push({title:'Playback',rows:[{label:'Song list',action:'song-list',branch:true},{label:'Volume',action:'volume',branch:true},{label:'Playback device',action:'devices',branch:true},{label:'Now playing',action:'back-now',branch:true}]});}
-function interfaceName(style){return {ipod:'iPod',zune:'Zune',radial:'Floating Radial'}[style]||'iPod';}
-function showInterfaces() {const styles=['ipod','zune','radial'];push({title:'Interface',rows:styles.map(style=>({label:interfaceName(style),action:'set-interface',style,detail:preferences.interfaceStyle===style?'✓':''})),hint:'Select an interface · Menu to return'});nav.current.selected=styles.indexOf(preferences.interfaceStyle);drawNavigation();}
+function interfaceName(style){return {radial:'turnbit',ipod:'iPod',zune:'Zune'}[style]||'turnbit';}
+function showInterfaces() {const styles=['radial','ipod','zune'];push({title:'Interface',rows:styles.map(style=>({label:interfaceName(style),action:'set-interface',style,detail:preferences.interfaceStyle===style?'✓':''})),hint:'Select an interface · Menu to return'});nav.current.selected=nav.current.rows.findIndex(row=>row.style===preferences.interfaceStyle);drawNavigation();}
 
 function showCaseThemes() {
   push({title:'Case Theme',rows:themes.map(theme=>({label:theme.name,action:'theme',theme:theme.id,swatch:theme.color,detail:theme.id===preferences.appearance?'✓':''})),hint:'Turn to preview · Select to save'});
-  nav.current.selected=themes.findIndex(theme=>theme.id===preferences.appearance);drawNavigation();
+  nav.current.selected=nav.current.rows.findIndex(row=>row.theme===preferences.appearance);drawNavigation();
 }
 function savePreferences(patch) {
-  try {const next={...preferences,...patch};localStorage.setItem('dialpod-preferences',JSON.stringify(next));Object.assign(preferences,next);applyTheme(document.body,preferences.appearance);document.body.dataset.screen=preferences.screenTheme;document.body.dataset.interface=preferences.interfaceStyle;document.body.dataset.edge=preferences.radialSide;api?.setInterface?.(preferences.interfaceStyle,preferences.radialSide)?.catch(error=>message(error.message));syncVisibility();return true;}
+  try {const next={...preferences,...patch};localStorage.setItem('dialpod-preferences',JSON.stringify(next));Object.assign(preferences,next);applyTheme(document.body,preferences.appearance);document.body.dataset.screen=preferences.screenTheme;document.body.dataset.interface=preferences.interfaceStyle;document.body.dataset.edge=preferences.radialSide;api?.setInterface?.(preferences.interfaceStyle,preferences.radialSide)?.catch(error=>message(error.message));syncVisibility();syncRecovery();return true;}
   catch {message('Could not save this setting. Please try again.');return false;}
 }
 function toggleCurrentSongBehavior() {
@@ -297,42 +423,122 @@ function toggleCurrentSongBehavior() {
 }
 let pinQueue=Promise.resolve();
 function togglePin(){pinQueue=pinQueue.then(performPinToggle);return pinQueue;}
+function toggleIdlePin(){
+  if(!savePreferences({idlePinned:!preferences.idlePinned}))return;
+  for(const page of nav.stack){const row=page.rows?.find(item=>item.action==='idle-pin');if(row)row.detail=preferences.idlePinned?'On':'Off';}
+  noteActivity();drawNavigation();message(preferences.idlePinned?'Widget pinned · idle paused':'Widget unpinned · idle resumed');
+}
 async function performPinToggle() { if(!api)return;try{const next=await api.pin(!pinned);if(!savePreferences({keepOnTop:next})){await api.pin(pinned);return;}pinned=next;$('#pin').textContent=pinned?'◆':'◇';$('#pin').setAttribute('aria-pressed',String(pinned));const row=nav.current.rows.find(r=>r.action==='pin');if(row)row.detail=pinned?'On':'Off';drawNavigation();message(pinned?'Always on Top enabled':'Always on Top disabled');}catch(e){message(e.message);} }
 function demoLibrary(kind,playlist) {
   if(kind==='playlists')return {items:[{id:'demo-night',name:'After Hours',demoIndexes:[0,1]},{id:'demo-sunday',name:'Slow Days',demoIndexes:[2]}],next:null};
   const indexes=playlist?.demoIndexes||[0,1,2];return {items:indexes.map(i=>({item:demos[i],demoIndex:i})),next:null};
 }
 function playable(item) { return item && !item.is_local && item.is_playable!==false && !item.restrictions && /^spotify:(track|episode):[A-Za-z0-9]{22}$/.test(item.uri||''); }
+const likedSongs=new window.LikedSongsCache();let lastLiked=null;
+// Load more is a shortcut row: press it, or rest on it (Hover Shortcuts) to load the next page.
+function moreRow(offset){return {label:'Load more',action:'more',offset,icon:'more',control:true};}
+function libraryRows(page,items,offset){return items.map((entry,i)=>{
+  if(page.libraryKind==='playlists')return {label:entry.name||'Untitled playlist',action:'playlist',playlist:entry,branch:true};
+  const item=entry.item||entry.track;
+  return {label:item?.name||'Unavailable item',action:'song',item,position:offset+i,contextUri:page.playlist?.uri,demoIndex:entry.demoIndex,queue:page.playlist?.demoIndexes,disabled:!demo&&!playable(item),detail:time(demo?item.duration:item?.duration_ms||0)};
+});}
+// Redraw a Liked Songs page from the cache, keeping the highlighted song selected if it is still there.
+function showCachedSongs(page,data){
+  const selectedUri=page.rows[page.selected]?.item?.uri,items=data.items||[];
+  page.total=data.total;page.rows=libraryRows(page,items,0);
+  if(data.next)page.rows.push(moreRow(items.length));
+  if(!page.rows.length)page.rows=[{label:'No items found',disabled:true}];
+  const index=selectedUri?page.rows.findIndex(row=>row.item?.uri===selectedUri):-1;
+  page.selected=index>=0?index:Math.min(page.selected,page.rows.length-1);
+  if(nav.current===page)drawNavigation();
+}
+function likedSongPages(){return [...new Set([...nav.stack,...(Array.isArray(nav.musicPath)?nav.musicPath:[]),lastSongListPage].filter(page=>page?.libraryKind==='songs'&&!page.loading))];}
+function syncLikedSongPages(){const data=likedSongs.snapshot();if(data)for(const page of likedSongPages())showCachedSongs(page,data);}
+// Show cached Liked Songs at once, then check Spotify's first page unless it was checked in the last 30 seconds.
+async function refreshLikedSongs(page){
+  if(likedSongs.isFresh()||page.refreshing)return;page.refreshing=true;
+  try{if(likedSongs.applyFirstPage(await api.library('songs',undefined,0)))syncLikedSongPages();}
+  catch(e){if(nav.current===page)message(e.message);}finally{page.refreshing=false;}
+}
 async function loadLibrary(page,offset=0) {
+  if(!demo&&page.libraryKind==='songs'&&!offset){const cached=likedSongs.snapshot();if(cached){showCachedSongs(page,cached);refreshLikedSongs(page);return;}}
   if(page.loading)return;page.loading=true;
   const baseRows=page.rows.filter(row=>row.action!=='more'&&row.action!=='retry'&&row.action!=='placeholder');
   if(!offset)page.rows=[...baseRows,{label:'Loading…',action:'placeholder',disabled:true}];
+  else{const more=page.rows.find(row=>row.action==='more');if(more)more.label='Loading…';}
   if(nav.current===page)drawNavigation();
   try{
     const data=demo?demoLibrary(page.libraryKind,page.playlist):await api.library(page.libraryKind,page.playlist?.id,offset);
     page.total=data.total;
-    const rows=(data.items||[]).map((entry,i)=>{
-      if(page.libraryKind==='playlists')return {label:entry.name||'Untitled playlist',action:'playlist',playlist:entry,branch:true};
-      const item=entry.item||entry.track;
-      return {label:item?.name||'Unavailable item',action:'song',item,position:offset+i,contextUri:page.playlist?.uri,demoIndex:entry.demoIndex,queue:page.playlist?.demoIndexes,disabled:!demo&&!playable(item),detail:time(demo?item.duration:item?.duration_ms||0)};
-    });
+    if(!demo&&page.libraryKind==='songs'){if(offset)likedSongs.appendPage(offset,data);else likedSongs.applyFirstPage(data);}
+    const rows=libraryRows(page,data.items||[],offset);
     page.rows=[...baseRows,...rows];
-    if(data.next)page.rows.push({label:'Load more…',action:'more',offset:offset+(data.items?.length||50),branch:true});
-    if(!page.rows.length)page.rows=[{label:'No items found',disabled:true}];
+    if(data.next)page.rows.push(moreRow(offset+(data.items?.length||50)));
+    // The Back row is not an item: an empty list still says so.
+    if(!page.rows.some(row=>row.action!=='nav-back'))page.rows=[...page.rows,{label:'No items found',disabled:true}];
   }catch(e){
     page.rows=[...baseRows,{label:'Retry loading',action:'retry',offset,branch:true}];
     if(nav.current===page)message(e.status===403?'Spotify denied browsing. Reconnect for library permissions; playlist contents require ownership or collaboration.':e.message);
-  }finally{page.loading=false;page.selected=Math.min(page.selected,Math.max(0,page.rows.length-1));if(nav.current===page)drawNavigation();}
+  }finally{page.loading=false;page.selected=Math.min(page.selected,Math.max(0,page.rows.length-1));if(nav.current===page)drawNavigation();if(page.selectPlayingOnLoad){page.selectPlayingOnLoad=false;selectPlayingSong(page);}}
+}
+let lastSongListPage=null;
+function lastSongListRow(){return {label:'Last Song List',action:'last-song-list',detail:preferences.lastSongList?.name||'',branch:true,showDetail:true};}
+function rememberSongList(page){
+  if(!['songs','playlist'].includes(page.libraryKind))return;
+  lastSongListPage=page;
+  const source=cleanLastSongList({kind:page.libraryKind,name:page.playlist?.name||'Liked Songs',playlist:page.playlist});
+  if(JSON.stringify(source)!==JSON.stringify(preferences.lastSongList))savePreferences({lastSongList:source});
+  const home=nav.stack[0],row=home.rows.find(row=>row.action==='last-song-list');if(row)Object.assign(row,lastSongListRow());else home.rows.push(lastSongListRow());
+}
+function openLastSongList(){
+  if(lastSongListPage&&!lastSongListPage.loading){const page=push(lastSongListPage);lastSongListPage=page;nav.rememberMusic();return;}
+  const source=preferences.lastSongList;if(source)showLibrary(source.kind,source.playlist);
+}
+// Returning from Now Playing turns the song list to the playing song, so nobody has to search for it.
+// A list that is still loading does this once its songs arrive.
+function selectPlayingSong(page=nav.current){
+  if(!['songs','playlist'].includes(page?.libraryKind))return false;
+  if(page.loading){page.selectPlayingOnLoad=true;return false;}
+  const current=page.rows.findIndex(isCurrentSong);if(current<0||current===page.selected)return false;
+  page.selected=current;if(nav.current!==page)return true;
+  if(preferences.interfaceStyle==='radial')radial.animateTo(current);drawNavigation();return true;
+}
+let pendingSkipFollow=null;
+function followSkippedSong(){
+  const pending=pendingSkipFollow,key=demo?'demo:'+index:playback?.item?.uri;
+  if(!pending)return;
+  if(Date.now()>pending.until||pending.page!==nav.current){pendingSkipFollow=null;return;}
+  if(!key||key===pending.key)return;
+  pendingSkipFollow=null;
+  const page=nav.current;
+  if(preferences.interfaceStyle!=='radial'||!['songs','playlist'].includes(page.libraryKind))return;
+  const current=page.rows.findIndex(isCurrentSong);if(current<0)return;
+  page.selected=current;
+  if(visibilityState.invisible||visibilityState.minimized)radial.snapTo(current);
+  drawNavigation();
+}
+function followIdleSong(faded=false){
+  const page=nav.current,fade=preferences.visibility;
+  // Fully hidden widgets follow the native fade completion, before their next reveal.
+  const wait=fade.mode==='idle'?fade.timeout*1000+650:10000;
+  const ready=faded||(fade.mode==='idle'&&fade.idleOpacity===0?visibilityState.invisible:Date.now()-lastVisualActivity>=wait);
+  if(!preferences.idleFollowSong||preferences.idlePinned||preferences.interfaceStyle!=='radial'||page.kind!=='list'||!['songs','playlist'].includes(page.libraryKind)||page.loading||$('#settings').open||!ready||!(demo?(playing||progress>0):playback?.item))return;
+  const key=demo?'demo:'+index:playback?.item?.uri,last=followIdleSong.last;
+  if(last?.page===page&&last.rows===page.rows&&last.key===key)return;
+  followIdleSong.last={page,rows:page.rows,key};
+  const current=page.rows.findIndex(isCurrentSong);if(current<0||current===page.selected)return;
+  page.selected=current;radial.animateTo(current);drawNavigation();
 }
 function showLibrary(kind,playlist) {
   const page=push({title:playlist?.name||(kind==='playlists'?'Playlists':'Liked Songs'),libraryKind:kind,playlist,rows:playlist?[{label:'Play this playlist',action:'play-playlist',playlist}]:[],hint:kind==='playlists'?'Select a playlist to see its songs':demo?'Demo songs · press to play':'Press to play · MENU goes back'});
-  nav.rememberMusic();loadLibrary(page);
+  nav.rememberMusic();rememberSongList(page);loadLibrary(page);
 }
-async function showDevices() {
-  const page=push({title:'Playback Device',rows:[{label:'Looking for devices…',disabled:true}]});
+async function showDevices(preferred=false) {
+  const page=push({preferred,title:preferred?'Preferred Device':'Playback Device',rows:[{label:'Looking for devices…',disabled:true}]});
   if(demo){page.rows=[{label:'Connect Spotify',action:'connect',branch:true}];drawNavigation();return;}
-  try{const data=await api.devices();page.rows=(data.devices||[]).map(d=>({label:d.name,action:'device',device:d,disabled:d.is_restricted,detail:d.is_active?'Active':''}));if(!page.rows.length)page.rows=[{label:'Open Spotify, then refresh',disabled:true}];}
+  try{const data=await api.devices();page.rows=(data.devices||[]).map(d=>({label:d.name,action:preferred?'preferred-device':'device',device:d,disabled:d.is_restricted||!d.id,detail:preferred?(d.id===preferences.preferredDevice?.id?'✓':''):d.is_active?'Active':''}));if(!page.rows.length)page.rows=[{label:'Open Spotify, then refresh',disabled:true}];}
   catch(e){page.rows=[];if(nav.current===page)message(e.message);}
+  if(preferred)page.rows.unshift({label:'Automatic',action:'preferred-device',device:null,detail:preferences.preferredDevice?'':'✓'});
   page.rows.push({label:'Refresh devices',action:'refresh-devices'});if(nav.current===page)drawNavigation();
 }
 function finishSongSelection(){if(preferences.songOpensNowPlaying)showNow();else {drawNavigation();render();}}
@@ -356,7 +562,9 @@ async function selectItem(fromDial=false) {
   if(nav.current.kind!=='list'){menuBack();return;}
   const row=nav.select();if(!row)return;message();
   switch(row.action){
+    case 'nav-back':nav.back();drawNavigation();break;
     case 'song-list':returnToSongList();break;
+    case 'last-song-list':openLastSongList();break;
     case 'back-now':nav.back();drawNavigation();render();break;
     case 'visibility':showTransparency();break;
     case 'visibility-mode':{const modes=['off','always','idle'];if(savePreferences({visibility:{...preferences.visibility,mode:modes[(modes.indexOf(preferences.visibility.mode)+1)%3]}})){nav.back();showTransparency();}break;}
@@ -372,25 +580,35 @@ async function selectItem(fromDial=false) {
     case 'volume':push({title:'Volume',kind:'volume'});break;
     case 'connect':openSettings();break;
     case 'pin':await togglePin();break;
+    case 'idle-pin':toggleIdlePin();break;
+    case 'double-press':if(savePreferences({doublePress:preferences.doublePress==='home'?'back':'home'})){row.detail=preferences.doublePress==='home'?'Home':'Back';drawNavigation();}break;
+    case 'settings-group':showSettingsGroup(row.group);break;
     case 'current-song':toggleCurrentSongBehavior();break;
     case 'screen-theme':if(savePreferences({screenTheme:preferences.screenTheme==='light'?'dark':'light'})){row.detail=preferences.screenTheme==='dark'?'Dark':'Light';drawNavigation();}break;
     case 'interface':showInterfaces();break;
     case 'radial-color':push({title:row.label,kind:'color',visibilitySettings:true,key:row.key,value:preferences[row.key]});break;
     case 'radial-background':push({title:'Smoky Background',kind:'visibility',visibilitySettings:true,key:'radialBackground',value:preferences.radialBackground});break;
     case 'radial-side':if(savePreferences({radialSide:preferences.radialSide==='left'?'right':'left'})){nav.current.rows.find(item=>item.action==='radial-side').detail=preferences.radialSide==='left'?'Left':'Right';drawNavigation();}break;
-    case 'set-interface':if(savePreferences({interfaceStyle:row.style})){nav.back();const setting=nav.current.rows.find(item=>item.action==='interface');if(setting)setting.detail=interfaceName(row.style);if(row.style!=='radial')nav.current.rows=nav.current.rows.filter(item=>!['radial-side','radial-background','radial-color'].includes(item.action));if(row.style==='radial'&&!nav.current.rows.some(item=>item.action==='radial-side'))nav.current.rows.push(...radialSettingsRows());drawNavigation();render();}break;
+    case 'set-interface':if(savePreferences({interfaceStyle:row.style})){nav.back();if(nav.current.settingsGroup==='appearance'){nav.current.rows=settingsRows('appearance');nav.current.selected=nav.current.rows.findIndex(item=>item.action==='interface');}drawNavigation();render();}break;
     case 'case-theme':showCaseThemes();break;
     case 'theme':if(savePreferences({appearance:row.theme})){for(const page of nav.stack){for(const item of page.rows){if(item.action==='case-theme')item.detail=themeName(preferences.appearance);if(item.action==='theme')item.detail=item.theme===preferences.appearance?'✓':'';}}nav.back();drawNavigation();}break;
     case 'playback-preference':if(savePreferences({[row.key]:!preferences[row.key]})){row.detail=preferences[row.key]?'On':'Off';noteActivity();drawNavigation();}break;
     case 'clicker':if(savePreferences({clicker:!preferences.clicker})){row.detail=preferences.clicker?'On':'Off';drawNavigation();}break;
     case 'devices':await showDevices();break;
-    case 'refresh-devices':nav.back();await showDevices();break;
+    case 'refresh-devices':{const preferred=!!nav.current.preferred;nav.back();await showDevices(preferred);break;}
+    case 'preferred-devices':await showDevices(true);break;
+    case 'preferred-device':if(savePreferences({preferredDevice:row.device?{id:row.device.id,name:row.device.name,type:row.device.type}:null})){nav.back();const setting=nav.current.rows.find(item=>item.action==='preferred-devices');if(setting)setting.detail=preferences.preferredDevice?.name||'Automatic';drawNavigation();}break;
     case 'device':if(await command('device',row.device.id))menuBack();break;
   }
 }
-const centerClick=new window.CenterClick(()=>selectItem(true),()=>menuBack());
-const transportHold=new window.TransportHold(direction=>command(direction>0?'next':'previous'),delta=>{noteActivity();seek(currentProgress()+delta);});
-function hardwareEvent(event) {
+const centerClick=new window.CenterClick(()=>selectItem(true),()=>preferences.doublePress==='home'?dialHome():menuBack());
+const transportHold=new window.TransportHold(direction=>command(direction>0?'next':'previous'),delta=>{if(!preferences.dialOnlyWake)noteActivity();seek(currentProgress()+delta);});
+function hardwareEvent(event){
+  const previous=silentHardwareActivity;
+  silentHardwareActivity=preferences.dialOnlyWake&&widgetAsleep()&&event.type!=='dial'&&!['center-down','center-up','center-click','select'].includes(event.command)&&event.type!=='wake';
+  try{return handleHardwareEvent(event);}finally{silentHardwareActivity=previous;}
+}
+function handleHardwareEvent(event) {
   if(event.type==='heartbeat')return;
   if(event.type==='wake'){centerClick.cancel();noteActivity();return;}
   if(event.type==='command'&&event.command==='center-down'){wheelFeedback(true);noteActivity();return;}
@@ -479,7 +697,7 @@ document.addEventListener('keydown',e=>{
 $('#visibilityRange').oninput=event=>{if(nav.current.kind==='visibility'){nav.current.value=Number(event.target.value);drawNavigation();}};
 $('#settings').addEventListener('toggle',syncVisibility);
 let lastMouseActivity=0;
-document.addEventListener('pointermove',()=>{if(Date.now()-lastMouseActivity>250){lastMouseActivity=Date.now();api?.activity();}},{passive:true});
+document.addEventListener('pointermove',()=>{if(preferences.mousePassthrough)return;if(Date.now()-lastMouseActivity>250){lastMouseActivity=Date.now();lastVisualActivity=Date.now();syncGamingMode();api?.activity();}},{passive:true});
 document.addEventListener('pointerdown',()=>noteActivity(),{passive:true,capture:true});
 document.addEventListener('keydown',()=>noteActivity(),{capture:true});
 $('#pin').onclick=togglePin;$('#minimize').onclick=()=>api?.minimize();$('#close').onclick=()=>api?.close();
@@ -489,18 +707,20 @@ $('#connectionForm').onsubmit=async e=>{
   $('#login').disabled=true;$('#settingsMessage').textContent='Opening Spotify authorization…';
   try{await api.configure($('#clientId').value);await api.login();}catch(error){$('#settingsMessage').textContent=error.message;}finally{$('#login').disabled=false;}
 };
-$('#logout').onclick=async()=>{try{transportHold.cancel();seekControl.reset(0);volumeControl.reset(volume);volumeDeviceId=null;await api?.logout();demo=true;playing=false;progress=0;updated=Date.now();playback=null;nav.reset(root());drawNavigation();$('#settingsMessage').textContent='Disconnected.';render();}catch(e){$('#settingsMessage').textContent=e.message;}};
+$('#logout').onclick=async()=>{try{likedSongs.clear();lastLiked=null;transportHold.cancel();seekControl.reset(0);volumeControl.reset(volume);volumeDeviceId=null;await api?.logout();demo=true;playing=false;progress=0;updated=Date.now();playback=null;nav.reset(root());drawNavigation();$('#settingsMessage').textContent='Disconnected.';render();}catch(e){$('#settingsMessage').textContent=e.message;}};
 $('#deviceBtn').onclick=showDevices;
 if(api){
+  syncRecovery();
   api.pin(preferences.keepOnTop).then(value=>{pinned=value;$('#pin').textContent=pinned?'◆':'◇';$('#pin').setAttribute('aria-pressed',String(pinned));const row=nav.current.rows.find(item=>item.action==='pin');if(row)row.detail=pinned?'On':'Off';drawNavigation();}).catch(error=>message(error.message));
   api.onState(data=>{if(!demo)acceptPlayback(data);});
   api.onAuth(auth=>{if(auth.error){message(auth.error);$('#settingsMessage').textContent=auth.error;return;}if(auth.connected){demo=false;$('#settingsMessage').textContent='Connected.';$('#settings').close();nav.reset(root());drawNavigation();refresh();}else if(!auth.authorizing){demo=true;playing=false;nav.reset(root());drawNavigation();render();}});
   api.onDeviceEvent(hardwareEvent);api.onBridgeError(message);
   api.status().then(auth=>{$('#clientId').value=auth.clientId;if(auth.connected){demo=false;refresh();}drawNavigation();render();}).catch(e=>message(e.message));
   setInterval(async()=>{try{const h=await api.hardware();$('#hardware').textContent=h.pluginOnline?'D100H plugin online':'D100H plugin offline';if(h.error)message(h.error);}catch(e){message(e.message);}},3000);
+  api.onVisibility?.(state=>{const wasHidden=visibilityState.invisible||visibilityState.minimized;Object.assign(visibilityState,state);const hidden=visibilityState.invisible||visibilityState.minimized;document.body.dataset.renderSuspended=String(hidden);if(hidden){if(state.invisible&&preferences.visibility.mode==='idle')followIdleSong(true);radial.stop();trackTransition.reset();}else if(wasHidden){renderStamp=null;drawNavigation();render();poll();}});
   poll();document.addEventListener('visibilitychange',()=>{if(!document.hidden)poll();});
 }else message('Preview only. Run npm start for Spotify and D100H.');
-setInterval(()=>{if(demo&&playing&&!transportHold.direction&&currentProgress()>=duration())command('next');if(idle.tick(!preferences.idlePinned&&preferences.idleNowPlaying&&!$('#settings').open&&!nav.current.loading&&!nav.current.visibilitySettings)){drawNavigation();}render();},250);
+setInterval(()=>{if(demo&&playing&&!transportHold.direction&&currentProgress()>=duration())command('next');if(idle.tick(!preferences.idlePinned&&preferences.idleNowPlaying&&!$('#settings').open&&!nav.current.loading&&!nav.current.visibilitySettings)){drawNavigation();}followIdleSong();syncGamingMode();renderProgress();},250);
 drawNavigation();render();
 
 $('#radial').addEventListener('wheel',event=>{event.preventDefault();rotate(event.deltaY>0?1:-1);},{passive:false});

@@ -56,3 +56,19 @@ test('A rate limit on Liked Songs pauses only library calls, not playback',async
  const state=await client.getPlaybackState();assert.equal(state.item.name,'Song');assert.equal(state.liked,null);
  await client.library('playlists');assert.ok(requests.at(-1).includes('/me/playlists'));
 });
+test('Rate-limit cooldowns are saved and honored after a restart',async()=>{
+ let saved=null,calls=0;const throttled=async()=>{calls++;return new Response('{}',{status:429,headers:{'retry-after':'3600'}});};
+ const first=new SpotifyClient(()=>{},{fetch:throttled,onCooldowns:data=>{saved=data;}});first.setTokens({access_token:'t',refresh_token:'t',expires_in:3600});
+ await assert.rejects(first.library('songs'),/paused until/);assert.ok(saved.library>Date.now()+3500000);
+ const restarted=new SpotifyClient(()=>{},{fetch:throttled,cooldowns:{...saved,'/me/player':Date.now()-1000,bogus:'x',forever:Date.now()+30*86400000}});restarted.setTokens({access_token:'t',refresh_token:'t',expires_in:3600});
+ calls=0;await assert.rejects(restarted.library('songs'),/Liked Songs and likes paused until/);assert.equal(calls,0);
+ assert.deepEqual([...restarted.cooldowns.keys()],['library']);
+ restarted.configure('b'.repeat(32));assert.equal(restarted.cooldowns.size,0);
+});
+test('Spotify server errors show a clear message and read-only requests retry once',async()=>{
+ const gateway=()=>new Response('no healthy upstream',{status:503});let calls=0,fail=1;
+ const client=new SpotifyClient(()=>{},{wait:async()=>{},fetch:async(url,options)=>{calls++;if(calls<=fail)return gateway();if(options.method)return new Response(null,{status:204});return new Response(JSON.stringify({items:[],total:0}));}});client.setTokens({access_token:'t',refresh_token:'t',expires_in:3600});
+ assert.equal((await client.library('songs')).total,0);assert.equal(calls,2,'one failure then a successful retry');
+ calls=0;fail=5;await assert.rejects(client.library('songs'),/Spotify is having trouble right now/);assert.equal(calls,2,'only one retry');
+ calls=0;fail=5;await assert.rejects(client.command('next'),/Spotify is having trouble right now/);assert.equal(calls,1,'actions are not repeated');
+});

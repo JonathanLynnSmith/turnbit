@@ -1,0 +1,21 @@
+const {app,BrowserWindow}=require('electron');
+const path=require('node:path'),assert=require('node:assert/strict');
+app.disableHardwareAcceleration();app.setPath('userData',path.join(app.getPath('temp'),'turnbit-mouse-passthrough-test'));
+process.env.DIALPOD_BRIDGE_PORT='4777';require('../src/main');
+const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+app.whenReady().then(async()=>{try{
+  await wait(1200);const window=BrowserWindow.getAllWindows()[0],js=code=>window.webContents.executeJavaScript(code);
+  let ignored=false;const original=window.setIgnoreMouseEvents.bind(window);window.setIgnoreMouseEvents=value=>{ignored=value;original(value);};
+  await js(`savePreferences({mousePassthrough:false,dialOnlyWake:false,idlePinned:false,idleNowPlaying:false,interfaceStyle:'radial',visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:1}});`);
+  assert.equal(window.isFocusable(),true);
+  await js(`savePreferences({mousePassthrough:true});`);await wait(80);assert.equal(ignored,true);assert.equal(window.isFocusable(),false);assert.equal(await js(`visibilityState.invisible`),false);
+  await js(`showSetting(row=>row.key==='mousePassthrough');`);
+  const post=async event=>{const response=await fetch('http://127.0.0.1:4777/device/event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(event)});assert.equal(response.status,204);await wait(100);};
+  const before=await js(`nav.current.selected`);await post({type:'dial',delta:1});assert.equal(await js(`nav.current.selected`),before+1);
+  await js(`nav.current.selected=nav.current.rows.findIndex(row=>row.key==='mousePassthrough');drawNavigation();`);await post({type:'command',command:'select'});assert.equal(await js(`preferences.mousePassthrough`),false);assert.equal(ignored,false);assert.equal(window.isFocusable(),true);
+  await js(`nav.goHome();savePreferences({mousePassthrough:true,visibility:{mode:'idle',opacity:100,idleOpacity:0,timeout:1}});noteActivity();`);await wait(1850);assert.equal(await js(`visibilityState.invisible`),true);assert.equal(ignored,true);
+  await post({type:'dial',delta:1});assert.equal(await js(`visibilityState.invisible`),false);assert.equal(ignored,true);
+  window.webContents.reload();await new Promise(resolve=>window.webContents.once('did-finish-load',resolve));await wait(200);assert.equal(await js(`preferences.mousePassthrough`),true);assert.equal(ignored,true);
+  await js(`savePreferences({mousePassthrough:false,visibility:{mode:'off'}});`);await wait(100);assert.equal(ignored,false);assert.equal(window.isFocusable(),true);
+  console.log('Mouse click-through, native focus, D100H navigation and toggle, fade/wake and persistence passed.');app.quit();
+}catch(error){console.error(error);app.exit(1);}});

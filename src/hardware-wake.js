@@ -3,6 +3,8 @@ class HardwareWakeGate {
   constructor(visibility,{now=()=>Date.now()}={}){this.visibility=visibility;this.now=now;this.centerUntil=0;this.centerConsumed=false;this.clickConsumed=false;this.menuConsumed=false;}
   handle(event){
     if(event.type==='heartbeat')return 'forward';
+    // 'touch' is sent on every macro key press (Play, Like, ...) before the action itself, so it is not a dial gesture.
+    if(this.dialOnlyWake&&event.type!=='dial'&&!['center-down','center-up','center-click','select'].includes(event.command))return 'forward';
     if(this.now()>this.centerUntil){this.centerConsumed=false;this.clickConsumed=false;}
     const idle=this.visibility.isIdle();this.visibility.wake();
     const command=event.command;

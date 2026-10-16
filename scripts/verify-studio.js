@@ -25,7 +25,7 @@ async function main() {
     await studio.evaluate(`$UD.emit('dialup',{uuid:'com.ulanzi.ulanzistudio.dialpod.encoder'});`);await delay();
     if(!await widget.evaluate(`nav.current.kind==='now'`))throw new Error('Studio dial press did not select');
     await studio.evaluate(`$UD.emit('run',{uuid:'com.ulanzi.ulanzistudio.dialpod.menu'});`);await delay();
-    if(!await widget.evaluate(`nav.current.title==='DialPod' && nav.current.selected===1`))throw new Error('Studio Menu key did not return');
+    if(!await widget.evaluate(`nav.current.title==='turnbit' && nav.current.selected===1`))throw new Error('Studio Menu key did not return');
     const after=await (await fetch('http://127.0.0.1:4765/device/state')).json();
     if(after.eventCount<before.eventCount+3)throw new Error('Expected three real WebView-to-widget bridge events');
     console.log('Live Studio → installed plugin → packaged widget: navigation, selection, Menu passed. Plugin online:',after.pluginOnline);

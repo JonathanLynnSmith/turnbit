@@ -7,9 +7,10 @@ contextBridge.exposeInMainWorld('dialpod', {
   configure: id => ipcRenderer.invoke('spotify:configure', id), login: () => ipcRenderer.invoke('spotify:login'), logout: () => ipcRenderer.invoke('spotify:logout'),
   status: () => ipcRenderer.invoke('spotify:status'), state: () => ipcRenderer.invoke('spotify:state'), command: (command, value) => ipcRenderer.invoke('spotify:command', command, value), devices: () => ipcRenderer.invoke('spotify:devices'),
   library: (kind, id, offset) => ipcRenderer.invoke('spotify:library', kind, id, offset),
+  recovery: value=>ipcRenderer.invoke('spotify:recovery',value),
   setInterface: (style,side)=>ipcRenderer.invoke('app:interface',style,side),
-  visibility: (settings,protectedView)=>ipcRenderer.invoke('app:visibility',settings,protectedView),
+  visibility: (settings,protectedView,dialOnlyWake,mousePassthrough)=>ipcRenderer.invoke('app:visibility',settings,protectedView,dialOnlyWake,mousePassthrough),
   activity: ()=>ipcRenderer.send('app:activity'),
   hardware: () => ipcRenderer.invoke('app:hardware'), pin: value => ipcRenderer.invoke('app:pin', value), openExternal: url => ipcRenderer.invoke('app:open-external', url), minimize: () => ipcRenderer.invoke('app:minimize'), close: () => ipcRenderer.invoke('app:close'),
-  onState: subscribe('spotify-state'), onAuth: subscribe('spotify-auth'), onDeviceEvent: subscribe('device-event'), onBridgeError: subscribe('bridge-error')
+  onVisibility: subscribe('app-visibility'), onState: subscribe('spotify-state'), onAuth: subscribe('spotify-auth'), onDeviceEvent: subscribe('device-event'), onBridgeError: subscribe('bridge-error')
 });
