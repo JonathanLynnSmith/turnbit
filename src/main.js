@@ -113,7 +113,7 @@ else {
     bridge.on('error', error => { bridgeError = `D100H bridge unavailable: ${error.message}`; send('bridge-error', bridgeError); });
     if (process.platform === 'darwin') app.dock?.hide();
     createWindow();
-    tray = createTray({ isVisible: () => !!mainWindow?.isVisible(), show: showWindow, hide: hideWindow, command: trayCommand, quit: () => { quitting = true; app.quit(); } });
+    tray = createTray({ isVisible: () => !!mainWindow?.isVisible(), show: showWindow, hide: hideWindow, command: trayCommand, restart: () => { quitting = true; app.relaunch(); app.quit(); }, quit: () => { quitting = true; app.quit(); } });
     if(!process.env.DIALPOD_BRIDGE_PORT)globalShortcut.register('Control+Alt+Shift+D',()=>showWindow());
     app.on('activate', () => { if (!BrowserWindow.getAllWindows().length) createWindow(); else showWindow(); });
   });

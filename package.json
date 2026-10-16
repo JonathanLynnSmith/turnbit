@@ -16,7 +16,9 @@
     "plugin:install": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-plugin.ps1",
     "studio:restart": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/restart-studio.ps1",
     "smoke": "electron scripts/smoke.js",
-    "package": "electron-builder --dir"
+    "package": "electron-builder --dir",
+    "brand:dev": "node scripts/brand-dev-electron.js",
+    "postinstall": "node scripts/brand-dev-electron.js"
   },
   "devDependencies": {
     "electron": "^44.7.2",

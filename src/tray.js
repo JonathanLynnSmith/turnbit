@@ -12,7 +12,7 @@ function loginOptions() { return app.isPackaged || process.platform !== 'win32' 
 function opensAtLogin() { return app.getLoginItemSettings(loginOptions()).openAtLogin; }
 function setOpensAtLogin(openAtLogin) { app.setLoginItemSettings({ ...loginOptions(), openAtLogin }); }
 
-function createTray({ isVisible, show, hide, command, quit }) {
+function createTray({ isVisible, show, hide, command, restart, quit }) {
   const tray = new Tray(trayIcon());
   tray.setToolTip('turnbit');
   const refresh = () => tray.setContextMenu(Menu.buildFromTemplate([
@@ -24,6 +24,7 @@ function createTray({ isVisible, show, hide, command, quit }) {
     { type: 'separator' },
     { label: 'Start at Login', type: 'checkbox', checked: opensAtLogin(), click: item => { setOpensAtLogin(item.checked); refresh(); } },
     { type: 'separator' },
+    { label: 'Restart turnbit', click: restart },
     { label: 'Quit turnbit', click: quit }
   ]));
   refresh();
