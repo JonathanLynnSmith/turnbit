@@ -78,21 +78,34 @@ function message(text='') {
 // the same item highlighted, so entering a list still lands on its first real item.
 // A small inline icon drawn in the text color (see .row-icon in styles.css), e.g. the Back row's arrow.
 function rowIcon(row){if(!row.icon)return [];const icon=document.createElement('span');icon.className=`row-icon row-icon-${row.icon}`;icon.setAttribute('aria-hidden','true');return [icon];}
-// Hover to Go Back: resting on the Back row after turning onto it goes back after a short hold. The Back arrow turns
-// into a ring that fills while it counts (driven by --back-hold, so it survives list redraws). Any change cancels it.
+// Hover Shortcuts: resting on a shortcut row (Back in lists, Now Playing on Home) after turning onto it runs it after a
+// short hold. Its icon turns into a ring that fills while it counts (driven by --back-hold, so it survives redraws).
 const BACK_HOLD_MS=1000;let backHold=null;
+function shortcutRow(page){const row=page?.rows[page.selected];return row?.control&&(row.action!=='nav-back'||preferences.backRow)?row:null;}
 function cancelBackHold(){if(!backHold)return;cancelAnimationFrame(backHold.frame);backHold=null;document.body.dataset.backHold='false';document.documentElement.style.removeProperty('--back-hold');}
 function startBackHold(){
-  cancelBackHold();const page=nav.current;if(!preferences.hoverBack||!preferences.backRow||page.rows[page.selected]?.action!=='nav-back')return;
+  cancelBackHold();const page=nav.current,row=shortcutRow(page);if(!preferences.hoverBack||!row)return;
   const start=performance.now();document.body.dataset.backHold='true';
   const step=now=>{
     if(!backHold)return;
-    if(nav.current!==page||page.rows[page.selected]?.action!=='nav-back'||$('#settings').open){cancelBackHold();return;}
+    if(nav.current!==page||shortcutRow(page)!==row||$('#settings').open){cancelBackHold();return;}
     const progress=Math.min(1,(now-start)/BACK_HOLD_MS);document.documentElement.style.setProperty('--back-hold',progress.toFixed(3));
-    if(progress>=1){cancelBackHold();nav.back();drawNavigation();return;}
+    if(progress>=1){cancelBackHold();if(row.action==='nav-back'){nav.back();drawNavigation();}else if(row.action==='now')showNow();return;}
     backHold.frame=requestAnimationFrame(step);
   };
   backHold={frame:requestAnimationFrame(step)};
+}
+// Home keeps Now Playing on top as a shortcut row (the Zune interface keeps its own Home layout). Moving it keeps the
+// same item highlighted, so Home opens on Music with Now Playing one notch up.
+function ensureHomeShortcut(page){
+  if(page!==nav.stack[0]||page===nav.idlePage)return;
+  const index=page.rows.findIndex(row=>row.action==='now'),top=preferences.interfaceStyle!=='zune';if(index<0)return;
+  const onTop=index===0&&!!page.rows[0].control;if(top===onTop)return;
+  const highlighted=page.rows[page.selected],nowSelected=highlighted?.action==='now';
+  page.rows.splice(index,1);
+  const row=top?{label:'Now Playing',action:'now',icon:'now',control:true}:{label:'Now Playing',action:'now',branch:true};
+  page.rows.splice(top?0:Math.min(1,page.rows.length),0,row);
+  page.selected=Math.max(0,page.rows.indexOf(nowSelected?row:highlighted));
 }
 function ensureBackRow(page){
   if(!page||page.kind!=='list'||page===nav.stack[0]||page===nav.idlePage)return;
@@ -105,7 +118,7 @@ function ensureBackRow(page){
   if(page.awaitingFirst&&page.rows.length>1&&!page.rows[1].disabled){page.awaitingFirst=false;if(page.selected===0)page.selected=1;}
 }
 function drawNavigation() {
-  const page=nav.current;ensureBackRow(page);syncVisibility();drawRadial();if(preferences.interfaceStyle==='radial')return;
+  const page=nav.current;ensureBackRow(page);ensureHomeShortcut(page);syncVisibility();drawRadial();if(preferences.interfaceStyle==='radial')return;
   const preview=page.rows[page.selected];
   applyTheme(document.body,preview?.action==='theme'?preview.theme:preferences.appearance);
   $('.case-name').textContent=preferences.interfaceStyle==='zune'?'zune':'turnbit';
@@ -174,7 +187,7 @@ function updateSmokeShape(){
 let miniIndexCache={};
 function currentMiniIndices(page){const key=[demo,index,playback?.item?.uri,demo?(playing||progress>0):!!playback?.item].join(':');if(miniIndexCache.rows!==page.rows||miniIndexCache.key!==key)miniIndexCache={rows:page.rows,key,indices:page.rows.flatMap((row,i)=>radialMiniPlayer(row)?[i]:[])};return miniIndexCache.indices;}
 function drawRadial(){
-  ensureBackRow(nav.current);
+  ensureBackRow(nav.current);ensureHomeShortcut(nav.current);
   if(visibilityState.invisible||visibilityState.minimized)return;
   if(preferences.interfaceStyle!=='radial'){radial.stop();trackTransition.reset();return;}
   const page=nav.current;if(page.kind!=='now')trackTransition.reset();
@@ -343,7 +356,7 @@ function rotate(delta) {
   if(nav.current.kind==='volume'||nav.current.kind==='now')return changeVolume(volume+delta*2);
   nav.current.awaitingFirst=false;const previous=nav.current.selected;nav.move(delta);if(nav.current.selected!==previous)clickSound();drawNavigation();
   // Extra up-turns at the top of the list are normal when turning all the way up: keep counting (or start) instead of cancelling.
-  if(nav.current.rows[nav.current.selected]?.action!=='nav-back')cancelBackHold();else if(!backHold&&(nav.current.selected!==previous||delta<0))startBackHold();
+  if(!shortcutRow(nav.current))cancelBackHold();else if(!backHold&&(nav.current.selected!==previous||delta<0))startBackHold();
 }
 function push(page) { noteActivity();const result=nav.push(page);drawNavigation();return result; }
 function showNow() { if(nav.current.kind!=='now')push({title:'Now Playing',kind:'now'});render(); }
@@ -358,7 +371,7 @@ function returnToSongList() {
 }
 function showMusic() { if(preferences.interfaceStyle==='zune'){showLibrary('playlists');return;}push({title:'Music',rows:[{label:'Playlists',action:'playlists',branch:true},{label:'Liked Songs',action:'songs',branch:true}],hint:demo?'Demo library · no audio':'Songs are your Spotify Liked Songs'}); }
 function radialSettingsRows(){return [{label:'Screen edge',action:'radial-side',detail:preferences.radialSide==='left'?'Left':'Right'},{label:'Smoky Background',action:'radial-background',detail:preferences.radialBackground?preferences.radialBackground+'%':'Off',branch:true,showDetail:true},{label:'Primary Color',action:'radial-color',key:'primaryHue',detail:radialColorName(preferences.primaryHue),branch:true},{label:'Accent Color',action:'radial-color',key:'accentHue',detail:radialColorName(preferences.accentHue),branch:true}];}
-function showSettings() { push({title:'Settings',rows:[{label:'Volume',action:'volume',branch:true},{label:'Playback Device',action:'devices',branch:true},{label:'Spotify Connection',action:'connect',branch:true},{label:'Keep on Top',action:'pin',detail:pinned?'On':'Off'},{label:'Keep Song Position',action:'current-song',detail:preferences.keepCurrentSongPosition?'On':'Off'},{label:'Apperance',action:'case-theme',detail:themeName(preferences.appearance),branch:true},{label:'Screen',action:'screen-theme',detail:preferences.screenTheme==='dark'?'Dark':'Light'},{label:'Clicker',action:'clicker',detail:preferences.clicker?'On':'Off'},{label:'Interface',action:'interface',detail:interfaceName(preferences.interfaceStyle),branch:true},{label:'Transparency',action:'visibility',branch:true},...(preferences.interfaceStyle==='radial'?radialSettingsRows():[]),{label:'Idle to Now Playing',action:'playback-preference',key:'idleNowPlaying',detail:preferences.idleNowPlaying?'On':'Off'},{label:'Open Song in Now Playing',action:'playback-preference',key:'songOpensNowPlaying',detail:preferences.songOpensNowPlaying?'On':'Off'},{label:'Play Opens Now Playing',action:'playback-preference',key:'playOpensNowPlaying',detail:preferences.playOpensNowPlaying?'On':'Off'},{label:'Reverse Dial Direction',action:'playback-preference',key:'reverseDial',detail:preferences.reverseDial?'On':'Off'},{label:'Back in Lists',action:'playback-preference',key:'backRow',detail:preferences.backRow?'On':'Off'},{label:'Hover to Go Back',action:'playback-preference',key:'hoverBack',detail:preferences.hoverBack?'On':'Off'},{label:'Pin Widget',action:'idle-pin',detail:preferences.idlePinned?'On':'Off'},{label:'Gaming Mode',action:'playback-preference',key:'gamingMode',detail:preferences.gamingMode?'On':'Off'},{label:'Preferred Device',action:'preferred-devices',detail:preferences.preferredDevice?.name||'Automatic',branch:true,showDetail:true},{label:'Open Spotify Automatically',action:'playback-preference',key:'autoLaunchSpotify',detail:preferences.autoLaunchSpotify?'On':'Off'},{label:'Mouse Click Through',action:'playback-preference',key:'mousePassthrough',detail:preferences.mousePassthrough?'On':'Off'},{label:'Dial Only Wake',action:'playback-preference',key:'dialOnlyWake',detail:preferences.dialOnlyWake?'On':'Off'},{label:'Follow Playing Song',action:'playback-preference',key:'idleFollowSong',detail:preferences.idleFollowSong?'On':'Off'}]}); }
+function showSettings() { push({title:'Settings',rows:[{label:'Volume',action:'volume',branch:true},{label:'Playback Device',action:'devices',branch:true},{label:'Spotify Connection',action:'connect',branch:true},{label:'Keep on Top',action:'pin',detail:pinned?'On':'Off'},{label:'Keep Song Position',action:'current-song',detail:preferences.keepCurrentSongPosition?'On':'Off'},{label:'Apperance',action:'case-theme',detail:themeName(preferences.appearance),branch:true},{label:'Screen',action:'screen-theme',detail:preferences.screenTheme==='dark'?'Dark':'Light'},{label:'Clicker',action:'clicker',detail:preferences.clicker?'On':'Off'},{label:'Interface',action:'interface',detail:interfaceName(preferences.interfaceStyle),branch:true},{label:'Transparency',action:'visibility',branch:true},...(preferences.interfaceStyle==='radial'?radialSettingsRows():[]),{label:'Idle to Now Playing',action:'playback-preference',key:'idleNowPlaying',detail:preferences.idleNowPlaying?'On':'Off'},{label:'Open Song in Now Playing',action:'playback-preference',key:'songOpensNowPlaying',detail:preferences.songOpensNowPlaying?'On':'Off'},{label:'Play Opens Now Playing',action:'playback-preference',key:'playOpensNowPlaying',detail:preferences.playOpensNowPlaying?'On':'Off'},{label:'Reverse Dial Direction',action:'playback-preference',key:'reverseDial',detail:preferences.reverseDial?'On':'Off'},{label:'Back in Lists',action:'playback-preference',key:'backRow',detail:preferences.backRow?'On':'Off'},{label:'Hover Shortcuts',action:'playback-preference',key:'hoverBack',detail:preferences.hoverBack?'On':'Off'},{label:'Pin Widget',action:'idle-pin',detail:preferences.idlePinned?'On':'Off'},{label:'Gaming Mode',action:'playback-preference',key:'gamingMode',detail:preferences.gamingMode?'On':'Off'},{label:'Preferred Device',action:'preferred-devices',detail:preferences.preferredDevice?.name||'Automatic',branch:true,showDetail:true},{label:'Open Spotify Automatically',action:'playback-preference',key:'autoLaunchSpotify',detail:preferences.autoLaunchSpotify?'On':'Off'},{label:'Mouse Click Through',action:'playback-preference',key:'mousePassthrough',detail:preferences.mousePassthrough?'On':'Off'},{label:'Dial Only Wake',action:'playback-preference',key:'dialOnlyWake',detail:preferences.dialOnlyWake?'On':'Off'},{label:'Follow Playing Song',action:'playback-preference',key:'idleFollowSong',detail:preferences.idleFollowSong?'On':'Off'}]}); }
 function showTransparency(){const value=preferences.visibility;push({title:'Transparency',visibilitySettings:true,rows:[{label:'Mode',action:'visibility-mode',detail:{off:'Off',always:'Always',idle:'Idle Fade'}[value.mode]},{label:'Opacity',action:'visibility-adjust',key:'opacity',detail:value.opacity+'%',branch:true,showDetail:true},{label:'Idle Opacity',action:'visibility-adjust',key:'idleOpacity',detail:value.idleOpacity+'%',branch:true,showDetail:true},{label:'Idle Timeout',action:'visibility-adjust',key:'timeout',detail:value.timeout+' sec',branch:true,showDetail:true}],hint:value.mode==='idle'?'Solid while active · fades after idle':value.mode==='always'?'Fixed opacity · 0% wakes on D100H input':'Select Mode to enable transparency'});}
 function showZunePlaybackOptions() {push({title:'Playback',rows:[{label:'Song list',action:'song-list',branch:true},{label:'Volume',action:'volume',branch:true},{label:'Playback device',action:'devices',branch:true},{label:'Now playing',action:'back-now',branch:true}]});}
 function interfaceName(style){return {radial:'turnbit',ipod:'iPod',zune:'Zune'}[style]||'turnbit';}

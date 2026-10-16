@@ -15,8 +15,8 @@ app.whenReady().then(async()=>{
     await select();await turn(-1);await select();await wait(400);
     await check(`preferences.interfaceStyle==='radial' && getComputedStyle(document.querySelector('.ipod')).display==='none' && getComputedStyle(document.querySelector('#radial')).display==='block'`);
     const leftBounds=window.getBounds(),leftArea=screen.getDisplayMatching(leftBounds).bounds;assert.equal(leftBounds.x,leftArea.x);assert.equal(leftBounds.y,leftArea.y);assert.equal(leftBounds.height,leftArea.height);
-    await js(`nav.reset(root());drawNavigation();`);await turn(2);await wait(60);
-    await check(`radial.position>0 && radial.position<2`);await wait(500);
+    await js(`nav.reset(root());drawNavigation();`);await turn(1);await wait(60);
+    await check(`radial.position>1 && radial.position<2`);await wait(500);
     await check(`radial.position===2 && document.querySelector('#radial-item-2').getAttribute('aria-selected')==='true'`);
     await select();await turn(10);await select();await wait(400);
     await check(`preferences.radialSide==='right' && document.body.dataset.edge==='right'`);

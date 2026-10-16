@@ -48,5 +48,16 @@ app.whenReady().then(async()=>{try{
   await js(`nav.reset(root());showSettings();nav.current.selected=nav.current.rows.findIndex(r=>r.key==='backRow');drawNavigation();`);await click();p=await page();
   assert.equal(p.first,'Back','Back in Lists on restores the row');assert.equal(p.highlighted,'Back in Lists');
   assert.deepEqual(await js(`[preferences.backRow,JSON.parse(localStorage.getItem('dialpod-preferences')).backRow]`),[true,true],'setting is saved');
-  console.log('Hover to Go Back: 1s rest goes back with a filling ring in both interfaces, turning away cancels, chains, skips empty lists, and both Back in Lists and Hover to Go Back are settings.');app.quit();
+  // Home: Now Playing sits on top as a shortcut; Home opens on Music; resting on it opens Now Playing.
+  const home=async style=>{await js(`savePreferences({interfaceStyle:'${style}',hoverBack:true,idleNowPlaying:false});demo=true;nav.reset(root());drawNavigation();`);await wait(200);};
+  for(const style of ['radial','ipod']){
+    await home(style);p=await page();assert.equal(p.first,'Now Playing',`${style}: Now Playing is first on Home`);assert.equal(p.highlighted,'Music','Home opens on Music');
+    await turn(-1);await turn(-1);p=await page();assert.equal(p.highlighted,'Now Playing');assert.equal(p.hold,'true','ring starts on the Home shortcut');
+    await wait(1150);assert.equal(await js('nav.current.kind'),'now',`${style}: resting on Now Playing opens it`);
+  }
+  await home('radial');await turn(-1);await wait(500);await turn(1);await wait(800);p=await page();assert.equal(p.highlighted,'Music','turning away from the Home shortcut cancels');
+  await home('zune');p=await page();assert.equal(p.first,'Music','Zune keeps its own Home order');assert.equal(await js(`nav.current.rows.findIndex(r=>r.action==='now')`),1);
+  await js(`savePreferences({interfaceStyle:'radial'});drawNavigation();`);p=await page();assert.equal(p.first,'Now Playing','switching back moves the shortcut to the top');assert.equal(p.highlighted,'Music','and keeps the highlight');
+  await js(`savePreferences({hoverBack:false});`);await turn(-1);await wait(1300);assert.equal(await js('nav.current.kind'),'list','Hover Shortcuts off: no auto Now Playing');
+  console.log('Hover Shortcuts: resting 1s on Back goes back and on Now Playing (top of Home) opens it, with a filling ring in both interfaces; turning away cancels, chains, skips empty lists; Zune keeps its Home; both settings work.');app.quit();
 }catch(error){console.error(error);app.exit(1);}});
