@@ -13,7 +13,7 @@ turnbit docks a transparent, curved menu along the edge of your screen. Turn the
 ## Features
 
 - **Floating radial menu** that docks to the left or right screen edge, with a soft backdrop you can tune or turn off
-- **Browse your library**: Liked Songs and Playlists right on Home, plus **Last Song List** to jump back to where you were
+- **Browse your library**: Liked Songs and Playlists right on Home, with **Last Song List** at the top to jump back to where you were
 - **Now Playing** with album art, a seek bar, volume, like, shuffle, and repeat
 - **Hardware control** with the Ulanzi D100H dial and macro buttons, even while turnbit is in the background
 - **Stays out of the way**: optional transparency, idle fade, and a Gaming Mode that pauses animations
@@ -100,7 +100,7 @@ To set this up in one step, import the profile included in the `ulanzi-plugin` f
 | Play / Pause | Pause or resume. From a menu, the first press opens Now Playing. |
 | Previous / Next | Tap to skip. Hold to rewind or fast-forward. |
 
-Every list below Home starts with a **Back** row, so you can get around with the dial alone. Turn up past the first item and press, or just rest on it for a second: a small ring fills and turnbit goes back on its own. Home works the same way: **Now Playing** sits above Liked Songs, so turn up and rest on it to open Now Playing. At the end of a long list, rest on **Load more** to load the next songs.
+Every list below Home starts with a **Back** row, so you can get around with the dial alone. Turn up past the first item and press, or just rest on it for a second: a small ring fills and turnbit goes back on its own. Home works the same way: **Now Playing** sits at the top of Home, so turn up and rest on it to open Now Playing. At the end of a long list, rest on **Load more** to load the next songs.
 
 ### Keyboard
 
@@ -141,6 +141,7 @@ Settings are grouped into five categories. On/off settings sit inside a category
 | Navigation | Reverse Dial Direction | Flips the dial's direction | Off |
 | Navigation | Dial Double-Press | What a double-press of the dial does: go Back one level, or go Home | Back |
 | Navigation | Back in Lists | Shows a Back row at the top of every list below Home | On |
+| Navigation | Last Song List on Home | Shows Last Song List at the top of Home, above Liked Songs, to reopen the list you were browsing | On |
 | Navigation | Hover Shortcuts | Resting for a second on Back, Now Playing (top of Home), or Load more (end of a long list) runs it, with a ring showing the countdown | On |
 | Navigation | Click Sounds | Soft clicks while browsing | Off |
 | Now Playing | Play Opens Now Playing | Pressing Play on any other screen opens Now Playing without playing or pausing. Off: Play plays or pauses and you stay on the current screen | On |

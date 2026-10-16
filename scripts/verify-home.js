@@ -11,7 +11,7 @@ app.whenReady().then(async()=>{try{
   const menu=async()=>{await post({type:'command',command:'menu-down'});await post({type:'command',command:'menu-up'});await wait(250);};
   const page=()=>js(`({title:nav.current.title,kind:nav.current.kind,labels:nav.current.rows.map(r=>r.label).join(', '),highlighted:nav.current.rows[nav.current.selected]?.label,depth:nav.stack.length})`);
   for(const style of ['radial','ipod']){
-    await js(`savePreferences({interfaceStyle:'${style}',lastSongList:null,idleNowPlaying:false,idlePinned:false,songOpensNowPlaying:true,visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:10}});demo=true;nav.reset(root());drawNavigation();`);await wait(200);
+    await js(`savePreferences({interfaceStyle:'${style}',lastSongList:null,homeLastSongList:true,idleNowPlaying:false,idlePinned:false,songOpensNowPlaying:true,visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:10}});demo=true;nav.reset(root());drawNavigation();`);await wait(200);
     let p=await page();assert.equal(p.labels,'Now Playing, Liked Songs, Playlists, Settings',`${style}: Home layout`);assert.equal(p.highlighted,'Liked Songs','Home opens on Liked Songs');
     await click();p=await page();assert.equal(p.title,'Liked Songs','one press opens Liked Songs');assert.equal(p.depth,2,'directly under Home');
     await menu();p=await page();assert.equal(p.title,'turnbit');assert.equal(p.highlighted,'Liked Songs','back lands on Liked Songs');
@@ -20,7 +20,10 @@ app.whenReady().then(async()=>{try{
   }
   // Browsing a list adds Last Song List, above Settings.
   await js(`nav.reset(root());showLibrary('songs');`);await wait(300);await js(`nav.goHome();drawNavigation();`);await wait(100);
-  assert.equal((await page()).labels,'Now Playing, Liked Songs, Playlists, Last Song List, Settings','Last Song List sits above Settings');
+  assert.equal((await page()).labels,'Now Playing, Last Song List, Liked Songs, Playlists, Settings','Last Song List sits above Liked Songs');
+  // Last Song List on Home is a setting: off hides it, on brings it back.
+  await js(`savePreferences({homeLastSongList:false});drawNavigation();`);assert.equal((await page()).labels,'Now Playing, Liked Songs, Playlists, Settings','setting off hides Last Song List');
+  await js(`savePreferences({homeLastSongList:true});drawNavigation();`);assert.equal((await page()).labels,'Now Playing, Last Song List, Liked Songs, Playlists, Settings','setting on restores it');
   // Center press from Now Playing returns to the playing list, directly under Home.
   await js(`nav.current.selected=nav.current.rows.findIndex(r=>r.action==='songs');drawNavigation();`);await click();await click();
   assert.equal((await page()).kind,'now','choosing a song opens Now Playing');await js(`nav.musicPath=null;nav.browsingPath=null;`);await click();
@@ -28,6 +31,6 @@ app.whenReady().then(async()=>{try{
   // Zune keeps Music, and switching interfaces keeps the highlight on the matching item.
   await js(`savePreferences({interfaceStyle:'zune'});nav.goHome();nav.current.selected=nav.current.rows.findIndex(r=>r.action==='songs');drawNavigation();`);await wait(150);
   p=await page();assert.ok(p.labels.startsWith('Music, Now Playing, Settings'),'Zune Home keeps Music: '+p.labels);assert.equal(p.highlighted,'Music','Liked Songs maps to Music');
-  await js(`savePreferences({interfaceStyle:'radial'});drawNavigation();`);p=await page();assert.ok(p.labels.startsWith('Now Playing, Liked Songs, Playlists'));assert.equal(p.highlighted,'Liked Songs','and back again');
-  console.log('Home: Liked Songs and Playlists one press from Home in both interfaces, back lands on them, Last Song List above Settings, center press returns under Home, Zune keeps Music, switching keeps the highlight.');app.quit();
+  await js(`savePreferences({interfaceStyle:'radial'});drawNavigation();`);p=await page();assert.ok(p.labels.startsWith('Now Playing, Last Song List, Liked Songs, Playlists'),p.labels);assert.equal(p.highlighted,'Liked Songs','and back again');
+  console.log('Home: Liked Songs and Playlists one press from Home in both interfaces, back lands on them, Last Song List above Liked Songs (and configurable), center press returns under Home, Zune keeps Music, switching keeps the highlight.');app.quit();
 }catch(error){console.error(error);app.exit(1);}});
