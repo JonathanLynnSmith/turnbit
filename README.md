@@ -114,8 +114,6 @@ If turnbit is fully transparent and you lose track of it, press **Ctrl + Alt + S
 
 All settings are saved between restarts.
 
-**Playback**
-
 | Setting | What it does | Default |
 | --- | --- | --- |
 | Volume | Opens a dedicated volume page | |
@@ -123,29 +121,23 @@ All settings are saved between restarts.
 | Preferred Device | The device turnbit reconnects to when playback has gone idle | Automatic |
 | Open Spotify Automatically | Starts the Spotify desktop app if no device is available | Off |
 | Keep Song Position | Selecting the song that is already playing opens Now Playing instead of restarting it | On |
-
-**Look and feel**
-
-| Setting | What it does | Default |
-| --- | --- | --- |
 | Screen edge | Docks the menu on the left or right | Left |
 | Smoky Background | Strength of the dark backdrop behind the menu | 24% |
 | Primary Color | Color of the menu text | |
 | Accent Color | Color of the current song, progress, and Now Playing controls | |
 | Transparency | Off, Always, or Idle Fade, with opacity and idle timeout | Off |
 | Keep on Top | Keeps turnbit above other windows | Off |
-
-**Behavior**
-
-| Setting | What it does | Default |
-| --- | --- | --- |
 | Idle to Now Playing | Switches to Now Playing after 10 seconds without input | On |
 | Open Song in Now Playing | Choosing a song opens Now Playing | On |
-| Follow Playing Song | After 10 seconds without input, a song list scrolls to the song that is playing | On |
 | Play Opens Now Playing | From a menu, the first Play press opens Now Playing | On |
+| Follow Playing Song | Recenters the playing song with a quick, smooth animation on wake after the idle fade timeout (10 seconds when idle fading is off) | On |
+| Mouse Click Through | Mouse input passes through the whole widget to windows behind it, even while visible. Use the D100H to navigate and turn this setting off. | Off |
+| Dial Only Wake | Media buttons control playback without revealing the widget; turn or press the dial to wake it | Off |
 | Reverse Dial Direction | Flips the dial's direction | Off |
 | Pin Widget | Pauses idle fading and the switch to Now Playing | Off |
 | Gaming Mode | Pauses decorative animations when you are not using turnbit | Off |
+
+Next and Previous animate the current song list to the newly playing song. Idle centering uses a short, eased animation when the widget wakes.
 
 To stay in the song list instead of switching to Now Playing, turn off **Idle to Now Playing** and **Open Song in Now Playing**.
 
@@ -222,3 +214,4 @@ Login uses Authorization Code with PKCE and a state-checked local callback. You 
 The turnbit software is released under the [MIT License](LICENSE).
 
 **turnbit™** is a trademark. The MIT License does not grant rights to the turnbit name or logo. The bundled Ulanzi SDK keeps its Apache 2.0 license (`libs/LICENSE` and `libs/NOTICE.md` in the plugin folder), and other third-party components keep their own licenses.
+
