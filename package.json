@@ -7,8 +7,8 @@
   "description": "iPod-like Spotify controller for Electron + Ulanzi D100H",
   "main": "src/main.js",
   "scripts": {
-    "start": "node scripts/start-dev.js",
-    "dev": "node scripts/start-dev.js",
+    "start": "electron .",
+    "dev": "electron .",
     "lint": "node --check src/main.js && node --check src/tray.js && node --check src/preload.js && node --check src/spotify.js && node --check src/media-session.js && node --check src/bridge.js && node --check src/visibility.js && node --check src/hardware-wake.js && node --check renderer/track-transition.js && node --check renderer/radial.js && node --check renderer/renderer.js && node --check renderer/navigation.js && node --check renderer/volume.js && node --check renderer/library-cache.js && node --check renderer/center-click.js && node --check renderer/transport-hold.js && node --check renderer/themes.js && node --check ulanzi-plugin/com.ulanzi.dialpod.ulanziPlugin/app.js",
     "test": "node --test",
     "check": "npm run lint && npm test",
@@ -16,9 +16,7 @@
     "plugin:install": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-plugin.ps1",
     "studio:restart": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/restart-studio.ps1",
     "smoke": "electron scripts/smoke.js",
-    "package": "electron-builder --dir",
-    "brand:dev": "node scripts/brand-dev-electron.js",
-    "postinstall": "node scripts/brand-dev-electron.js"
+    "package": "electron-builder --dir"
   },
   "devDependencies": {
     "electron": "^44.7.2",
