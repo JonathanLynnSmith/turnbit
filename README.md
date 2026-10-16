@@ -18,6 +18,7 @@ turnbit docks a transparent, curved menu along the edge of your screen. Turn the
 - **Targets Spotify only**: play, pause, and skip never land on a YouTube video or other app by mistake
 - **Picks up where you left off**: reconnects to your preferred Spotify device when playback has gone idle
 - **Custom colors** for the menu text and highlights
+- **Lives in the system tray** with play controls and an optional Start at Login, instead of a taskbar button
 
 ## Requirements
 
@@ -38,9 +39,11 @@ npm install
 npm start
 ```
 
+turnbit runs from the system tray. Closing or minimizing the widget hides it there; click the tray icon to bring it back, and use the tray menu to quit.
+
 Then [connect Spotify](#connect-spotify) and, if you have one, [set up the D100H](#set-up-the-ulanzi-d100h).
 
-To build a standalone app, run `npm run package`. The app is created in `dist\win-unpacked`; keep that whole folder together. Builds are unsigned, so Windows may show a warning the first time you run one.
+To build a standalone app, run `npm run package`. The app is created as `turnbit.exe` in `dist\win-unpacked`; keep that whole folder together. Builds are unsigned, so Windows may show a warning the first time you run one.
 
 ## Connect Spotify
 

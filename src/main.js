@@ -7,7 +7,8 @@ const { createBridge } = require('./bridge');
 const { VisibilityControl } = require('./visibility');
 const { HardwareWakeGate } = require('./hardware-wake');
 const { MediaSession } = require('./media-session');
-let mainWindow, spotify, bridge, bridgeError, media;
+const { createTray } = require('./tray');
+let mainWindow, spotify, bridge, bridgeError, media, tray, quitting = false;
 let visibility,visibilityTimer,wakeGate;
 let mousePassthrough=false,mouseIgnored=false,mouseFocusable=true;
 function syncMousePassthrough(){
@@ -26,7 +27,7 @@ function scheduleVisibility(){
 }
 function wakeVisibility(force=false){visibility?.wake(force);scheduleVisibility();}
 function createWindow() {
-  mainWindow = new BrowserWindow({ show: false, icon: path.join(__dirname, '../assets/branding/turnbit.ico'), width: 380, height: 710, minWidth: 360, minHeight: 700, maxWidth: 460, maxHeight: 800, frame: false, transparent: true, backgroundColor: '#00000000', resizable: true, webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: false } });
+  mainWindow = new BrowserWindow({ show: false, skipTaskbar: true, icon: path.join(__dirname, '../assets/branding/turnbit.ico'), width: 380, height: 710, minWidth: 360, minHeight: 700, maxWidth: 460, maxHeight: 800, frame: false, transparent: true, backgroundColor: '#00000000', resizable: true, webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: false } });
   // Running from the repo, the process is electron.exe; tell Windows which icon and command to use when pinned
   if(process.platform==='win32'&&!app.isPackaged)mainWindow.setAppDetails({appId:'com.nexez.desktopulanziipod',appIconPath:path.join(__dirname,'../assets/branding/turnbit.ico'),appIconIndex:0,relaunchCommand:`"${process.execPath}" "${app.getAppPath()}"`,relaunchDisplayName:'turnbit'});
   let invisible=false;
@@ -35,6 +36,9 @@ function createWindow() {
   scheduleVisibility();
   mainWindow.on('focus',()=>wakeVisibility());
   mainWindow.on('minimize',()=>send('app-visibility',{minimized:true}));mainWindow.on('restore',()=>send('app-visibility',{minimized:false}));
+  // Hidden in the tray counts as minimized, so rendering and polling slow down. Closing hides instead of quitting.
+  mainWindow.on('hide',()=>{send('app-visibility',{minimized:true});tray?.refresh();});mainWindow.on('show',()=>{send('app-visibility',{minimized:false});tray?.refresh();});
+  mainWindow.on('close',event=>{if(!quitting){event.preventDefault();hideWindow();}});
   // Stay hidden until the renderer applies its interface, so the default turnbit layout does not flash at the compact size first.
   mainWindow.once('ready-to-show',()=>{const fallback=setTimeout(revealWindow,1500);fallback.unref();});
   mainWindow.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
@@ -69,7 +73,9 @@ ipcMain.handle('app:hardware', () => ({ ...bridge?.status(), error: bridgeError 
 ipcMain.handle('app:visibility',(_,value,protectedView,dialOnlyWake,ignoreMouse)=>{mousePassthrough=ignoreMouse===true;syncMousePassthrough();if(wakeGate)wakeGate.dialOnlyWake=dialOnlyWake===true;const result=visibility?.configure(value,protectedView===true);scheduleVisibility();return result;});
 ipcMain.on('app:activity',()=>wakeVisibility());
 ipcMain.handle('app:pin', (_, pinned) => { mainWindow.setAlwaysOnTop(!!pinned); return mainWindow.isAlwaysOnTop(); });
-function revealWindow(){if(mainWindow&&!mainWindow.isDestroyed()&&!mainWindow.isVisible())mainWindow.show();}
+// Only the first reveal at startup; later interface updates must not pull turnbit back out of the tray.
+let revealed=false;
+function revealWindow(){if(revealed||!mainWindow||mainWindow.isDestroyed())return;revealed=true;if(!mainWindow.isVisible())mainWindow.show();}
 ipcMain.handle('app:interface',(_,style,side='left')=>{
   setImmediate(revealWindow);
   if(!['ipod','zune','radial'].includes(style))throw new Error('Unknown interface');
@@ -88,11 +94,16 @@ ipcMain.handle('app:open-external', (_, url) => {
   if (parsed.protocol !== 'https:' || parsed.hostname !== 'developer.spotify.com') throw new Error('Unsupported external link.');
   return shell.openExternal(parsed.href);
 });
-ipcMain.handle('app:minimize', () => mainWindow?.minimize());
-ipcMain.handle('app:close', () => mainWindow?.close());
+function showWindow(){if(!mainWindow||mainWindow.isDestroyed())return;wakeVisibility(true);if(mainWindow.isMinimized())mainWindow.restore();mainWindow.show();mainWindow.focus();}
+function hideWindow(){if(mainWindow&&!mainWindow.isDestroyed())mainWindow.hide();}
+function trayCommand(command){const next=commandQueue.then(()=>spotify.command(command));commandQueue=next.catch(()=>{});next.catch(error=>send('spotify-state',{error:error.message}));}
+// With no taskbar button, minimize and close both tuck turnbit into the tray.
+ipcMain.handle('app:minimize', () => hideWindow());
+ipcMain.handle('app:close', () => hideWindow());
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
-  app.on('second-instance', () => { wakeVisibility(true);mainWindow?.restore(); mainWindow?.focus(); });
+  app.on('second-instance', () => showWindow());
+  app.on('before-quit', () => { quitting = true; });
   app.whenReady().then(() => {
     const file = path.join(app.getPath('userData'), 'spotify-session.json'), limits = path.join(app.getPath('userData'), 'rate-limits.json');
     if (process.platform === 'win32') media = new MediaSession(state => spotify?.localChanged(state));
@@ -100,10 +111,13 @@ else {
     media?.start();
     bridge = createBridge(event => {const action=wakeGate?.handle(event)||'forward';scheduleVisibility();if(action==='forward')send('device-event',event);else if(action==='wake')send('device-event',{type:'wake'});}, Number(process.env.DIALPOD_BRIDGE_PORT || 4765));
     bridge.on('error', error => { bridgeError = `D100H bridge unavailable: ${error.message}`; send('bridge-error', bridgeError); });
+    if (process.platform === 'darwin') app.dock?.hide();
     createWindow();
-    if(!process.env.DIALPOD_BRIDGE_PORT)globalShortcut.register('Control+Alt+Shift+D',()=>{wakeVisibility(true);mainWindow?.restore();mainWindow?.focus();});
-    app.on('activate', () => { if (!BrowserWindow.getAllWindows().length) createWindow(); });
+    tray = createTray({ isVisible: () => !!mainWindow?.isVisible(), show: showWindow, hide: hideWindow, command: trayCommand, quit: () => { quitting = true; app.quit(); } });
+    if(!process.env.DIALPOD_BRIDGE_PORT)globalShortcut.register('Control+Alt+Shift+D',()=>showWindow());
+    app.on('activate', () => { if (!BrowserWindow.getAllWindows().length) createWindow(); else showWindow(); });
   });
-  app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
-  app.on('will-quit', () => { clearTimeout(visibilityTimer);globalShortcut.unregisterAll();spotify?.cancelLogin(); media?.stop(); bridge?.close(); });
+  // A tray app keeps running with no window; Quit is in the tray menu.
+  app.on('window-all-closed', () => { if (quitting) app.quit(); });
+  app.on('will-quit', () => { clearTimeout(visibilityTimer);globalShortcut.unregisterAll();spotify?.cancelLogin(); media?.stop(); bridge?.close(); tray?.tray.destroy(); });
 }
