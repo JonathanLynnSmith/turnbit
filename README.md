@@ -93,7 +93,7 @@ To set this up in one step, import the profile included in the `ulanzi-plugin` f
 | --- | --- |
 | Turn the dial | Move through the menu. On Now Playing, change the volume. |
 | Press the dial | Select |
-| Double-press the dial | Go back. From Now Playing, go Home. |
+| Double-press the dial | Go back one level, or straight Home with **Dial Double-Press** set to Home |
 | Menu / Back | Go back. From Now Playing, go Home. |
 | Play / Pause | Pause or resume. From a menu, the first press opens Now Playing. |
 | Previous / Next | Tap to skip. Hold to rewind or fast-forward. |
@@ -139,6 +139,7 @@ All settings are saved between restarts.
 | Mouse Click Through | Mouse input passes through the whole widget to windows behind it, even while visible. Use the D100H to navigate and turn this setting off. | Off |
 | Dial Only Wake | While turnbit is faded out, media buttons control playback without waking it or changing screens; turn or press the dial to wake it | Off |
 | Reverse Dial Direction | Flips the dial's direction | Off |
+| Dial Double-Press | What a double-press of the dial does: go Back one level, or go Home | Back |
 | Back in Lists | Shows a Back row at the top of every list below Home | On |
 | Hover Shortcuts | Resting for a second on Back, Now Playing (top of Home), or Load more (end of a long list) runs it, with a ring showing the countdown | On |
 | Pin Widget | Pauses idle fading and the switch to Now Playing | Off |
