@@ -4,7 +4,7 @@
   <img src="assets/branding/turnbit-logo-black-tm.svg" alt="turnbit" width="360">
 </picture>
 
-**A floating Spotify controller for your Windows desktop, driven by a rotary dial.**
+**A floating Spotify controller for your desktop, driven by a rotary dial.**
 
 turnbit docks a transparent, curved menu along the edge of your screen. Turn the Ulanzi D100H dial to browse playlists and songs, press to play, and keep album art and playback controls one turn away. Your music keeps playing in Spotify; turnbit is the remote.
 
@@ -22,11 +22,11 @@ turnbit docks a transparent, curved menu along the edge of your screen. Turn the
 - **Targets Spotify only**: play, pause, and skip never land on a YouTube video or other app by mistake
 - **Picks up where you left off**: reconnects to your preferred Spotify device when playback has gone idle
 - **Custom colors** for the menu text and highlights
-- **Lives in the system tray** with play controls and an optional Start at Login, instead of a taskbar button
+- **Lives in the system tray or menu bar** with play controls and an optional Start at Login, instead of a taskbar or Dock icon
 
 ## Requirements
 
-- Windows 10 or 11
+- Windows 10 or 11 (macOS builds are not tested yet)
 - [Node.js](https://nodejs.org/) 20 or newer
 - Spotify Premium and the Spotify app (desktop, phone, or any Spotify Connect device)
 - A free [Spotify developer app](https://developer.spotify.com/dashboard) (setup below)
@@ -36,18 +36,18 @@ Without a dial, you can use the mouse and keyboard. Without Spotify connected, t
 
 ## Quick start
 
-```powershell
+```bash
 git clone https://github.com/JonathanLynnSmith/turnbit.git
 cd turnbit
 npm install
 npm start
 ```
 
-turnbit runs from the system tray. Closing or minimizing the widget hides it there; click the tray icon to bring it back, and use the tray menu to quit.
+turnbit runs from the system tray or menu bar. Closing or minimizing the widget hides it there; click the turnbit icon to bring it back, and use its menu to quit.
 
 Then [connect Spotify](#connect-spotify) and, if you have one, [set up the D100H](#set-up-the-ulanzi-d100h).
 
-To build a standalone app, run `npm run package`. The app is created as `turnbit.exe` in `dist\win-unpacked`; keep that whole folder together. Builds are unsigned, so Windows may show a warning the first time you run one.
+To build a standalone app, run `npm run package`. On Windows, the app is created as `turnbit.exe` in `dist\win-unpacked`; keep that whole folder together. Builds are unsigned, so Windows may show a warning the first time you run one.
 
 ## Connect Spotify
 
@@ -57,16 +57,16 @@ To build a standalone app, run `npm run package`. The app is created as `turnbit
 4. In turnbit, open **Settings > Playback > Spotify Connection**, paste your app's **Client ID**, and select **Connect Spotify**.
 5. Approve access in your browser, then start a song in Spotify.
 
-No client secret is needed. Your login is saved encrypted with Windows (DPAPI), and **Disconnect** deletes it.
+No client secret is needed. Your login is saved encrypted by your system's secure storage, and **Disconnect** deletes it.
 
 > [!NOTE]
 > Spotify development-mode apps are limited to a few authorized users. See [Spotify quota modes](https://developer.spotify.com/documentation/web-api/concepts/quota-modes).
 
 ## Set up the Ulanzi D100H
 
-Install the turnbit plugin into Ulanzi Studio, then restart Studio's background process so it loads:
+Install the turnbit plugin into Ulanzi Studio, then restart Studio's background process so it loads (these install scripts currently run on Windows):
 
-```powershell
+```bash
 npm run plugin:build
 npm run plugin:install
 npm run studio:restart
@@ -165,7 +165,7 @@ When turnbit has faded out with Idle Fade, the first dial turn or press only wak
 ## How it works
 
 - turnbit controls Spotify through the [Spotify Web API](https://developer.spotify.com/documentation/web-api). Audio always plays in Spotify itself.
-- When the Spotify desktop app is playing on the same PC, play, pause, skip, and seek go straight to Spotify's own Windows media session. They work instantly, use no API calls, and never affect other apps.
+- On Windows, when the Spotify desktop app is playing on the same PC, play, pause, skip, and seek go straight to Spotify's own media session. They work instantly, use no API calls, and never affect other apps.
 - If you start a song after Spotify has gone idle, turnbit reconnects to your Preferred Device (opening Spotify first, if you allow it) and tries the song again.
 - turnbit checks Spotify less often when music is paused or the window is hidden, which helps it stay within Spotify's rate limits.
 - If Spotify rate-limits a feature, only that feature pauses, and turnbit shows when it will be available again.
@@ -183,7 +183,13 @@ When turnbit has faded out with Idle Fade, the first dial turn or press only wak
 To see every Spotify API call and any rate-limit wait, start turnbit with logging on:
 
 ```powershell
+# Windows (PowerShell)
 $env:TURNBIT_DEBUG_API=1; npm start
+```
+
+```bash
+# macOS / Linux
+TURNBIT_DEBUG_API=1 npm start
 ```
 
 ## Development
