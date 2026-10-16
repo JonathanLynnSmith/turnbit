@@ -267,7 +267,8 @@ let likeRequests=0;
 let demoShuffle=false,demoRepeat='off';
 async function command(cmd,value) {
   if(!preferences.dialOnlyWake||!['toggle','next','previous','seek','like','shuffle','repeat','volume'].includes(cmd))noteActivity();
-  const quietPlay=preferences.dialOnlyWake&&(visibilityState.invisible||(preferences.visibility.mode==='idle'&&Date.now()-lastVisualActivity>=preferences.visibility.timeout*1000));
+  // Dial-only wake overrides Play Opens Now Playing, including during a fade.
+  const quietPlay=preferences.dialOnlyWake;
   if(['next','previous'].includes(cmd))pendingSkipFollow={page:nav.current,key:demo?'demo:'+index:playback?.item?.uri,until:Date.now()+20000};
   message();
   if(cmd==='pin'){toggleIdlePin();return true;}

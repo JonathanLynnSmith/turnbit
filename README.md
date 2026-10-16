@@ -132,7 +132,7 @@ All settings are saved between restarts.
 | Play Opens Now Playing | From a menu, the first Play press opens Now Playing | On |
 | Follow Playing Song | Recenters the playing song with a quick, smooth animation on wake after the idle fade timeout (10 seconds when idle fading is off) | On |
 | Mouse Click Through | Mouse input passes through the whole widget to windows behind it, even while visible. Use the D100H to navigate and turn this setting off. | Off |
-| Dial Only Wake | Media buttons control playback without revealing the widget; turn or press the dial to wake it | Off |
+| Dial Only Wake | Media buttons control playback without revealing the widget; turn or press the dial to wake it. Overrides Play Opens Now Playing, so Play/Pause always controls playback directly | Off |
 | Reverse Dial Direction | Flips the dial's direction | Off |
 | Pin Widget | Pauses idle fading and the switch to Now Playing | Off |
 | Gaming Mode | Pauses decorative animations when you are not using turnbit | Off |
