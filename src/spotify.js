@@ -24,6 +24,9 @@ class SpotifyClient {
     // Optional Windows media session for the Spotify desktop app: local state and transport without Web API calls.
     this.media=options.media||null;this.webCacheMs=options.webCacheMs??25000;this.lastLocal=null;this.mismatchRetries=0;
     this.waitForLike=options.waitForLike||(ms=>new Promise(resolve=>{const timer=setTimeout(resolve,ms);timer.unref();}));
+    this.recovery={preferredDevice:null,autoLaunchSpotify:false};this.configureRecovery(options.recovery||{});
+    this.launchSpotify=options.launchSpotify||(()=>this.openExternal('spotify:'));
+    this.waitForDevice=options.waitForDevice||(ms=>new Promise(resolve=>setTimeout(resolve,ms)));
   }
   status() { return { clientId: this.clientId, connected: !!this.refreshToken, authorizing: !!this.server }; }
   configure(clientId) {
@@ -150,6 +153,42 @@ class SpotifyClient {
     this.emit(state);return state;
   }
   getDevices() { return this.api('/me/player/devices'); }
+  configureRecovery(value={}){
+    if(Object.hasOwn(value,'preferredDevice')){
+      const device=value.preferredDevice;
+      if(device!==null&&(!device||typeof device.id!=='string'||!device.id||device.id.length>256||typeof device.name!=='string'||device.name.length>256))throw new Error('Select a valid preferred device.');
+      const changed=JSON.stringify(this.recovery.preferredDevice)!==JSON.stringify(device?{id:device.id,name:device.name,type:String(device.type||'').slice(0,64)}:null);
+      this.recovery.preferredDevice=device?{id:device.id,name:device.name,type:String(device.type||'').slice(0,64)}:null;
+      if(changed)this.deviceId=device?.id||'';
+    }
+    if(typeof value.autoLaunchSpotify==='boolean')this.recovery.autoLaunchSpotify=value.autoLaunchSpotify;
+    return {...this.recovery};
+  }
+  recoveryDevice(devices=[]){
+    const available=(Array.isArray(devices)?devices:[]).filter(device=>device.id&&!device.is_restricted),preferred=this.recovery.preferredDevice;
+    if(preferred){const exact=available.find(device=>device.id===preferred.id);if(exact)return exact;const matches=available.filter(device=>device.name===preferred.name&&device.type?.toLowerCase()===preferred.type?.toLowerCase());return matches.length===1?matches[0]:null;}
+    return available.find(device=>device.is_active)||(available.filter(device=>device.type?.toLowerCase()==='computer').length===1?available.find(device=>device.type?.toLowerCase()==='computer'):available.length===1?available[0]:null);
+  }
+  async recoverDevice(){
+    this.onState({recoveryMessage:'Connecting to Spotify…'});
+    if(this.pendingPlay)this.pendingPlay.until=Date.now()+30000;
+    let device=this.recoveryDevice((await this.getDevices())?.devices);
+    if(!device&&this.recovery.autoLaunchSpotify){
+      await this.launchSpotify();
+      for(const delay of [500,1500,3000]){await this.waitForDevice(delay);device=this.recoveryDevice((await this.getDevices())?.devices);if(device)break;}
+    }
+    if(!device)throw new Error(this.recovery.preferredDevice?'Preferred Spotify device is unavailable. Open Spotify on that device or choose another preferred device.':'No Spotify device is available. Open Spotify or select a preferred device in Settings.');
+    await this.api('/me/player',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({device_ids:[device.id],play:false})});
+    this.deviceId=device.id;
+    if(this.recovery.preferredDevice){this.recovery.preferredDevice={id:device.id,name:device.name,type:device.type};this.onState({recoveredDevice:this.recovery.preferredDevice});}
+    await this.waitForDevice(300);
+  }
+  async startPlayback(body){
+    const send=()=>this.api(`/me/player/play${this.deviceId?`?device_id=${encodeURIComponent(this.deviceId)}`:''}`,{method:'PUT',...(body?{headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{})});
+    try{return await send();}catch(error){if(error.status!==404)throw error;}
+    await this.recoverDevice();
+    try{const result=await send();this.onState({recoveryMessage:'Spotify reconnected · playback request sent'});return result;}catch(error){if(error.status===404)throw new Error('Spotify is still starting. Try Play again in a moment.');throw error;}
+  }
   publishLike(uri,entry,error){
     if(this.likeStates.get(uri)!==entry)return;
     this.stateRevision++;
@@ -216,7 +255,7 @@ class SpotifyClient {
       else throw new Error('This item cannot be played through Spotify.');
       const pending=valid(value?.item?.uri)?{item:value.item,until:Date.now()+8000}:null;
       if(pending){this.pendingPlay=pending;this.emit(this.playbackState);}
-      try{await this.api(`/me/player/play${this.deviceId?`?device_id=${encodeURIComponent(this.deviceId)}`:''}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});}
+      try{await this.startPlayback(body);}
       catch(error){if(this.pendingPlay===pending&&pending){this.pendingPlay=null;this.emit(this.playbackState);}throw error;}
       if(pending)this.scheduleRefresh(1500);return;
     }
@@ -226,8 +265,13 @@ class SpotifyClient {
     }
     // Transport goes to Spotify's own Windows media session when it is the active player; the Web API is the fallback.
     const localReady={play:true,pause:true,toggle:true,next:this.media?.state?.canNext,previous:this.media?.state?.canPrevious,seek:this.media?.state?.canSeek&&Number.isFinite(value)};
+    if(['play','toggle'].includes(command)&&!this.playbackState?.device&&!this.deviceId&&!this.recovery.preferredDevice&&this.media?.state?.available&&await this.media.command('play'))return;
     if(localReady[command]&&this.localTrusted()&&await this.media.command(command,value))return;
-    if (command === 'toggle') command = (await this.getPlaybackState())?.is_playing ? 'pause' : 'play';
+    if (command === 'toggle') {
+      let state;try{state=await this.getPlaybackState();}catch(error){if(error.status!==404)throw error;}
+      command=state?.is_playing?'pause':'play';
+    }
+    if(command==='play'){await this.startPlayback();return;}
     const methods = { play: 'PUT', pause: 'PUT', next: 'POST', previous: 'POST', seek: 'PUT', volume: 'PUT' };
     if (!methods[command]) throw new Error(`Unknown playback command: ${command}`);
     const params = new URLSearchParams(); if (this.deviceId) params.set('device_id', this.deviceId);
