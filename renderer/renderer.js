@@ -506,7 +506,7 @@ const centerClick=new window.CenterClick(()=>selectItem(true),()=>menuBack());
 const transportHold=new window.TransportHold(direction=>command(direction>0?'next':'previous'),delta=>{if(!preferences.dialOnlyWake)noteActivity();seek(currentProgress()+delta);});
 function hardwareEvent(event){
   const previous=silentHardwareActivity;
-  silentHardwareActivity=preferences.dialOnlyWake&&event.type!=='dial'&&!['center-down','center-up','center-click','select','touch'].includes(event.command)&&event.type!=='wake';
+  silentHardwareActivity=preferences.dialOnlyWake&&event.type!=='dial'&&!['center-down','center-up','center-click','select'].includes(event.command)&&event.type!=='wake';
   try{return handleHardwareEvent(event);}finally{silentHardwareActivity=previous;}
 }
 function handleHardwareEvent(event) {

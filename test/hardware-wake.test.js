@@ -32,7 +32,7 @@ test('permanent partial opacity does not swallow controls',()=>{
 
 test('dial-only wake leaves media and Menu presses idle, but dial gestures wake',()=>{
   const {gate,visibility,event,sleep}=fixture();gate.dialOnlyWake=true;
-  for(const command of ['toggle','next-down','next-up','previous-down','previous-up','like','shuffle','repeat','menu-down','menu-up']){
+  for(const command of ['touch','toggle','next-down','next-up','previous-down','previous-up','like','shuffle','repeat','menu-down','menu-up']){
     sleep();const deadline=visibility.lastActivity;assert.equal(event(command),'forward');assert.equal(visibility.lastActivity,deadline);assert.equal(visibility.isIdle(),true);
   }
   assert.equal(gate.handle({type:'dial',delta:1}),'wake');assert.equal(visibility.isIdle(),false);

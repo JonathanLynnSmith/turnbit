@@ -8,14 +8,14 @@ app.whenReady().then(async()=>{try{
   const post=async event=>{const response=await fetch('http://127.0.0.1:4778/device/event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(event)});assert.equal(response.status,204);await wait(80);};
   await js(`savePreferences({dialOnlyWake:true,mousePassthrough:false,idleNowPlaying:false,idlePinned:false,playOpensNowPlaying:true,interfaceStyle:'radial',visibility:{mode:'idle',opacity:100,idleOpacity:0,timeout:1}});demo=true;playing=true;nav.reset(root());drawNavigation();lastMouseActivity=Date.now()+60000;noteActivity();`);
   const activity=await js(`lastVisualActivity`);
-  await post({type:'command',command:'toggle'});
+  await post({type:'command',command:'touch'});await post({type:'command',command:'toggle'});
   assert.equal(await js(`!playing&&nav.current.kind==='list'&&lastVisualActivity===${activity}`),true);
   await wait(1000);const fading=window.getOpacity();assert.ok(fading<1&&fading>0);
-  await post({type:'command',command:'toggle'});assert.equal(await js(`playing&&nav.current.kind==='list'`),true);assert.ok(window.getOpacity()<=fading);
+  await post({type:'command',command:'touch'});await post({type:'command',command:'toggle'});assert.equal(await js(`playing&&nav.current.kind==='list'`),true);assert.ok(window.getOpacity()<=fading);
   await wait(700);assert.equal(await js(`visibilityState.invisible`),true);
-  await post({type:'command',command:'toggle'});assert.equal(await js(`!playing&&visibilityState.invisible&&nav.current.kind==='list'`),true);assert.equal(window.getOpacity(),0);
+  await post({type:'command',command:'touch'});await post({type:'command',command:'toggle'});assert.equal(await js(`!playing&&visibilityState.invisible&&nav.current.kind==='list'`),true);assert.equal(window.getOpacity(),0);
   await post({type:'dial',delta:1});assert.equal(await js(`!visibilityState.invisible`),true);
   await js(`savePreferences({dialOnlyWake:false});`);
-  await post({type:'command',command:'toggle'});assert.equal(await js(`!playing&&nav.current.kind==='now'`),true);
+  await post({type:'command',command:'touch'});await post({type:'command',command:'toggle'});assert.equal(await js(`!playing&&nav.current.kind==='now'`),true);
   console.log('Play/Pause respects Dial Only Wake before, during and after fading; dial wakes; default Play Opens Now Playing preserved.');app.quit();
 }catch(error){console.error(error);app.exit(1);}});
