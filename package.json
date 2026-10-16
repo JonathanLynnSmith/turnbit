@@ -23,7 +23,7 @@
     "electron-builder": "^26.15.3"
   },
   "build": {
-    "appId": "com.nexez.desktopulanziipod",
+    "appId": "com.turnbit.app",
     "productName": "turnbit",
     "files": [
       "src/**/*",

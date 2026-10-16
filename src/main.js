@@ -1,7 +1,9 @@
 const { app, BrowserWindow, ipcMain, shell, safeStorage, globalShortcut, screen } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
-if(process.platform==='win32')app.setAppUserModelId('com.nexez.desktopulanziipod');
+// Must match build.appId in package.json; Windows and macOS use it to recognize turnbit across installs and updates.
+const APP_ID='com.turnbit.app';
+if(process.platform==='win32')app.setAppUserModelId(APP_ID);
 const { SpotifyClient } = require('./spotify');
 const { createBridge } = require('./bridge');
 const { VisibilityControl } = require('./visibility');
@@ -29,7 +31,7 @@ function wakeVisibility(force=false){visibility?.wake(force);scheduleVisibility(
 function createWindow() {
   mainWindow = new BrowserWindow({ show: false, skipTaskbar: true, icon: path.join(__dirname, '../assets/branding/turnbit.ico'), width: 380, height: 710, minWidth: 360, minHeight: 700, maxWidth: 460, maxHeight: 800, frame: false, transparent: true, backgroundColor: '#00000000', resizable: true, webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: false } });
   // Running from the repo, the process is electron.exe; tell Windows which icon and command to use when pinned
-  if(process.platform==='win32'&&!app.isPackaged)mainWindow.setAppDetails({appId:'com.nexez.desktopulanziipod',appIconPath:path.join(__dirname,'../assets/branding/turnbit.ico'),appIconIndex:0,relaunchCommand:`"${process.execPath}" "${app.getAppPath()}"`,relaunchDisplayName:'turnbit'});
+  if(process.platform==='win32'&&!app.isPackaged)mainWindow.setAppDetails({appId:APP_ID,appIconPath:path.join(__dirname,'../assets/branding/turnbit.ico'),appIconIndex:0,relaunchCommand:`"${process.execPath}" "${app.getAppPath()}"`,relaunchDisplayName:'turnbit'});
   let invisible=false;
   visibility=new VisibilityControl(value=>{if(mainWindow&&!mainWindow.isDestroyed()){const nextInvisible=value===0;if(nextInvisible!==invisible){invisible=nextInvisible;send('app-visibility',{invisible});}syncMousePassthrough();mainWindow.setOpacity(value);}});
   wakeGate=new HardwareWakeGate(visibility);
