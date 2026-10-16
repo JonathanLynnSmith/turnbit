@@ -98,7 +98,7 @@ To set this up in one step, import the profile included in the `ulanzi-plugin` f
 | Play / Pause | Pause or resume. From a menu, the first press opens Now Playing. |
 | Previous / Next | Tap to skip. Hold to rewind or fast-forward. |
 
-Every list below Home starts with a **Back** row, so you can get around with the dial alone. Turn up past the first item and press.
+Every list below Home starts with a **Back** row, so you can get around with the dial alone. Turn up past the first item and press, or just rest on it for a second: a small ring fills and turnbit goes back on its own.
 
 ### Keyboard
 
@@ -139,6 +139,8 @@ All settings are saved between restarts.
 | Mouse Click Through | Mouse input passes through the whole widget to windows behind it, even while visible. Use the D100H to navigate and turn this setting off. | Off |
 | Dial Only Wake | While turnbit is faded out, media buttons control playback without waking it or changing screens; turn or press the dial to wake it | Off |
 | Reverse Dial Direction | Flips the dial's direction | Off |
+| Back in Lists | Shows a Back row at the top of every list below Home | On |
+| Hover to Go Back | Resting on the Back row for a second goes back, with a ring showing the countdown | On |
 | Pin Widget | Pauses idle fading and the switch to Now Playing | Off |
 | Gaming Mode | Pauses decorative animations when you are not using turnbit | Off |
 
