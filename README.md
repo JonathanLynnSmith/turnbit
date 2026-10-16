@@ -8,9 +8,7 @@
 
 turnbit docks a transparent, curved menu along the edge of your screen. Turn the Ulanzi D100H dial to browse playlists and songs, press to play, and keep album art and playback controls one turn away. Your music keeps playing in Spotify; turnbit is the remote.
 
-<p align="center">
-  <img src="assets/demo/turnbit-demo.gif" alt="turnbit demo: browsing a long song list on the curved menu, playing a song, adjusting volume on Now Playing, and the hover shortcuts on Back and Now Playing" width="420">
-</p>
+<img src="assets/demo/turnbit-demo.gif" alt="turnbit demo: browsing a long song list on the curved menu, playing a song, adjusting volume on Now Playing, and the hover shortcuts on Back and Now Playing" width="420">
 
 ## Features
 
