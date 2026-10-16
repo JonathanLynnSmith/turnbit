@@ -300,7 +300,7 @@ function menuBack() {
   if($('#settings').open){$('#settings').close();return;}
   if(preferences.interfaceStyle==='zune'&&nav.stack.length===1&&!nav.idlePage){showNow();return;}
   if(nav.current.kind==='now'&&preferences.interfaceStyle==='ipod'){nav.goHome();drawNavigation();message();return;}
-  nav.back();drawNavigation();message();
+  const fromNow=nav.current.kind==='now';nav.back();drawNavigation();message();if(fromNow)selectPlayingSong();
 }
 function dialogControls() { return [...$('#settings').querySelectorAll('button:not(:disabled),input,a,summary')]; }
 function rotate(delta) {
@@ -316,11 +316,12 @@ function push(page) { noteActivity();const result=nav.push(page);drawNavigation(
 function showNow() { if(nav.current.kind!=='now')push({title:'Now Playing',kind:'now'});render(); }
 function returnToSongList() {
   noteActivity();
-  if(nav.returnToMusic()){drawNavigation();return;}
+  if(nav.returnToMusic()){drawNavigation();selectPlayingSong();return;}
   const uri=playback?.context?.uri;
   nav.goHome();showMusic();
   if(/^spotify:playlist:[a-zA-Z0-9]{22}$/.test(uri||''))showLibrary('playlist',{id:uri.split(':')[2],uri,name:'Current Playlist'});
   else showLibrary('songs');
+  selectPlayingSong();
 }
 function showMusic() { if(preferences.interfaceStyle==='zune'){showLibrary('playlists');return;}push({title:'Music',rows:[{label:'Playlists',action:'playlists',branch:true},{label:'Liked Songs',action:'songs',branch:true}],hint:demo?'Demo library · no audio':'Songs are your Spotify Liked Songs'}); }
 function radialSettingsRows(){return [{label:'Screen edge',action:'radial-side',detail:preferences.radialSide==='left'?'Left':'Right'},{label:'Smoky Background',action:'radial-background',detail:preferences.radialBackground?preferences.radialBackground+'%':'Off',branch:true,showDetail:true},{label:'Primary Color',action:'radial-color',key:'primaryHue',detail:radialColorName(preferences.primaryHue),branch:true},{label:'Accent Color',action:'radial-color',key:'accentHue',detail:radialColorName(preferences.accentHue),branch:true}];}
@@ -395,7 +396,7 @@ async function loadLibrary(page,offset=0) {
   }catch(e){
     page.rows=[...baseRows,{label:'Retry loading',action:'retry',offset,branch:true}];
     if(nav.current===page)message(e.status===403?'Spotify denied browsing. Reconnect for library permissions; playlist contents require ownership or collaboration.':e.message);
-  }finally{page.loading=false;page.selected=Math.min(page.selected,Math.max(0,page.rows.length-1));if(nav.current===page)drawNavigation();}
+  }finally{page.loading=false;page.selected=Math.min(page.selected,Math.max(0,page.rows.length-1));if(nav.current===page)drawNavigation();if(page.selectPlayingOnLoad){page.selectPlayingOnLoad=false;selectPlayingSong(page);}}
 }
 let lastSongListPage=null;
 function lastSongListRow(){return {label:'Last Song List',action:'last-song-list',detail:preferences.lastSongList?.name||'',branch:true,showDetail:true};}
@@ -409,6 +410,15 @@ function rememberSongList(page){
 function openLastSongList(){
   if(lastSongListPage&&!lastSongListPage.loading){const page=push(lastSongListPage);lastSongListPage=page;nav.rememberMusic();return;}
   const source=preferences.lastSongList;if(source)showLibrary(source.kind,source.playlist);
+}
+// Returning from Now Playing turns the song list to the playing song, so nobody has to search for it.
+// A list that is still loading does this once its songs arrive.
+function selectPlayingSong(page=nav.current){
+  if(!['songs','playlist'].includes(page?.libraryKind))return false;
+  if(page.loading){page.selectPlayingOnLoad=true;return false;}
+  const current=page.rows.findIndex(isCurrentSong);if(current<0||current===page.selected)return false;
+  page.selected=current;if(nav.current!==page)return true;
+  if(preferences.interfaceStyle==='radial')radial.animateTo(current);drawNavigation();return true;
 }
 let pendingSkipFollow=null;
 function followSkippedSong(){
