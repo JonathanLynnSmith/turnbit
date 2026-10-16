@@ -98,6 +98,8 @@ To set this up in one step, import the profile included in the `ulanzi-plugin` f
 | Play / Pause | Pause or resume. From a menu, the first press opens Now Playing. |
 | Previous / Next | Tap to skip. Hold to rewind or fast-forward. |
 
+Every list below Home starts with a **Back** row, so you can get around with the dial alone. Turn up past the first item and press.
+
 ### Keyboard
 
 These work when turnbit has focus.
