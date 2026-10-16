@@ -26,6 +26,7 @@ class SpotifyClient {
     this.likedCache=null;this.likedRecheck=options.likedRecheck??60000;
     // Optional Windows media session for the Spotify desktop app: local state and transport without Web API calls.
     this.media=options.media||null;this.webCacheMs=options.webCacheMs??25000;this.lastLocal=null;this.mismatchRetries=0;
+    this.serverRetryMs=options.serverRetryMs??1500;this.wait=options.wait||(ms=>new Promise(resolve=>{const timer=setTimeout(resolve,ms);timer.unref?.();}));
     this.waitForLike=options.waitForLike||(ms=>new Promise(resolve=>{const timer=setTimeout(resolve,ms);timer.unref();}));
     this.recovery={preferredDevice:null,autoLaunchSpotify:false};this.configureRecovery(options.recovery||{});
     this.launchSpotify=options.launchSpotify||(()=>this.openExternal('spotify:'));
@@ -50,7 +51,8 @@ class SpotifyClient {
     try { data = text ? JSON.parse(text) : null; } catch { data = null; }
     if (!response.ok) {
       const hints = { 403: 'Spotify denied access. Check Premium, your app user allowlist, and playback permissions.', 404: 'No active Spotify device. Open Spotify and start a track, then select a device.', 429: 'Spotify rate limit reached. Waiting for cooldown.' };
-      const error = new Error(hints[response.status] || data?.error?.message || data?.error_description || `Spotify HTTP ${response.status}`); error.status = response.status;
+      const serverError = response.status >= 500;
+      const error = new Error(hints[response.status] || (serverError ? 'Spotify is having trouble right now. Try again in a moment.' : data?.error?.message || data?.error_description || `Spotify HTTP ${response.status}`)); error.status = response.status;
       if (response.status === 429) error.retryAfter = Math.max(1, Number(response.headers.get('retry-after')) || 30);
       throw error;
     }
@@ -101,7 +103,10 @@ class SpotifyClient {
     if (Date.now() < until) throw cooldownError(group, until);
     const request = async () => this.request(`${API}${path}`, { ...options, headers: { Authorization: `Bearer ${await this.ensureToken()}`, ...options.headers } });
     try {
-      try { return await request(); } catch (error) { if (error.status !== 401 || !this.refreshToken) throw error; this.token = null; return await request(); }
+      try { return await request(); } catch (error) {
+        if (error.status >= 500 && (!options.method || options.method === 'GET')) { await this.wait(this.serverRetryMs); return await request(); }
+        if (error.status !== 401 || !this.refreshToken) throw error; this.token = null; return await request();
+      }
     } catch (error) {
       if (error.status === 429 && error.retryAfter) { const at = Date.now() + error.retryAfter * 1000; this.cooldowns.set(group, at); this.saveCooldowns(); throw cooldownError(group, at); }
       throw error;

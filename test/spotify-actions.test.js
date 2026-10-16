@@ -65,3 +65,10 @@ test('Rate-limit cooldowns are saved and honored after a restart',async()=>{
  assert.deepEqual([...restarted.cooldowns.keys()],['library']);
  restarted.configure('b'.repeat(32));assert.equal(restarted.cooldowns.size,0);
 });
+test('Spotify server errors show a clear message and read-only requests retry once',async()=>{
+ const gateway=()=>new Response('no healthy upstream',{status:503});let calls=0,fail=1;
+ const client=new SpotifyClient(()=>{},{wait:async()=>{},fetch:async(url,options)=>{calls++;if(calls<=fail)return gateway();if(options.method)return new Response(null,{status:204});return new Response(JSON.stringify({items:[],total:0}));}});client.setTokens({access_token:'t',refresh_token:'t',expires_in:3600});
+ assert.equal((await client.library('songs')).total,0);assert.equal(calls,2,'one failure then a successful retry');
+ calls=0;fail=5;await assert.rejects(client.library('songs'),/Spotify is having trouble right now/);assert.equal(calls,2,'only one retry');
+ calls=0;fail=5;await assert.rejects(client.command('next'),/Spotify is having trouble right now/);assert.equal(calls,1,'actions are not repeated');
+});
