@@ -12,8 +12,9 @@ body[data-interface=radial] #radial{display:block;position:relative;width:min(52
 .radial-label:disabled{cursor:default}
 #radialContext,#radialStatus{text-align:left;position:absolute;left:32px;right:32px;pointer-events:none;font-size:9px;letter-spacing:2.5px;color:#d1e9df;opacity:.45;text-shadow:0 1px 4px #000;z-index:1}
 #radialContext{top:28px}#radialStatus{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;bottom:28px;font-variant-numeric:tabular-nums;letter-spacing:1.8px}
-body[data-edge=left] .radial-label{text-align:right;transform-origin:right center}
-body[data-edge=left] #radialContext,body[data-edge=left] #radialStatus{text-align:right}
+/* List text alignment follows Text Alignment (data-align); panel placement follows the docked edge (data-edge). */
+body[data-align=right] .radial-label{text-align:right;transform-origin:right center}
+body[data-align=right] #radialContext,body[data-align=right] #radialStatus{text-align:right}
 body[data-interface=radial] dialog{color:#29343c}
 @media(prefers-reduced-motion:reduce){.radial-label{will-change:auto}}
 
@@ -127,7 +128,7 @@ body[data-edge=right] #radial::before{background:var(--smoke-shape) no-repeat 0 
 .radial-mini .mini-times{display:flex;align-items:center;flex:none;color:#c2d8cf;white-space:nowrap;font-variant-numeric:tabular-nums}
 .radial-mini .mini-times b{font-size:9px;line-height:1;font-weight:400;letter-spacing:.15px}.radial-mini .mini-times b:first-child{color:#dfede6}.radial-mini .mini-times b:last-child{color:#a9bfb5}
 .radial-mini .mini-times b+b::before{content:' / ';white-space:pre;color:#a8c3b6}
-body[data-edge=right] .radial-mini .mini-info{right:auto;left:0}
+body[data-align=left] .radial-mini .mini-info{right:auto;left:0}
 @keyframes mini-reveal{from{opacity:0}to{opacity:1}}
 .radial-mini .mini-cover::after{content:'';position:absolute;inset:0;pointer-events:none;border:1px solid #e8f8ef12;border-radius:inherit}
 @media(prefers-reduced-motion:reduce){.radial-mini{animation:none}.radial-mini .mini-progress i{transition:none;will-change:auto}}
@@ -159,12 +160,12 @@ body[data-edge=right] #radialColor{left:auto;right:72px}
 
 /* Compact playback row: artwork beside a stable metadata and timeline column. */
 .radial-label.has-mini{width:250px;max-width:calc(100% - 145px);height:80px;text-align:left}
-body[data-edge=left] .radial-label.has-mini{text-align:left}
+body[data-align=right] .radial-label.has-mini{text-align:left}
 .radial-label.has-mini>span,.radial-label.has-mini>small{text-align:left}
 .radial-label.has-mini>span{position:absolute;left:2px;right:2px;top:2px}
 .radial-label.has-mini>small{position:absolute;left:2px;right:2px;top:41px}
 .radial-mini .mini-cover{left:-72px;top:6px}
-.radial-mini .mini-info,body[data-edge=right] .radial-mini .mini-info{left:2px;right:2px;top:64px;bottom:auto;width:auto;display:flex;flex-direction:column;align-items:stretch;gap:6px}
+.radial-mini .mini-info,body[data-align=left] .radial-mini .mini-info{left:2px;right:2px;top:64px;bottom:auto;width:auto;display:flex;flex-direction:column;align-items:stretch;gap:6px}
 .radial-mini .mini-progress{flex:none;width:100%}
 .radial-label>span>span{display:inline-block;min-width:100%;padding:0}
 .radial-label>span.scrolling-title{text-overflow:clip}
@@ -182,10 +183,10 @@ body[data-edge=left] .radial-label.has-mini{text-align:left}
 @media(prefers-reduced-motion:reduce){.radial-label>span.scrolling-title>span{animation:none}.radial-label>span.scrolling-title>span>span[aria-hidden=true]{display:none}}
 /* Align each label's inward edge to the oval, including short marquee titles. */
 .radial-label>span>span{min-width:0}
-body[data-edge=left] .radial-label.has-mini,body[data-edge=left] .radial-label.has-mini>span,body[data-edge=left] .radial-label.has-mini>small{text-align:right}
-body[data-edge=left] .radial-mini .mini-times{justify-content:flex-end}
+body[data-align=right] .radial-label.has-mini,body[data-align=right] .radial-label.has-mini>span,body[data-align=right] .radial-label.has-mini>small{text-align:right}
+body[data-align=right] .radial-mini .mini-times{justify-content:flex-end}
 .radial-label>span.scrolling-title{text-align:left}
-body[data-edge=left] .radial-label.has-mini>span.scrolling-title{text-align:left}
+body[data-align=right] .radial-label.has-mini>span.scrolling-title{text-align:left}
 /* Brief hardware-action feedback; hidden between commands. */
 #actionNotice{display:none}
 body[data-interface=radial] #actionNotice:not([hidden]){display:block;position:fixed;bottom:44px;left:72px;max-width:360px;color:#e0eee8;font:400 12px/1.6 'Segoe UI',sans-serif;text-shadow:0 2px 8px #000;pointer-events:none;animation:mini-reveal .2s ease-out}
