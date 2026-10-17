@@ -78,13 +78,26 @@ ipcMain.handle('app:pin', (_, pinned) => { mainWindow.setAlwaysOnTop(!!pinned); 
 // Only the first reveal at startup; later interface updates must not pull turnbit back out of the tray.
 let revealed=false;
 function revealWindow(){if(revealed||!mainWindow||mainWindow.isDestroyed())return;revealed=true;if(!mainWindow.isVisible())mainWindow.show();}
-ipcMain.handle('app:interface',(_,style,side='left')=>{
+// Size & Position for the turnbit interface: display (Automatic keeps the current screen), width in px,
+// height as a share of the screen, and vertical position. Invalid values fall back to the defaults.
+function radialLayout(layout={}){
+  const number=(value,fallback,min,max)=>Number.isFinite(Number(value))?Math.max(min,Math.min(max,Math.round(Number(value)))):fallback;
+  return {width:number(layout.width,1040,320,1200),height:number(layout.height,100,30,100),vertical:['top','center','bottom'].includes(layout.vertical)?layout.vertical:'center',display:layout.display==null?null:String(layout.display)};
+}
+ipcMain.handle('app:displays',()=>{const primary=screen.getPrimaryDisplay().id;return screen.getAllDisplays().map((display,i)=>({id:String(display.id),name:display.label||`Display ${i+1}`,primary:display.id===primary,width:display.bounds.width,height:display.bounds.height}));});
+ipcMain.handle('app:interface',(_,style,side='left',layout)=>{
   setImmediate(revealWindow);
   if(!['ipod','zune','radial'].includes(style))throw new Error('Unknown interface');
   side=side==='right'?'right':'left';
-  if(!mainWindow||`${style}:${side}`===activeInterface)return;
-  const previous=activeInterface;activeInterface=`${style}:${side}`;
-  if(style==='radial'){const area=screen.getDisplayMatching(mainWindow.getBounds()).bounds;const width=Math.min(1040,area.width),height=area.height;mainWindow.setMinimumSize(320,400);mainWindow.setMaximumSize(1200,Math.max(1000,area.height));mainWindow.setBounds({x:side==='right'?area.x+area.width-width:area.x,y:area.y+Math.round((area.height-height)/2),width,height});return;}
+  const size=style==='radial'?radialLayout(layout):null,key=`${style}:${side}${size?':'+JSON.stringify(size):''}`;
+  if(!mainWindow||key===activeInterface)return;
+  const previous=activeInterface;activeInterface=key;
+  if(style==='radial'){
+    const display=screen.getAllDisplays().find(item=>String(item.id)===size.display)||screen.getDisplayMatching(mainWindow.getBounds()),area=display.bounds;
+    const width=Math.min(size.width,area.width),height=Math.round(area.height*size.height/100);
+    const y=area.y+(size.vertical==='top'?0:size.vertical==='bottom'?area.height-height:Math.round((area.height-height)/2));
+    mainWindow.setMinimumSize(320,240);mainWindow.setMaximumSize(1200,Math.max(1000,area.height));mainWindow.setBounds({x:side==='right'?area.x+area.width-width:area.x,y,width,height});return;
+  }
   mainWindow.setMaximumSize(460,800);
   if(previous?.startsWith('radial:')){mainWindow.setSize(380,710);mainWindow.center();}
   const [width]=mainWindow.getSize();

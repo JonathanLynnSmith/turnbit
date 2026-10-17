@@ -151,6 +151,7 @@ Settings are grouped into five categories. On/off settings sit inside a category
 | Now Playing | Idle to Now Playing | Switches to Now Playing after 10 seconds without input | On |
 | Now Playing | Follow Playing Song | Recenters the playing song with a quick, smooth animation on wake after the idle fade timeout (10 seconds when idle fading is off) | On |
 | Window | Transparency | Off, Always, or Idle Fade, with opacity and idle timeout | Off |
+| Window | Size & Position | turnbit interface: which display, width (320 to 1200 px), height (30 to 100% of the screen), and vertical position; width and height preview live | Automatic, 1040 px, 100%, Center |
 | Window | Keep on Top | Keeps turnbit above other windows | Off |
 | Window | Pin Widget | Pauses idle fading and the switch to Now Playing | Off |
 | Window | Dial Only Wake | While turnbit is faded out, media buttons control playback without waking it or changing screens; turn or press the dial to wake it | Off |
