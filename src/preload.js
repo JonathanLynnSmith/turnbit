@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('dialpod', {
   library: (kind, id, offset) => ipcRenderer.invoke('spotify:library', kind, id, offset),
   recovery: value=>ipcRenderer.invoke('spotify:recovery',value),
   setInterface: (style,side,layout)=>ipcRenderer.invoke('app:interface',style,side,layout),
+  windowGesture: (phase,kind)=>ipcRenderer.invoke('app:window-gesture',phase,kind),
   displays: ()=>ipcRenderer.invoke('app:displays'),
   visibility: (settings,protectedView,dialOnlyWake,mousePassthrough)=>ipcRenderer.invoke('app:visibility',settings,protectedView,dialOnlyWake,mousePassthrough),
   activity: ()=>ipcRenderer.send('app:activity'),

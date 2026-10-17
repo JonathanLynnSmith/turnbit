@@ -11,7 +11,7 @@ class RadialCarousel {
     if(this.motion&&this.motion.to!==selected)this.motion=null;
     this.rows=rows;this.target=selected;this.miniIndices=miniIndices||rows.flatMap((row,i)=>row.mini?[i]:[]);
     for(const [i,node] of this.nodes)if(i>=rows.length){node.remove();this.nodes.delete(i);}
-    this.reach=Math.max(2,(this.element.clientHeight/2-70)/76);const extent=Math.ceil(this.reach)+1;
+    this.reach=Math.max(2,(this.element.clientHeight/2-56)/this.rowStep());const extent=Math.ceil(this.reach)+1;
     const low=Math.max(0,Math.floor(Math.min(this.position,selected))-extent),high=Math.min(rows.length-1,Math.ceil(Math.max(this.position,selected))+extent);
     // Bound work even on large playlists or a burst of hardware input.
     for(let i=low;i<=high;i++){
@@ -61,12 +61,13 @@ class RadialCarousel {
     if(Math.abs(this.target-this.position)<.002)this.position=this.target;
     this.paint();if(this.position!==this.target)this.frame=requestAnimationFrame(next=>this.tick(next));
   }
+  rowStep(){return Math.max(54,Math.min(76,this.element.clientHeight*.105));}
   paint(){
     const height=this.element.clientHeight,width=this.element.clientWidth;
     const radiusX=Math.min(270,width*.52),radiusY=Math.max(100,height/2-70),right=document.body.dataset.edge==='left';
     // Reserve space on both sides of the richer playback row, while keeping
     // every label on the same oval and the selected row vertically centered.
-    const rowY=i=>i*76+this.miniIndices.reduce((extra,mini)=>extra+(i>mini?48:i===mini?24:0),0);
+    const rowY=i=>i*this.rowStep()+this.miniIndices.reduce((extra,mini)=>extra+(i>mini?48:i===mini?24:0),0);
     const base=Math.floor(this.position),fraction=this.position-base;
     const center=rowY(base)+(rowY(base+1)-rowY(base))*fraction;
     for(const [i,node] of this.nodes){
@@ -77,10 +78,12 @@ class RadialCarousel {
       // Curved Menu: labels bow along the oval; off, they stay in a straight column at the highlighted row's position.
       const x=30+(this.curved()?radiusX*(1-Math.sqrt(1-normalized*normalized)):0),y=height/2+offset;
       node.style.left=right?'auto':x+'px';node.style.right=right?x+'px':'auto';
-      node.style.top=y+'px';node.style.transform=`translateY(-50%) scale(${1.12-Math.min(depth,5)*.075})`;
+      node.style.top=y+'px';node.style.transform=`translateY(-50%) scale(${1.06-Math.min(depth,5)*.045})`;
       node.style.opacity=Math.max(0,.98*Math.pow(Math.max(0,1-depth/(this.reach+1)),1.4));node.style.pointerEvents=depth<this.reach-.3?'auto':'none';
       const light=Math.max(0,1-depth);
-      node.style.fontWeight=String(Math.round(300+light*120));node.style.setProperty('--light',light);
+      // Keep glyphs stable while the carousel settles. Interpolating weight
+      // with position makes selection look like a delayed switch to bold.
+      node.style.setProperty('--light',light);
     }
   }
 }

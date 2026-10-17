@@ -21,6 +21,40 @@ function syncMousePassthrough(){
 }
 let commandQueue = Promise.resolve();
 let activeInterface=null;
+let windowGesture=null,gestureTimer;
+function finishWindowGesture(cancel=false){
+  clearInterval(gestureTimer);gestureTimer=null;
+  if(!windowGesture)return;
+  if(cancel&&!mainWindow.isDestroyed())mainWindow.setBounds(windowGesture.bounds);
+  else if(!mainWindow.isDestroyed()){
+    try{fs.writeFileSync(path.join(app.getPath('userData'),'floating-placement.json'),JSON.stringify({key:activeInterface,bounds:mainWindow.getBounds()}));}catch{}
+  }
+  windowGesture=null;
+}
+ipcMain.handle('app:window-gesture',(event,phase,kind)=>{
+  if(event.sender!==mainWindow?.webContents||!activeInterface?.startsWith('radial:'))return;
+  if(phase==='end'||phase==='cancel'){finishWindowGesture(phase==='cancel');return;}
+  if(phase!=='start'||!['move','resize'].includes(kind))return;
+  finishWindowGesture();
+  const bounds=mainWindow.getBounds(),origin=screen.getCursorScreenPoint(),area=screen.getDisplayMatching(bounds).workArea;
+  windowGesture={bounds,origin,kind};
+  gestureTimer=setInterval(()=>{
+    if(!windowGesture||mainWindow.isDestroyed()){clearInterval(gestureTimer);return;}
+    const point=screen.getCursorScreenPoint(),dx=point.x-origin.x,dy=point.y-origin.y;
+    if(kind==='move'){
+      const target=screen.getDisplayNearestPoint(point).workArea;
+      mainWindow.setPosition(Math.round(Math.max(target.x-bounds.width+80,Math.min(target.x+target.width-80,bounds.x+dx))),Math.round(Math.max(target.y,Math.min(target.y+target.height-48,bounds.y+dy))));
+    }else{
+      const right=activeInterface.startsWith('radial:right:'),horizontal=right?-dx:dx;
+      const delta=(horizontal*bounds.width+dy*bounds.height)/(bounds.width*bounds.width+bounds.height*bounds.height);
+      const min=Math.max(400/bounds.width,300/bounds.height),max=Math.max(min,Math.min(area.width/bounds.width,area.height/bounds.height));
+      const scale=Math.max(min,Math.min(max,1+delta)),width=Math.round(bounds.width*scale),height=Math.round(bounds.height*scale);
+      const x=right?bounds.x+bounds.width-width:bounds.x;
+      mainWindow.setBounds({x:Math.max(area.x,Math.min(area.x+area.width-width,x)),y:Math.max(area.y,Math.min(area.y+area.height-height,bounds.y)),width,height});
+    }
+  },16);gestureTimer.unref();
+  return bounds;
+});
 const send = (channel, data) => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(channel, data); };
 function scheduleVisibility(){
   clearTimeout(visibilityTimer);const delay=visibility?.nextDelay();
@@ -37,6 +71,7 @@ function createWindow() {
   wakeGate=new HardwareWakeGate(visibility);
   scheduleVisibility();
   mainWindow.on('focus',()=>wakeVisibility());
+  mainWindow.on('blur',()=>finishWindowGesture());
   mainWindow.on('minimize',()=>send('app-visibility',{minimized:true}));mainWindow.on('restore',()=>send('app-visibility',{minimized:false}));
   // Hidden in the tray counts as minimized, so rendering and polling slow down. Closing hides instead of quitting.
   mainWindow.on('hide',()=>{send('app-visibility',{minimized:true});tray?.refresh();});mainWindow.on('show',()=>{send('app-visibility',{minimized:false});tray?.refresh();});
@@ -93,15 +128,27 @@ ipcMain.handle('app:interface',(_,style,side='left',layout)=>{
   const size=style==='radial'?radialLayout(layout):null,key=`${style}:${side}${size?':'+JSON.stringify(size):''}`;
   if(!mainWindow||key===activeInterface)return;
   const previous=activeInterface;activeInterface=key;
+  finishWindowGesture(true);
   if(style==='radial'){
+    mainWindow.setResizable(false);
     const display=screen.getAllDisplays().find(item=>String(item.id)===size.display)||screen.getDisplayMatching(mainWindow.getBounds()),area=display.bounds;
     const width=Math.min(area.width,Math.max(400,Math.round(area.width*size.width/100))),height=Math.round(area.height*size.height/100);
     const y=area.y+(size.vertical==='top'?0:size.vertical==='bottom'?area.height-height:Math.round((area.height-height)/2));
     mainWindow.setMinimumSize(320,240);mainWindow.setMaximumSize(Math.max(1200,area.width),Math.max(1000,area.height));mainWindow.setBounds({x:side==='right'?area.x+area.width-width:area.x,y,width,height});
     // Display scaling can round the window a pixel wider than asked; keep a right-docked window flush with the edge.
     if(side==='right'){const actual=mainWindow.getBounds();if(actual.x+actual.width!==area.x+area.width)mainWindow.setPosition(area.x+area.width-actual.width,actual.y);}
+    if(!previous){
+      try{
+        const saved=JSON.parse(fs.readFileSync(path.join(app.getPath('userData'),'floating-placement.json'),'utf8')),b=saved.bounds;
+        if(saved.key===key&&b&&['x','y','width','height'].every(k=>Number.isFinite(b[k]))&&b.width>=400&&b.height>=300){
+          const work=screen.getDisplayMatching(b).workArea;
+          if(b.width<=work.width&&b.height<=work.height)mainWindow.setBounds({...b,x:Math.max(work.x,Math.min(work.x+work.width-b.width,b.x)),y:Math.max(work.y,Math.min(work.y+work.height-b.height,b.y))});
+        }
+      }catch{}
+    }
     return;
   }
+  mainWindow.setResizable(true);
   mainWindow.setMaximumSize(460,800);
   if(previous?.startsWith('radial:')){mainWindow.setSize(380,710);mainWindow.center();}
   const [width]=mainWindow.getSize();
@@ -114,7 +161,7 @@ ipcMain.handle('app:open-external', (_, url) => {
   return shell.openExternal(parsed.href);
 });
 function showWindow(){if(!mainWindow||mainWindow.isDestroyed())return;wakeVisibility(true);if(mainWindow.isMinimized())mainWindow.restore();mainWindow.show();mainWindow.focus();}
-function hideWindow(){if(mainWindow&&!mainWindow.isDestroyed())mainWindow.hide();}
+function hideWindow(){finishWindowGesture();if(mainWindow&&!mainWindow.isDestroyed())mainWindow.hide();}
 function trayCommand(command){const next=commandQueue.then(()=>spotify.command(command));commandQueue=next.catch(()=>{});next.catch(error=>send('spotify-state',{error:error.message}));}
 // With no taskbar button, minimize and close both tuck turnbit into the tray.
 ipcMain.handle('app:minimize', () => hideWindow());
@@ -122,7 +169,7 @@ ipcMain.handle('app:close', () => hideWindow());
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
   app.on('second-instance', () => showWindow());
-  app.on('before-quit', () => { quitting = true; });
+  app.on('before-quit', () => { quitting = true;finishWindowGesture(); });
   app.whenReady().then(() => {
     const file = path.join(app.getPath('userData'), 'spotify-session.json'), limits = path.join(app.getPath('userData'), 'rate-limits.json');
     if (process.platform === 'win32') media = new MediaSession(state => spotify?.localChanged(state));
