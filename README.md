@@ -117,6 +117,19 @@ These work when turnbit has focus.
 
 If turnbit is fully transparent and you lose track of it, press **Ctrl + Alt + Shift + D** to bring it back.
 
+### Keyboard & Mouse Mode
+
+No dial nearby? Hold **Ctrl + Alt + Z** (change it in Settings > Navigation > Mouse Mode Key) and use the mouse, wherever the cursor is. The cursor hides while the mode is on, and the mouse goes back to normal when you let go.
+
+| Input | What it does |
+| --- | --- |
+| Scroll | Move through the menu. On Now Playing, change the volume. |
+| Left click | Select |
+| Right click | Go back |
+| Middle click | Play / Pause |
+
+A quick tap of the shortcut keeps the mode on without holding it. Tap again, press **Esc**, switch apps, or leave the mouse alone for 20 seconds to turn it off. The **F13** option suits a mouse side button or macro key mapped to F13 in the mouse's software.
+
 ## Settings
 
 All settings are saved between restarts.
@@ -145,6 +158,7 @@ Settings are grouped into five categories. On/off settings sit inside a category
 | Navigation | Back in Lists | Shows a Back row at the top of every list below Home | On |
 | Navigation | Last Song List on Home | Shows Last Song List at the top of Home, above Liked Songs, to reopen the list you were browsing | On |
 | Navigation | Hover Shortcuts | Resting for a second on Back, Now Playing (top of Home), or Load more (end of a long list) runs it, with a ring showing the countdown | On |
+| Navigation | Mouse Mode Key | Shortcut you hold for Keyboard & Mouse Mode: Ctrl+Alt+Z, Alt+Shift+Space, Ctrl+Alt+Space, F13, or Off. If another app already uses it, turnbit says so; pick another. | Ctrl+Alt+Z |
 | Navigation | Click Sounds | Soft clicks while browsing | Off |
 | Now Playing | Play Opens Now Playing | Pressing Play on any other screen opens Now Playing without playing or pausing. Off: Play plays or pauses and you stay on the current screen | On |
 | Now Playing | Open Song in Now Playing | Choosing a song opens Now Playing | On |

@@ -10,8 +10,9 @@ const { VisibilityControl } = require('./visibility');
 const { HardwareWakeGate } = require('./hardware-wake');
 const { MediaSession } = require('./media-session');
 const { createTray } = require('./tray');
+const { MouseMode } = require('./mouse-mode');
 let mainWindow, spotify, bridge, bridgeError, media, tray, quitting = false;
-let visibility,visibilityTimer,wakeGate;
+let visibility,visibilityTimer,wakeGate,mouseMode;
 let mousePassthrough=false,mouseIgnored=false,mouseFocusable=true;
 function syncMousePassthrough(){
   if(!mainWindow||mainWindow.isDestroyed())return;
@@ -109,6 +110,7 @@ ipcMain.handle('spotify:command', (_, command, value) => {
 ipcMain.handle('app:hardware', () => ({ ...bridge?.status(), error: bridgeError }));
 ipcMain.handle('app:visibility',(_,value,protectedView,dialOnlyWake,ignoreMouse)=>{mousePassthrough=ignoreMouse===true;syncMousePassthrough();if(wakeGate)wakeGate.dialOnlyWake=dialOnlyWake===true;const result=visibility?.configure(value,protectedView===true);scheduleVisibility();return result;});
 ipcMain.on('app:activity',()=>wakeVisibility());
+ipcMain.handle('app:mouse-mode',(_,key)=>mouseMode?.setKey(key));
 ipcMain.handle('app:pin', (_, pinned) => { mainWindow.setAlwaysOnTop(!!pinned); return mainWindow.isAlwaysOnTop(); });
 // Only the first reveal at startup; later interface updates must not pull turnbit back out of the tray.
 let revealed=false;
@@ -179,11 +181,14 @@ else {
     bridge.on('error', error => { bridgeError = `D100H bridge unavailable: ${error.message}`; send('bridge-error', bridgeError); });
     if (process.platform === 'darwin') app.dock?.hide();
     createWindow();
+    // Keyboard & Mouse Mode wakes turnbit (without stealing focus from the overlay) and forwards mouse input to it.
+    mouseMode = new MouseMode({ electron: require('electron'), onEvent: event => { wakeVisibility(true); send('mouse-mode', event); }, onChange: active => { if (active) { wakeVisibility(true); if (!mainWindow.isVisible()) mainWindow.showInactive(); } send('mouse-mode', { type: 'active', active }); } });
+    if (process.env.DIALPOD_BRIDGE_PORT) global.turnbitMouseMode = mouseMode;
     tray = createTray({ isVisible: () => !!mainWindow?.isVisible(), show: showWindow, hide: hideWindow, command: trayCommand, restart: () => { quitting = true; app.relaunch(); app.quit(); }, quit: () => { quitting = true; app.quit(); } });
     if(!process.env.DIALPOD_BRIDGE_PORT)globalShortcut.register('Control+Alt+Shift+D',()=>showWindow());
     app.on('activate', () => { if (!BrowserWindow.getAllWindows().length) createWindow(); else showWindow(); });
   });
   // A tray app keeps running with no window; Quit is in the tray menu.
   app.on('window-all-closed', () => { if (quitting) app.quit(); });
-  app.on('will-quit', () => { clearTimeout(visibilityTimer);globalShortcut.unregisterAll();spotify?.cancelLogin(); media?.stop(); bridge?.close(); tray?.tray.destroy(); });
+  app.on('will-quit', () => { clearTimeout(visibilityTimer);mouseMode?.dispose();globalShortcut.unregisterAll();spotify?.cancelLogin(); media?.stop(); bridge?.close(); tray?.tray.destroy(); });
 }

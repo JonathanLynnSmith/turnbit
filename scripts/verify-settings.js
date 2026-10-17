@@ -20,7 +20,7 @@ app.whenReady().then(async()=>{try{
   const expected={
     playback:'Volume, Playback Device, Preferred Device, Open Spotify Automatically, Keep Song Position, Spotify Connection',
     appearance:'Interface, Curved Menu, Text Alignment, Screen Edge, Smoky Background, Text Color, Accent Color',
-    navigation:'Reverse Dial Direction, Dial Double-Press, Back in Lists, Last Song List on Home, Hover Shortcuts, Click Sounds',
+    navigation:'Reverse Dial Direction, Dial Double-Press, Back in Lists, Last Song List on Home, Hover Shortcuts, Mouse Mode Key, Click Sounds',
     'now-playing':'Play Opens Now Playing, Open Song in Now Playing, Idle to Now Playing, Follow Playing Song',
     window:'Transparency, Size & Position, Keep on Top, Pin Widget, Dial Only Wake, Mouse Click Through, Gaming Mode'};
   for(const [id,want] of Object.entries(expected)){
