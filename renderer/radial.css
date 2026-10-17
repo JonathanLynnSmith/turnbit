@@ -1,7 +1,7 @@
 #radial{display:none}
 body[data-interface=radial]{padding:0;background:transparent!important;color:#eef7f5}
 body[data-interface=radial] .ipod{display:none!important}
-body[data-interface=radial] #radial{display:block;position:relative;width:min(520px,100%);height:100%;overflow:visible;font-family:'Segoe UI Variable Display','Segoe UI',sans-serif;font-weight:300;user-select:none}
+body[data-interface=radial] #radial{display:block;position:relative;width:min(520px,calc(100% - 80px));height:100%;overflow:visible;font-family:'Segoe UI Variable Display','Segoe UI',sans-serif;font-weight:300;user-select:none}
 #radialLabels{position:absolute;left:0;right:0;top:50%;height:100%;transform:translateY(-50%);overflow:visible}
 .radial-label{position:absolute;width:350px;max-width:calc(100% - 115px);padding:9px 2px;background:none;border:0;border-radius:0;color:#edf7f5;text-align:left;font:300 25px/1.3 'Segoe UI Variable Display','Segoe UI',sans-serif;letter-spacing:.2px;transform-origin:left center;cursor:pointer;box-shadow:none;will-change:transform,opacity;white-space:nowrap;text-shadow:0 1px 2px #000b,0 3px 12px #0006,0 0 calc(var(--light)*13px) #d7fff329}
 .radial-label>span{display:block;overflow:hidden;text-overflow:ellipsis;padding:2px 0}
@@ -56,7 +56,7 @@ body[data-edge=left] :is(#radialSongList,.radial-song-list){margin-left:auto}
 @media(prefers-reduced-motion:reduce){#radialLabels{animation:none}:is(#radialSongList,.radial-song-list){transition:none}}
 
 /* A broad scrim holds its strength past the text before an eased oval falloff. */
-#radial::before{content:'';position:absolute;inset:0;width:min(1040px,100vw);pointer-events:none;opacity:var(--smoke-opacity,.24);background:linear-gradient(to right,#000 0%,#000 52%,#000000f5 60%,#000000d1 68%,#00000094 78%,#00000047 88%,#00000014 95%,#0000 100%);mask-image:none;transition:opacity .12s ease}
+#radial::before{content:'';position:absolute;inset:0;width:100vw;pointer-events:none;opacity:var(--smoke-opacity,.24);background:linear-gradient(to right,#000 0%,#000 52%,#000000f5 60%,#000000d1 68%,#00000094 78%,#00000047 88%,#00000014 95%,#0000 100%);mask-image:none;transition:opacity .12s ease}
 body[data-edge=right] #radial{margin-left:auto}
 body[data-edge=right] #radial::before{left:auto;right:0;background:linear-gradient(to left,#000 0%,#000 52%,#000000f5 60%,#000000d1 68%,#00000094 78%,#00000047 88%,#00000014 95%,#0000 100%)}
 @media(prefers-reduced-motion:reduce){#radial::before{transition:none}}

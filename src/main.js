@@ -78,11 +78,12 @@ ipcMain.handle('app:pin', (_, pinned) => { mainWindow.setAlwaysOnTop(!!pinned); 
 // Only the first reveal at startup; later interface updates must not pull turnbit back out of the tray.
 let revealed=false;
 function revealWindow(){if(revealed||!mainWindow||mainWindow.isDestroyed())return;revealed=true;if(!mainWindow.isVisible())mainWindow.show();}
-// Size & Position for the turnbit interface: display (Automatic keeps the current screen), width in px,
-// height as a share of the screen, and vertical position. Invalid values fall back to the defaults.
+// Size & Position for the turnbit interface: display (Automatic keeps the current screen), width and height as
+// shares of the screen, and vertical position. Width never drops below 400 px so the menu and its fade fit.
+// Invalid values fall back to the defaults.
 function radialLayout(layout={}){
   const number=(value,fallback,min,max)=>Number.isFinite(Number(value))?Math.max(min,Math.min(max,Math.round(Number(value)))):fallback;
-  return {width:number(layout.width,1040,320,1200),height:number(layout.height,100,30,100),vertical:['top','center','bottom'].includes(layout.vertical)?layout.vertical:'center',display:layout.display==null?null:String(layout.display)};
+  return {width:number(layout.width,35,15,70),height:number(layout.height,100,30,100),vertical:['top','center','bottom'].includes(layout.vertical)?layout.vertical:'center',display:layout.display==null?null:String(layout.display)};
 }
 ipcMain.handle('app:displays',()=>{const primary=screen.getPrimaryDisplay().id;return screen.getAllDisplays().map((display,i)=>({id:String(display.id),name:display.label||`Display ${i+1}`,primary:display.id===primary,width:display.bounds.width,height:display.bounds.height}));});
 ipcMain.handle('app:interface',(_,style,side='left',layout)=>{
@@ -94,9 +95,12 @@ ipcMain.handle('app:interface',(_,style,side='left',layout)=>{
   const previous=activeInterface;activeInterface=key;
   if(style==='radial'){
     const display=screen.getAllDisplays().find(item=>String(item.id)===size.display)||screen.getDisplayMatching(mainWindow.getBounds()),area=display.bounds;
-    const width=Math.min(size.width,area.width),height=Math.round(area.height*size.height/100);
+    const width=Math.min(area.width,Math.max(400,Math.round(area.width*size.width/100))),height=Math.round(area.height*size.height/100);
     const y=area.y+(size.vertical==='top'?0:size.vertical==='bottom'?area.height-height:Math.round((area.height-height)/2));
-    mainWindow.setMinimumSize(320,240);mainWindow.setMaximumSize(1200,Math.max(1000,area.height));mainWindow.setBounds({x:side==='right'?area.x+area.width-width:area.x,y,width,height});return;
+    mainWindow.setMinimumSize(320,240);mainWindow.setMaximumSize(Math.max(1200,area.width),Math.max(1000,area.height));mainWindow.setBounds({x:side==='right'?area.x+area.width-width:area.x,y,width,height});
+    // Display scaling can round the window a pixel wider than asked; keep a right-docked window flush with the edge.
+    if(side==='right'){const actual=mainWindow.getBounds();if(actual.x+actual.width!==area.x+area.width)mainWindow.setPosition(area.x+area.width-actual.width,actual.y);}
+    return;
   }
   mainWindow.setMaximumSize(460,800);
   if(previous?.startsWith('radial:')){mainWindow.setSize(380,710);mainWindow.center();}
