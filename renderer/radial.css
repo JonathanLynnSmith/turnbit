@@ -56,10 +56,7 @@ body[data-edge=left] :is(#radialSongList,.radial-song-list){margin-left:auto}
 @media(prefers-reduced-motion:reduce){#radialLabels{animation:none}:is(#radialSongList,.radial-song-list){transition:none}}
 
 /* A broad scrim holds its strength past the text before an eased oval falloff. */
-#radial::before{content:'';position:absolute;inset:0;width:100vw;pointer-events:none;opacity:var(--smoke-opacity,.24);background:linear-gradient(to right,#000 0%,#000 52%,#000000f5 60%,#000000d1 68%,#00000094 78%,#00000047 88%,#00000014 95%,#0000 100%);mask-image:none;transition:opacity .12s ease}
 body[data-edge=right] #radial{margin-left:auto}
-body[data-edge=right] #radial::before{left:auto;right:0;background:linear-gradient(to left,#000 0%,#000 52%,#000000f5 60%,#000000d1 68%,#00000094 78%,#00000047 88%,#00000014 95%,#0000 100%)}
-@media(prefers-reduced-motion:reduce){#radial::before{transition:none}}
 
 /* Edge-docked playback: artwork anchors the composition; controls step inward. */
 :is(#radialNow,.radial-now-snapshot){left:28px;right:auto;width:min(340px,calc(100% - 56px))}
@@ -104,13 +101,6 @@ body[data-interface=radial] :is(#radialNow,.radial-now-snapshot)::before{display
 body[data-edge=right] :is(#radialNow,.radial-now-snapshot) .radial-art{margin-left:auto;margin-right:28px}
 
 /* Match the wheel ellipse; feather only horizontally to retain full-height shading. */
-#radial::before{background:var(--smoke-shape) no-repeat 0 0 / 100% 100%;mask-image:none}
-/* Short windows: the backdrop fades out at any end that stops inside the screen, instead of ending in a hard line. */
-#radial{--vfade:clamp(48px,16%,160px)}
-#radial[data-fade-top=true]::before{-webkit-mask-image:linear-gradient(to bottom,#0000,#000 var(--vfade));mask-image:linear-gradient(to bottom,#0000,#000 var(--vfade))}
-#radial[data-fade-bottom=true]::before{-webkit-mask-image:linear-gradient(to top,#0000,#000 var(--vfade));mask-image:linear-gradient(to top,#0000,#000 var(--vfade))}
-#radial[data-fade-top=true][data-fade-bottom=true]::before{-webkit-mask-image:linear-gradient(to bottom,#0000,#000 var(--vfade),#000 calc(100% - var(--vfade)),#0000);mask-image:linear-gradient(to bottom,#0000,#000 var(--vfade),#000 calc(100% - var(--vfade)),#0000)}
-body[data-edge=right] #radial::before{background:var(--smoke-shape) no-repeat 0 0 / 100% 100%;transform:scaleX(-1)}
 
 /* Let playback content reach the same inward line as the centered wheel label. */
 :is(#radialNow,.radial-now-snapshot){width:min(418px,calc(100% - 102px))}
@@ -223,3 +213,7 @@ body[data-render-suspended=true] *{animation-play-state:paused!important}
 #radial .radial-label.radial-control .row-icon{width:1.1em;height:1.1em;margin-right:.55em;vertical-align:-.18em;background:var(--radial-accent)}
 /* Hover to Go Back: the accent ring fills while the hold counts down. */
 body[data-back-hold=true] #radial .radial-label.radial-control :is(.row-icon-back,.row-icon-now,.row-icon-more){background:conic-gradient(var(--radial-accent) calc(var(--back-hold,0)*1turn),color-mix(in srgb,var(--radial-accent) 28%,transparent) 0)}
+
+/* Backdrop behind the turnbit menu: one smooth alpha field drawn by updateSmokeShape(), mirrored when docked right. */
+#radialHaze{position:absolute;top:0;left:0;width:100vw;height:100%;pointer-events:none}
+body[data-edge=right] #radialHaze{left:auto;right:0;transform:scaleX(-1)}

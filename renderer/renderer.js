@@ -180,16 +180,27 @@ function radialMiniPlayer(row){
   if(!isCurrentSong(row)||!(demo?(playing||progress>0):playback?.item))return null;
   return {title:row.label,artist:row.item?.artists?.map(artist=>artist.name).filter(Boolean).join(', ')||row.item?.artist||playback?.item?.publisher||'Unknown artist',art:!demo&&(playback?.item?.album?.images?.[0]?.url||row.item?.album?.images?.[0]?.url),playing,ratio:duration()?currentProgress()/duration():0,elapsed:time(currentProgress()),total:time(duration())};
 }
-function updateSmokeShape(){
-  const host=$('#radial'),height=host.clientHeight,width=innerWidth,menu=host.clientWidth,radiusX=Math.min(270,menu*.52),radiusY=Math.max(100,height/2-70);
-  const curved=preferences.radialCurve,key=[width,height,menu,curved].join(':');if(!height||updateSmokeShape.key===key)return;updateSmokeShape.key=key;
-  // Solid behind the labels (so text stays readable), then a fade sized to end at the window edge at any width.
-  // The edge follows the same ellipse as the labels; the blur spreads the fade across the free space past them.
-  const pad=20,blur=Math.max(10,(width-(menu-30+pad))/4);
-  const points=[];
-  for(let y=0;y<=height+8;y+=8){const py=Math.min(height,y),normal=Math.min(1,Math.abs(py-height/2)/radiusY);const bow=curved?radiusX*(1-Math.sqrt(1-normal*normal)):0,edge=menu-30-bow*0.6+pad;points.push(`${(edge+2*blur).toFixed(2)},${py}`);}
-  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><defs><filter id="soft" filterUnits="userSpaceOnUse" x="-300" y="0" width="${width+600}" height="${height}"><feGaussianBlur stdDeviation="${blur.toFixed(1)} 0"/></filter></defs><path d="M-300,0 L${points.join(' L')} L-300,${height} Z" fill="black" filter="url(#soft)"/></svg>`;
-  host.style.setProperty('--smoke-shape',`url("data:image/svg+xml,${encodeURIComponent(svg)}")`);
+// Backdrop behind the turnbit menu: one smooth alpha field, so it never shows a hard line. It is solid behind the labels
+// (text stays readable), then eases to exactly zero at the window's inner edge and, when the window is shorter than the
+// screen, at the top and/or bottom. The two directions multiply, so corners blend. Drawn at half resolution with a
+// light ordered dither (against banding on dark gradients) and scaled up smoothly by the browser.
+const HAZE_DITHER=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5].map(v=>v/16-0.47);
+function updateSmokeShape(opacity=updateSmokeShape.opacity??preferences.radialBackground/100){
+  updateSmokeShape.opacity=opacity;const host=$('#radial'),canvas=$('#radialHaze');if(!canvas)return;
+  const width=innerWidth,height=host.clientHeight,menu=host.clientWidth,radiusX=Math.min(270,menu*.52),radiusY=Math.max(100,height/2-70);
+  const short=preferences.radialHeight<100,vertical=preferences.radialVertical,fadeTop=short&&vertical!=='top',fadeBottom=short&&vertical!=='bottom',curved=preferences.radialCurve;
+  const key=[width,height,menu,curved,fadeTop,fadeBottom,opacity].join(':');if(!height||!width||updateSmokeShape.key===key)return;updateSmokeShape.key=key;
+  const scale=2,w=Math.ceil(width/scale),h=Math.ceil(height/scale),pad=24,vfade=Math.max(48,Math.min(160,height*0.16));
+  const ease=t=>t<=0?0:t>=1?1:t*t*t*(t*(t*6-15)+10);
+  canvas.width=w;canvas.height=h;const context=canvas.getContext('2d'),image=context.createImageData(w,h),data=image.data;
+  for(let j=0;j<h;j++){
+    // The solid edge follows the label curve (bending less, so labels near the ends stay on solid).
+    const y=(j+0.5)*scale,normal=Math.min(1,Math.abs(y-height/2)/radiusY),bow=curved?radiusX*(1-Math.sqrt(1-normal*normal)):0;
+    const solid=Math.min(width-24,menu-30-bow*0.6+pad),span=width-solid;
+    const across=Math.min(fadeTop?ease(y/vfade):1,fadeBottom?ease((height-y)/vfade):1)*opacity*255;
+    for(let i=0;i<w;i++){const x=(i+0.5)*scale,value=(1-ease((x-solid)/span))*across;data[(j*w+i)*4+3]=value<=0?0:Math.max(0,Math.min(255,Math.round(value+HAZE_DITHER[(j&3)*4+(i&3)])));}
+  }
+  context.putImageData(image,0,0);
 }// Resizing (Size & Position, moving displays) changes the free space for the fade and the label path: redraw both.
 window.addEventListener('resize',()=>{if(preferences.interfaceStyle==='radial'){updateSmokeShape();drawNavigation();}});
 
@@ -204,7 +215,7 @@ function drawRadial(){
   $('#radial').dataset.page=page.kind;applyRadialColors();
   $('#radialColor').hidden=page.kind!=='color';
   const haze=page.kind==='visibility'&&page.key==='radialBackground'?page.value:preferences.radialBackground;
-  $('#radial').style.setProperty('--smoke-opacity',haze/100);updateSmokeShape();
+  $('#radial').style.setProperty('--smoke-opacity',haze/100);updateSmokeShape(haze/100);
   // Height under 100% leaves the window's top and/or bottom inside the screen: fade the backdrop there too.
   const short=preferences.radialHeight<100,v=preferences.radialVertical;$('#radial').dataset.fadeTop=String(short&&v!=='top');$('#radial').dataset.fadeBottom=String(short&&v!=='bottom');
   $('#radialStatus').dataset.playing=String(page.kind==='now'&&playing);
