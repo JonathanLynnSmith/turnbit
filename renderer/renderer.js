@@ -187,7 +187,7 @@ function updateSmokeShape(){
   // The edge follows the same ellipse as the labels; the blur spreads the fade across the free space past them.
   const pad=20,blur=Math.max(10,(width-(menu-30+pad))/4);
   const points=[];
-  for(let y=0;y<=height+8;y+=8){const py=Math.min(height,y),normal=Math.min(1,Math.abs(py-height/2)/radiusY);const edge=menu-30-(curved?radiusX*(1-Math.sqrt(1-normal*normal)):0)+pad;points.push(`${(edge+2*blur).toFixed(2)},${py}`);}
+  for(let y=0;y<=height+8;y+=8){const py=Math.min(height,y),normal=Math.min(1,Math.abs(py-height/2)/radiusY);const bow=curved?radiusX*(1-Math.sqrt(1-normal*normal)):0,edge=menu-30-bow*0.6+pad;points.push(`${(edge+2*blur).toFixed(2)},${py}`);}
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><defs><filter id="soft" filterUnits="userSpaceOnUse" x="-300" y="0" width="${width+600}" height="${height}"><feGaussianBlur stdDeviation="${blur.toFixed(1)} 0"/></filter></defs><path d="M-300,0 L${points.join(' L')} L-300,${height} Z" fill="black" filter="url(#soft)"/></svg>`;
   host.style.setProperty('--smoke-shape',`url("data:image/svg+xml,${encodeURIComponent(svg)}")`);
 }// Resizing (Size & Position, moving displays) changes the free space for the fade and the label path: redraw both.
@@ -205,6 +205,8 @@ function drawRadial(){
   $('#radialColor').hidden=page.kind!=='color';
   const haze=page.kind==='visibility'&&page.key==='radialBackground'?page.value:preferences.radialBackground;
   $('#radial').style.setProperty('--smoke-opacity',haze/100);updateSmokeShape();
+  // Height under 100% leaves the window's top and/or bottom inside the screen: fade the backdrop there too.
+  const short=preferences.radialHeight<100,v=preferences.radialVertical;$('#radial').dataset.fadeTop=String(short&&v!=='top');$('#radial').dataset.fadeBottom=String(short&&v!=='bottom');
   $('#radialStatus').dataset.playing=String(page.kind==='now'&&playing);
   $('#radialNow').hidden=page.kind!=='now';$('#radialLabels').hidden=['now','color'].includes(page.kind);
   $('#radialContext').textContent=page.title==='turnbit'?'SPOTIFY / TURNBIT':page.title.toUpperCase();

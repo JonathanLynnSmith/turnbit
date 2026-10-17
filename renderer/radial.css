@@ -105,6 +105,11 @@ body[data-edge=right] :is(#radialNow,.radial-now-snapshot) .radial-art{margin-le
 
 /* Match the wheel ellipse; feather only horizontally to retain full-height shading. */
 #radial::before{background:var(--smoke-shape) no-repeat 0 0 / 100% 100%;mask-image:none}
+/* Short windows: the backdrop fades out at any end that stops inside the screen, instead of ending in a hard line. */
+#radial{--vfade:clamp(48px,16%,160px)}
+#radial[data-fade-top=true]::before{-webkit-mask-image:linear-gradient(to bottom,#0000,#000 var(--vfade));mask-image:linear-gradient(to bottom,#0000,#000 var(--vfade))}
+#radial[data-fade-bottom=true]::before{-webkit-mask-image:linear-gradient(to top,#0000,#000 var(--vfade));mask-image:linear-gradient(to top,#0000,#000 var(--vfade))}
+#radial[data-fade-top=true][data-fade-bottom=true]::before{-webkit-mask-image:linear-gradient(to bottom,#0000,#000 var(--vfade),#000 calc(100% - var(--vfade)),#0000);mask-image:linear-gradient(to bottom,#0000,#000 var(--vfade),#000 calc(100% - var(--vfade)),#0000)}
 body[data-edge=right] #radial::before{background:var(--smoke-shape) no-repeat 0 0 / 100% 100%;transform:scaleX(-1)}
 
 /* Let playback content reach the same inward line as the centered wheel label. */

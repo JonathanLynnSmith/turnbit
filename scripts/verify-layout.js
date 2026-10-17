@@ -38,6 +38,15 @@ app.whenReady().then(async()=>{try{
   await click();assert.equal((await page()).detail,'Bottom');assert.equal(b().y,a.y+a.height-b().height,'bottom');
   await click();assert.equal((await page()).detail,'Top');assert.equal(b().y,a.y,'top');
   await click();assert.equal((await page()).detail,'Center');
+  // Short windows fade the backdrop at any end inside the screen: Center both, Top only the bottom, Bottom only the top.
+  const ends=()=>js(`[document.querySelector('#radial').dataset.fadeTop,document.querySelector('#radial').dataset.fadeBottom]`);
+  await js(`savePreferences({radialHeight:50,radialVertical:'center'});drawNavigation();`);await wait(400);assert.deepEqual(await ends(),['true','true'],'center fades both ends');
+  const topAlpha=async()=>{const img=await window.webContents.capturePage(),{width:CW,height:CH}=img.getSize(),px=img.toBitmap();return [px[(2*CW+Math.round(CW*0.02))*4+3],px[(Math.round(CH/2)*CW+Math.round(CW*0.02))*4+3]];};
+  let [edgeA,midA]=await topAlpha();assert.ok(edgeA<=midA*0.2,`backdrop fades at the top edge (${edgeA} vs ${midA})`);
+  await js(`savePreferences({radialVertical:'top'});drawNavigation();`);await wait(400);assert.deepEqual(await ends(),['false','true'],'top: fade only the bottom');
+  await js(`savePreferences({radialVertical:'bottom'});drawNavigation();`);await wait(400);assert.deepEqual(await ends(),['true','false'],'bottom: fade only the top');
+  await js(`savePreferences({radialHeight:100,radialVertical:'center'});drawNavigation();`);await wait(400);assert.deepEqual(await ends(),['false','false'],'full height: no vertical fade');
+  await js(`savePreferences({radialHeight:50});drawNavigation();`);await wait(300);
   // Display cycles Automatic -> each connected display -> Automatic.
   const displays=await js('api.displays()');assert.ok(displays.length>=1&&displays.every(d=>d.id&&d.name),'displays have ids and names');
   await js(`nav.current.selected=nav.current.rows.findIndex(r=>r.action==='radial-display');drawNavigation();`);
@@ -49,5 +58,5 @@ app.whenReady().then(async()=>{try{
   await js(`savePreferences({interfaceStyle:'radial'});Object.assign(preferences,{radialWidthPct:99999,radialHeight:-5,radialVertical:'sideways',radialDisplay:'nope'});drawNavigation();`);await wait(500);
   a=area();w=b();near(w.width,pct(70),'width clamps to 70%');assert.ok(Math.abs(w.height-a.height*0.3)<=2,'height clamps to 30% (display scaling can round by a pixel or two)');
   await js(`savePreferences({radialWidthPct:35,radialHeight:100,radialVertical:'center',radialDisplay:null});drawNavigation();`);
-  console.log(`Size & Position: width and height (as screen percentages) preview live and save, the fade stays visible when narrow, Menu cancels, vertical position and display (${displays.length} found) apply, turnbit only, bad values clamp.`);app.quit();
+  console.log(`Size & Position: width and height (as screen percentages) preview live and save, the fade stays visible when narrow, short windows fade top and bottom, Menu cancels, vertical position and display (${displays.length} found) apply, turnbit only, bad values clamp.`);app.quit();
 }catch(error){console.error(error);app.exit(1);}});
