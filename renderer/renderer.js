@@ -15,9 +15,12 @@ function cleanLastSongList(value){
 }
 // Shortcut held for Keyboard & Mouse Mode. F13 suits a mouse side button or macro key mapped to it in the mouse's software.
 const mouseModeKeys={off:'Off','ctrl-alt-z':'Ctrl+Alt+Z','alt-shift-space':'Alt+Shift+Space','ctrl-alt-space':'Ctrl+Alt+Space',f13:'F13'};
-const preferences = { lastSongList:null, idleFollowSong:true, dialOnlyWake:false, mousePassthrough:false, preferredDevice:null, autoLaunchSpotify:false, gamingMode:false, idlePinned:false, reverseDial:false, doublePress:'back', homeLastSongList:true, backRow:true, hoverBack:true, idleNowPlaying:true, songOpensNowPlaying:true, playOpensNowPlaying:true, keepOnTop:false, keepCurrentSongPosition: true, appearance:'silver', screenTheme:'light', interfaceStyle:'radial', radialSide:'left', radialAlign:'auto', radialWidthPct:35, radialHeight:100, radialVertical:'center', radialDisplay:null, radialCurve:true, radialBackground:24, primaryHue:360, accentHue:145, visibility:{...visibilityDefaults}, clicker:false, mouseModeKey:'ctrl-alt-z', windowMode:false, nowPlayingBackdrop:false };
-try { const saved=JSON.parse(localStorage.getItem('turnbit-preferences')||localStorage.getItem('dialpod-preferences')||'{}');if(saved.appearance==='spotify-center')saved.appearance='spotify';for(const key of ['mousePassthrough','dialOnlyWake','idleFollowSong','autoLaunchSpotify','gamingMode','idlePinned','reverseDial','radialCurve','homeLastSongList','backRow','hoverBack','idleNowPlaying','songOpensNowPlaying','playOpensNowPlaying','windowMode','nowPlayingBackdrop'])if(typeof saved[key]==='boolean')preferences[key]=saved[key];preferences.lastSongList=cleanLastSongList(saved.lastSongList);if(saved.preferredDevice&&typeof saved.preferredDevice.id==='string'&&saved.preferredDevice.id.length>0&&saved.preferredDevice.id.length<=256&&typeof saved.preferredDevice.name==='string'&&saved.preferredDevice.name.length<=256)preferences.preferredDevice={id:saved.preferredDevice.id,name:saved.preferredDevice.name,type:String(saved.preferredDevice.type||'').slice(0,64)};if(['back','home'].includes(saved.doublePress))preferences.doublePress=saved.doublePress;if(typeof saved.keepOnTop==='boolean')preferences.keepOnTop=saved.keepOnTop;if(typeof saved.keepCurrentSongPosition==='boolean')preferences.keepCurrentSongPosition=saved.keepCurrentSongPosition;if(themes.some(theme=>theme.id===saved.appearance))preferences.appearance=saved.appearance;if(['light','dark'].includes(saved.screenTheme))preferences.screenTheme=saved.screenTheme;else if(preferences.appearance==='spotify')preferences.screenTheme='dark';if(['ipod','zune','radial'].includes(saved.interfaceStyle))preferences.interfaceStyle=saved.interfaceStyle;for(const [key,min,max] of [['radialWidthPct',15,70],['radialHeight',30,100]])if(Number.isFinite(saved[key]))preferences[key]=Math.max(min,Math.min(max,Math.round(saved[key])));if(['top','center','bottom'].includes(saved.radialVertical))preferences.radialVertical=saved.radialVertical;if(saved.radialDisplay===null||typeof saved.radialDisplay==='string')preferences.radialDisplay=saved.radialDisplay;if(['auto','left','right'].includes(saved.radialAlign))preferences.radialAlign=saved.radialAlign;if(['left','right'].includes(saved.radialSide))preferences.radialSide=saved.radialSide;if(Number.isFinite(saved.radialBackground))preferences.radialBackground=Math.max(0,Math.min(100,Math.round(saved.radialBackground)));for(const key of ['primaryHue','accentHue'])if(Number.isFinite(saved[key]))preferences[key]=Math.max(0,Math.min(360,Math.round(saved[key])));if(saved.visibility&&typeof saved.visibility==='object')preferences.visibility=cleanVisibility(saved.visibility);if(typeof saved.clicker==='boolean')preferences.clicker=saved.clicker;if(Object.hasOwn(mouseModeKeys,saved.mouseModeKey))preferences.mouseModeKey=saved.mouseModeKey; } catch {}
-applyTheme(document.body,preferences.appearance);document.body.dataset.screen=preferences.screenTheme;document.body.dataset.interface=preferences.interfaceStyle;document.body.dataset.edge=preferences.radialSide;document.body.dataset.align=textAlign();api?.setInterface?.(preferences.interfaceStyle,preferences.radialSide,radialLayoutNow())?.catch(error=>message(error.message));
+// Window Mode layout limits: the narrowest window Split View will take, and how far the menu's smoke
+// feathers past the divider. Declared up here because the first paint reads them.
+const SPLIT_MIN_WIDTH=640,SPLIT_HAZE_SPILL=96;
+const preferences = { lastSongList:null, idleFollowSong:true, dialOnlyWake:false, mousePassthrough:false, preferredDevice:null, autoLaunchSpotify:false, gamingMode:false, idlePinned:false, reverseDial:false, doublePress:'back', homeLastSongList:true, backRow:true, hoverBack:true, idleNowPlaying:true, songOpensNowPlaying:true, playOpensNowPlaying:true, keepOnTop:false, keepCurrentSongPosition: true, appearance:'silver', screenTheme:'light', interfaceStyle:'radial', radialSide:'left', radialAlign:'auto', radialWidthPct:35, radialHeight:100, radialVertical:'center', radialDisplay:null, radialCurve:true, radialBackground:24, primaryHue:360, accentHue:145, visibility:{...visibilityDefaults}, clicker:false, mouseModeKey:'ctrl-alt-z', windowMode:false, nowPlayingBackdrop:true, backdropLayout:'overlay', menuTimeout:8, splitDivider:true };
+try { const saved=JSON.parse(localStorage.getItem('turnbit-preferences')||localStorage.getItem('dialpod-preferences')||'{}');if(saved.appearance==='spotify-center')saved.appearance='spotify';for(const key of ['mousePassthrough','dialOnlyWake','idleFollowSong','autoLaunchSpotify','gamingMode','idlePinned','reverseDial','radialCurve','homeLastSongList','backRow','hoverBack','idleNowPlaying','songOpensNowPlaying','playOpensNowPlaying','windowMode','nowPlayingBackdrop','splitDivider'])if(typeof saved[key]==='boolean')preferences[key]=saved[key];preferences.lastSongList=cleanLastSongList(saved.lastSongList);if(saved.preferredDevice&&typeof saved.preferredDevice.id==='string'&&saved.preferredDevice.id.length>0&&saved.preferredDevice.id.length<=256&&typeof saved.preferredDevice.name==='string'&&saved.preferredDevice.name.length<=256)preferences.preferredDevice={id:saved.preferredDevice.id,name:saved.preferredDevice.name,type:String(saved.preferredDevice.type||'').slice(0,64)};if(['back','home'].includes(saved.doublePress))preferences.doublePress=saved.doublePress;if(typeof saved.keepOnTop==='boolean')preferences.keepOnTop=saved.keepOnTop;if(typeof saved.keepCurrentSongPosition==='boolean')preferences.keepCurrentSongPosition=saved.keepCurrentSongPosition;if(themes.some(theme=>theme.id===saved.appearance))preferences.appearance=saved.appearance;if(['light','dark'].includes(saved.screenTheme))preferences.screenTheme=saved.screenTheme;else if(preferences.appearance==='spotify')preferences.screenTheme='dark';if(['ipod','zune','radial'].includes(saved.interfaceStyle))preferences.interfaceStyle=saved.interfaceStyle;for(const [key,min,max] of [['radialWidthPct',15,70],['radialHeight',30,100]])if(Number.isFinite(saved[key]))preferences[key]=Math.max(min,Math.min(max,Math.round(saved[key])));if(['top','center','bottom'].includes(saved.radialVertical))preferences.radialVertical=saved.radialVertical;if(saved.radialDisplay===null||typeof saved.radialDisplay==='string')preferences.radialDisplay=saved.radialDisplay;if(['auto','left','right'].includes(saved.radialAlign))preferences.radialAlign=saved.radialAlign;if(['left','right'].includes(saved.radialSide))preferences.radialSide=saved.radialSide;if(Number.isFinite(saved.radialBackground))preferences.radialBackground=Math.max(0,Math.min(100,Math.round(saved.radialBackground)));for(const key of ['primaryHue','accentHue'])if(Number.isFinite(saved[key]))preferences[key]=Math.max(0,Math.min(360,Math.round(saved[key])));if(saved.visibility&&typeof saved.visibility==='object')preferences.visibility=cleanVisibility(saved.visibility);if(typeof saved.clicker==='boolean')preferences.clicker=saved.clicker;if(Object.hasOwn(mouseModeKeys,saved.mouseModeKey))preferences.mouseModeKey=saved.mouseModeKey;if(['overlay','split'].includes(saved.backdropLayout))preferences.backdropLayout=saved.backdropLayout;if(Number.isFinite(saved.menuTimeout))preferences.menuTimeout=Math.max(1,Math.min(600,Math.round(saved.menuTimeout))); } catch {}
+applyTheme(document.body,preferences.appearance);document.body.dataset.windowMode=String(preferences.windowMode);document.body.dataset.screen=preferences.screenTheme;document.body.dataset.interface=preferences.interfaceStyle;document.body.dataset.edge=preferences.radialSide;document.body.dataset.align=textAlign();syncPlayerColumn();api?.setInterface?.(preferences.interfaceStyle,preferences.radialSide,radialLayoutNow())?.catch(error=>message(error.message));
 let audioContext, feedbackTimer, pressTimer, displayedPage, displayedDepth=1;
 const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
 function wheelFeedback(pressed=false) {
@@ -57,14 +60,26 @@ const homeStart=()=>preferences.interfaceStyle==='zune'?0:1;
 const root = () => ({title:'turnbit',rows:homeRows(),selected:homeStart()});
 const nav = new window.WheelNavigation(root());
 const idle = new window.IdleNowPlaying(nav);
+const dialOverlay = new window.DialOverlay();
+let dialRevealPress=false;
 let silentHardwareActivity=false;
 function noteActivity(){if(silentHardwareActivity)return;followIdleSong.last=null;lastVisualActivity=Date.now();idle.noteActivity();syncGamingMode();api?.activity();}
 // Asleep = faded out by Idle Fade (past its timeout) or fully transparent. Dial Only Wake only changes behavior while asleep.
 function widgetAsleep(){return visibilityState.invisible||(preferences.visibility.mode==='idle'&&!visibilityProtected()&&Date.now()-lastVisualActivity>=preferences.visibility.timeout*1000);}
 function visibilityProtected(){return (preferences.idlePinned&&preferences.visibility.mode==='idle')||!!nav.current.visibilitySettings||$('#settings').open;}
 let visibilitySyncKey;
+// Window Mode has to stay reachable with the mouse: the title bar buttons and the resize edges are
+// the only way to minimize, full screen or close a normal window. So Mouse Click Through applies to
+// the floating widget only, and transparency there never fades the frame away completely.
+const WINDOW_MIN_OPACITY=20;
+function clickThroughActive(){return preferences.mousePassthrough&&!preferences.windowMode;}
+function visibilityNow(){
+  const value=preferences.visibility;
+  if(!preferences.windowMode)return value;
+  return {...value,opacity:Math.max(WINDOW_MIN_OPACITY,value.opacity),idleOpacity:Math.max(WINDOW_MIN_OPACITY,value.idleOpacity)};
+}
 function syncRecovery(){const value={preferredDevice:preferences.preferredDevice,autoLaunchSpotify:preferences.autoLaunchSpotify},key=JSON.stringify(value);if(syncRecovery.key===key)return;syncRecovery.key=key;api?.recovery?.(value)?.catch(error=>{syncRecovery.key=null;message(error.message);});}
-function syncVisibility(){const key=JSON.stringify([preferences.visibility,visibilityProtected(),preferences.dialOnlyWake,preferences.mousePassthrough]);if(key===visibilitySyncKey)return;visibilitySyncKey=key;api?.visibility(preferences.visibility,visibilityProtected(),preferences.dialOnlyWake,preferences.mousePassthrough)?.catch(error=>{visibilitySyncKey=null;message(error.message);});}
+function syncVisibility(){const settings=visibilityNow(),passthrough=clickThroughActive();const key=JSON.stringify([settings,visibilityProtected(),preferences.dialOnlyWake,passthrough]);if(key===visibilitySyncKey)return;visibilitySyncKey=key;api?.visibility(settings,visibilityProtected(),preferences.dialOnlyWake,passthrough)?.catch(error=>{visibilitySyncKey=null;message(error.message);});}
 const volumeControl=new window.VolumeControl(async value=>{
   if(!demo)await api.command('volume',value);
 },{interval:600,settle:1500,onValue:value=>{volume=value;render();},onError:error=>message(error.message)});
@@ -135,7 +150,7 @@ function drawNavigation() {
   $('.screen').setAttribute('aria-label',preferences.interfaceStyle==='zune'?'Zune-style player':'iPod menu');
   $('#screenTitle').textContent=preferences.interfaceStyle==='zune'&&nav.stack.length===1&&!nav.idlePage?'zune':page.title;
   $('#menuView').hidden=page.kind!=='list'; $('#nowView').hidden=page.kind!=='now'; $('#adjustView').hidden=page.kind!=='volume';$('#visibilityView').hidden=page.kind!=='visibility';
-  if(page.kind==='visibility'){const seconds=page.key==='timeout',spec=valueSpec(page.key);$('#visibilityValue').textContent=valueText(page.key,page.value);$('#visibilityLabel').textContent=page.key==='radialBackground'?'Background strength · 0% turns it off':seconds?'Time without interaction':page.key==='radialWidthPct'?'Share of the screen width':page.key==='radialHeight'?'Share of the screen height':'0% invisible · 100% solid';$('#visibilityRange').min=spec.min;$('#visibilityRange').max=spec.max;$('#visibilityRange').step=spec.step;$('#visibilityRange').value=page.value;$('#visibilityRange').style.setProperty('--fill',((page.value-spec.min)/(spec.max-spec.min)*100)+'%');}
+  if(page.kind==='visibility'){const seconds=['timeout','menuTimeout'].includes(page.key),spec=valueSpec(page.key);$('#visibilityValue').textContent=valueText(page.key,page.value);$('#visibilityLabel').textContent=page.key==='radialBackground'?'Background strength · 0% turns it off':page.key==='menuTimeout'?'Time without input before the menu hides':seconds?'Time without interaction':page.key==='radialWidthPct'?'Share of the screen width':page.key==='radialHeight'?'Share of the screen height':'0% invisible · 100% solid';$('#visibilityRange').min=spec.min;$('#visibilityRange').max=spec.max;$('#visibilityRange').step=spec.step;$('#visibilityRange').value=page.value;$('#visibilityRange').style.setProperty('--fill',((page.value-spec.min)/(spec.max-spec.min)*100)+'%');}
   if(displayedPage!==page){
     const view=page.kind==='list'?$('#menuView'):page.kind==='now'?$('#nowView'):page.kind==='visibility'?$('#visibilityView'):$('#adjustView');
     if(displayedPage&&!reducedMotion.matches)view.animate([{opacity:.75,transform:`translateX(${nav.stack.length<displayedDepth?-7:7}px)`},{opacity:1,transform:'translateX(0)'}],{duration:110,easing:'ease-out'});
@@ -182,6 +197,15 @@ function radialMiniPlayer(row){
   if(!isCurrentSong(row)||!(demo?(playing||progress>0):playback?.item))return null;
   return {title:row.label,artist:row.item?.artists?.map(artist=>artist.name).filter(Boolean).join(', ')||row.item?.artist||playback?.item?.publisher||'Unknown artist',art:!demo&&(playback?.item?.album?.images?.[0]?.url||row.item?.album?.images?.[0]?.url),playing,ratio:duration()?currentProgress()/duration():0,elapsed:time(currentProgress()),total:time(duration())};
 }
+// Ambient glow behind the middle of the menu, tinted by whatever is playing: the artwork is reused as
+// the source rather than sampled, so it needs no pixel access, and the CSS mask does the fading. It
+// belongs to the window player's artwork atmosphere; the floating widget keeps its plain dark haze.
+const GLOW_STRENGTH=0.3;
+function syncRadialGlow(){
+  const glow=$('#radialGlow'),artwork=$('#art'),source=backdropActive()&&!artwork.hidden?artwork.src:'';
+  if(syncRadialGlow.source!==source){syncRadialGlow.source=source;glow.style.backgroundImage=source?`url(${JSON.stringify(source)})`:'none';}
+  glow.style.opacity=source?GLOW_STRENGTH:0;
+}
 // Backdrop behind the turnbit menu: one smooth alpha field, so it never shows a hard line. It is solid behind the labels
 // (text stays readable), then eases to exactly zero at the window's inner edge and, when the window is shorter than the
 // screen, at the top and/or bottom. The two directions multiply, so corners blend. Drawn at half resolution with a
@@ -189,9 +213,12 @@ function radialMiniPlayer(row){
 const HAZE_DITHER=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5].map(v=>v/16-0.47);
 function updateSmokeShape(opacity=updateSmokeShape.opacity??preferences.radialBackground/100){
   updateSmokeShape.opacity=opacity;const host=$('#radial'),canvas=$('#radialHaze');if(!canvas)return;
-  const width=innerWidth,height=host.clientHeight,menu=host.clientWidth,radiusX=Math.min(270,menu*.52),radiusY=Math.max(100,height/2-70);
+  // Split View keeps the smoke over the menu's own half, feathering out just past the divider.
+  const split=splitActive(),menu=host.clientWidth;
+  const width=split?menu+SPLIT_HAZE_SPILL:innerWidth,height=host.clientHeight,radiusX=Math.min(270,menu*.52),radiusY=Math.max(100,height/2-70);
   const short=preferences.radialHeight<100,vertical=preferences.radialVertical,fadeTop=short&&vertical!=='top',fadeBottom=short&&vertical!=='bottom',curved=preferences.radialCurve;
   const key=[width,height,menu,curved,fadeTop,fadeBottom,opacity].join(':');if(!height||!width||updateSmokeShape.key===key)return;updateSmokeShape.key=key;
+  canvas.style.width=split?width+'px':'';
   const scale=2,w=Math.ceil(width/scale),h=Math.ceil(height/scale),pad=24,vfade=Math.max(48,Math.min(160,height*0.16));
   const ease=t=>t<=0?0:t>=1?1:t*t*t*(t*(t*6-15)+10);
   canvas.width=w;canvas.height=h;const context=canvas.getContext('2d'),image=context.createImageData(w,h),data=image.data;
@@ -203,17 +230,82 @@ function updateSmokeShape(opacity=updateSmokeShape.opacity??preferences.radialBa
     for(let i=0;i<w;i++){const x=(i+0.5)*scale,value=(1-ease((x-solid)/span))*across;data[(j*w+i)*4+3]=value<=0?0:Math.max(0,Math.min(255,Math.round(value+HAZE_DITHER[(j&3)*4+(i&3)])));}
   }
   context.putImageData(image,0,0);
-}// Resizing (Size & Position, moving displays) changes the free space for the fade and the label path: redraw both.
-window.addEventListener('resize',()=>{if(preferences.interfaceStyle==='radial'){updateSmokeShape();drawNavigation();}});
+}
+// Resizing (Size & Position, moving displays) changes the free space for the fade and the label path: redraw both.
+window.addEventListener('resize',()=>{if(preferences.interfaceStyle==='radial'){drawNavigation();updateSmokeShape();}});
 
 let miniIndexCache={};
 function currentMiniIndices(page){const key=[demo,index,playback?.item?.uri,demo?(playing||progress>0):!!playback?.item].join(':');if(miniIndexCache.rows!==page.rows||miniIndexCache.key!==key)miniIndexCache={rows:page.rows,key,indices:page.rows.flatMap((row,i)=>radialMiniPlayer(row)?[i]:[])};return miniIndexCache.indices;}
-// Window Mode's Now Playing Backdrop: the album art fills the whole window and the menu floats on
-// top of it. Active only for the radial skin, and only once Window Mode and the setting are both on.
+// Window Mode alternates between the large player and a dedicated dial browsing screen.
 function backdropActive(){return preferences.windowMode&&preferences.nowPlayingBackdrop&&preferences.interfaceStyle==='radial';}
+// Split View changes how the two views share the window while the menu is up: instead of covering the
+// player, the menu takes its docked half and the player keeps the other, both live. The menu still
+// comes and goes the same way, so the idle timeout collapses it and the player expands to fill the
+// window. Two columns need room, so a window narrower than SPLIT_MIN_WIDTH uses the overlay instead.
+function splitActive(){return backdropActive()&&preferences.backdropLayout==='split'&&innerWidth>=SPLIT_MIN_WIDTH;}
+function backdropLayoutName(){return preferences.backdropLayout==='split'?'Split View':'Overlay';}
+// The player stacks artwork above its text when its column is too narrow to hold both side by side:
+// the whole window, or the half left over while Split View has the menu up beside it.
+function syncPlayerColumn(sharing=false){
+  const column=sharing?Math.max(0,innerWidth-($('#radial')?.clientWidth||0)):innerWidth;
+  document.body.dataset.playerColumn=column<=SPLIT_MIN_WIDTH?'narrow':'wide';
+}
+function syncDialOverlay(){
+  const active=backdropActive(),split=splitActive();
+  const visible=active&&dialOverlay.visible&&nav.current.kind!=='now';
+  // Overlay covers the player with the menu; Split View sets it beside the menu instead.
+  const covered=visible&&!split;
+  document.body.dataset.dialOverlay=String(visible);
+  document.body.dataset.backdropSplit=String(split);
+  document.body.dataset.splitDivider=String(preferences.splitDivider);
+  const radialHost=$('#radial');
+  const player=$('.radial-backdrop-info'),browseButton=$('#radialBackdropBrowse');
+  $('#radialBackdrop').setAttribute('aria-label',visible&&split?'Now playing and music browsing':visible?'Music browsing':'Now playing');
+  if(active&&!visible&&radialHost.contains(document.activeElement))browseButton.focus({preventScroll:true});
+  // Only a covered player has to hand focus back; beside the menu it stays usable.
+  if(covered&&player.contains(document.activeElement))browseButton.focus({preventScroll:true});
+  radialHost.inert=active&&!visible;
+  if(active&&!visible)radialHost.setAttribute('aria-hidden','true');else radialHost.removeAttribute('aria-hidden');
+  player.inert=covered;
+  if(covered)player.setAttribute('aria-hidden','true');else player.removeAttribute('aria-hidden');
+  browseButton.setAttribute('aria-expanded',String(visible));
+  $('#radialBackdropBrowse span').textContent=visible?'Now Playing':'Browse';
+  $('#windowViewLabel').textContent=visible?(nav.current.title==='turnbit'?'BROWSE':nav.current.title.toUpperCase()):'NOW PLAYING';
+  // The full-window dismiss target would sit on top of the player's own controls in Split View.
+  $('#radialBackdropDismiss').hidden=!visible||split;
+  syncPlayerColumn(visible&&split);
+}
+function revealDialOverlay(){
+  if(!backdropActive())return false;
+  const opened=dialOverlay.show();
+  if(nav.current.kind==='now'){nav.dismissIdle();if(nav.current.kind==='now')nav.back();}
+  syncDialOverlay();return opened;
+}
+function dismissDialOverlay(){
+  dialOverlay.hide();cancelBackHold();syncDialOverlay();
+}
+function browseFromPlayer(){
+  noteActivity();revealDialOverlay();drawNavigation();
+}
+function playbackModes(){return {liked:demo?demoLikes.has(index):playback?.liked,shuffle:demo?demoShuffle:!!playback?.shuffle_state,repeat:demo?demoRepeat:playback?.repeat_state||'off'};}
+function updateBackdropControls(){
+  const modes=playbackModes(),play=$('#radialBackdropPlay');
+  play.dataset.playing=String(playing);play.setAttribute('aria-label',playing?'Pause':'Play');
+  for(const key of ['like','shuffle','repeat']){
+    const button=document.querySelector(`[data-backdrop-command="${key}"]`);
+    const active=key==='like'?modes.liked===true:key==='shuffle'?modes.shuffle:modes.repeat!=='off';
+    button.setAttribute('aria-pressed',String(active));button.dataset.repeat=modes.repeat;
+    const label=key==='like'?(active?'Remove from Liked Songs':'Save to Liked Songs'):key==='shuffle'?'Shuffle '+(active?'on':'off'):'Repeat '+({off:'off',context:'all',track:'one song'}[modes.repeat]||'off');
+    button.setAttribute('aria-label',label);button.title=label;
+    if(key==='like'){button.disabled=!demo&&!/^spotify:track:[A-Za-z0-9]{22}$/.test(playback?.item?.uri||'');button.setAttribute('aria-busy',String(likeRequests>0||(!demo&&!!playback?.likedPending)));}
+  }
+}
 function updateBackdropInfo(){
-  $('#radialBackdropTitle').textContent=$('#title').textContent;$('#radialBackdropArtist').textContent=$('#artist').textContent;$('#radialBackdropAlbum').textContent=$('#album').textContent;
-  const artwork=$('#art');$('#radialBackdropArtImg').hidden=artwork.hidden;
+  updateBackdropControls();
+  $('#radialBackdropState').textContent=demo?'DEMO · NO AUDIO':playing?'PLAYING':'PAUSED';
+  $('#radialBackdropDevice').textContent=demo?'Connect Spotify':playback?.device?.name||'Choose a device';
+  for(const [target,source] of [['Title','title'],['Artist','artist'],['Album','album']]){const node=$('#radialBackdrop'+target);node.textContent=$('#'+source).textContent;node.title=node.textContent;}
+  const artwork=$('#art');$('#radialBackdropArtImg').hidden=artwork.hidden;$('#radialBackdropArtImg').nextElementSibling.hidden=!artwork.hidden;
   if(!artwork.hidden){if($('#radialBackdropArtImg').src!==artwork.src)$('#radialBackdropArtImg').src=artwork.src;$('#radialBackdropArt').style.backgroundImage=`url(${JSON.stringify(artwork.src)})`;}
   else $('#radialBackdropArt').style.backgroundImage='none';
   $('#radialBackdropElapsed').textContent=time(currentProgress());$('#radialBackdropDuration').textContent=time(duration());
@@ -225,17 +317,18 @@ function drawRadial(){
   if(preferences.interfaceStyle==='radial')api?.setInterface?.('radial',preferences.radialSide,radialLayoutNow())?.catch(()=>{});
   ensureBackRow(nav.current);ensureHomeLayout(nav.current);
   if(visibilityState.invisible||visibilityState.minimized)return;
-  if(preferences.interfaceStyle!=='radial'){radial.stop();trackTransition.reset();$('#radialBackdrop').hidden=true;document.body.dataset.backdropActive='false';return;}
+  if(preferences.interfaceStyle!=='radial'){radial.stop();trackTransition.reset();$('#radialBackdrop').hidden=true;document.body.dataset.backdropActive='false';syncDialOverlay();return;}
   const page=nav.current;if(page.kind!=='now')trackTransition.reset();
+  // The backdrop already shows everything the compact Now Playing panel would, so that panel stays hidden while it's active.
+  // Settle this first: the smoke and the label path below are measured against the menu's column width.
+  const backdrop=backdropActive();$('#radialBackdrop').hidden=!backdrop;document.body.dataset.backdropActive=String(backdrop);syncDialOverlay();if(backdrop)updateBackdropInfo();
   $('#radial').dataset.page=page.kind;applyRadialColors();
   $('#radialColor').hidden=page.kind!=='color';
   const haze=page.kind==='visibility'&&page.key==='radialBackground'?page.value:preferences.radialBackground;
-  $('#radial').style.setProperty('--smoke-opacity',haze/100);updateSmokeShape(haze/100);
+  const smoke=haze/100;$('#radial').style.setProperty('--smoke-opacity',smoke);updateSmokeShape(smoke);syncRadialGlow();
   // Height under 100% leaves the window's top and/or bottom inside the screen: fade the backdrop there too.
   const short=preferences.radialHeight<100,v=preferences.radialVertical;$('#radial').dataset.fadeTop=String(short&&v!=='top');$('#radial').dataset.fadeBottom=String(short&&v!=='bottom');
   $('#radialStatus').dataset.playing=String(page.kind==='now'&&playing);
-  // The backdrop already shows everything the compact Now Playing panel would, so that panel stays hidden while it's active.
-  const backdrop=backdropActive();$('#radialBackdrop').hidden=!backdrop;document.body.dataset.backdropActive=String(backdrop);if(backdrop)updateBackdropInfo();
   $('#radialNow').hidden=page.kind!=='now'||backdrop;$('#radialLabels').hidden=['now','color'].includes(page.kind);
   $('#radialContext').textContent=page.title==='turnbit'?'SPOTIFY / TURNBIT':page.title.toUpperCase();
   $('#radialStatus').textContent=page.kind==='list'?(page.rows.length?`${String(page.selected+1).padStart(2,'0')} / ${String(page.rows.length).padStart(2,'0')}`:''):
@@ -244,7 +337,7 @@ function drawRadial(){
   if(page.kind==='color'){radial.stop();$('#radialColorLabel').textContent=page.title;$('#radialHue').value=page.value;$('#radialColorValue').textContent=radialColorName(page.value);$('#radialColorSwatch').style.background=radialColor(page.value,page.key==='accentHue');}
   else if(page.kind==='list')radial.update(page,page.rows,page.selected,{resolve:row=>({label:row.label,icon:row.icon,control:row.control,detail:radialRowDetail(row),disabled:row.disabled,mini:radialMiniPlayer(row)}),miniIndices:currentMiniIndices(page)});
   else if(page.kind==='now'){
-    radial.stop();trackTransition.update([demo?'demo:'+index:playback?.item?.uri,$('#title').textContent,$('#artist').textContent,$('#album').textContent,$('#art').hidden?'':$('#art').src].join('|'));
+    radial.stop();if(backdrop)trackTransition.reset();else trackTransition.update([demo?'demo:'+index:playback?.item?.uri,$('#title').textContent,$('#artist').textContent,$('#album').textContent,$('#art').hidden?'':$('#art').src].join('|'));
     $('#radialTitle').textContent=$('#title').textContent;$('#radialArtist').textContent=$('#artist').textContent;$('#radialAlbum').textContent=$('#album').textContent;
     const artwork=$('#art');$('#radialArt').hidden=artwork.hidden;$('#radialArtFallback').hidden=!artwork.hidden;
     if(!artwork.hidden&&$('#radialArt').src!==artwork.src)$('#radialArt').src=artwork.src;
@@ -275,9 +368,9 @@ function updateTrackIndicators() {
   });
 }
 function renderPlaybackIndicators(){
-  const liked=demo?demoLikes.has(index):playback?.liked,shuffle=demo?demoShuffle:!!playback?.shuffle_state,repeat=demo?demoRepeat:playback?.repeat_state||'off';
+  const {liked,shuffle,repeat}=playbackModes();updateBackdropControls();
   const paths={like:'<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/>',shuffle:'<path d="M3 5h3c5 0 7 14 12 14h3m-4-4 4 4-4 4M3 19h3c2 0 4-3 6-7s4-7 6-7h3m-4-4 4 4-4 4"/>',repeat:'<path d="m17 2 4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4m14-1v2a3 3 0 0 1-3 3H3"/><text class="repeat-one" x="12" y="15" text-anchor="middle">1</text>'};
-  for(const host of [document.querySelector('#radialNow .radial-track'),document.querySelector('#nowView .now-meta'),document.querySelector('.radial-backdrop-track')]){
+  for(const host of [document.querySelector('#radialNow .radial-track'),document.querySelector('#nowView .now-meta')]){
     let bar=host.querySelector('.playback-indicators');
     if(!bar){bar=document.createElement('div');bar.className='playback-indicators';for(const key of ['like','shuffle','repeat']){const icon=document.createElement('span');icon.dataset.mode=key;icon.setAttribute('role','img');icon.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true">'+paths[key]+'</svg>';bar.append(icon);}host.append(bar);}
     for(const icon of bar.children){const key=icon.dataset.mode,active=key==='like'?liked===true:key==='shuffle'?shuffle:repeat!=='off';const label=key==='like'?(liked===true?'Liked song':liked===false?'Not liked':'Like status unavailable'):key==='shuffle'?'Shuffle '+(shuffle?'on':'off'):'Repeat '+({off:'off',context:'all',track:'one song'}[repeat]||'off');icon.dataset.pending=String(key==='like'&&(likeRequests>0||(!demo&&!!playback?.likedPending)));icon.dataset.active=String(active);icon.dataset.repeat=repeat;icon.title=label;icon.setAttribute('aria-label',label);}
@@ -360,7 +453,7 @@ async function command(cmd,value) {
   if(['next','previous'].includes(cmd))pendingSkipFollow={page:nav.current,key:demo?'demo:'+index:playback?.item?.uri,until:Date.now()+20000};
   message();
   if(cmd==='pin'){toggleIdlePin();return true;}
-  if(cmd==='toggle' && !quietPlay && preferences.playOpensNowPlaying && (nav.current.kind!=='now'||$('#settings').open)){
+  if(cmd==='toggle' && !backdropActive() && !quietPlay && preferences.playOpensNowPlaying && (nav.current.kind!=='now'||$('#settings').open)){
     // From any menu/form, the first Play press only opens the player.
     if($('#settings').open)$('#settings').close();
     showNow();return true;
@@ -380,9 +473,13 @@ function changeVolume(value) { noteActivity();message();volumeControl.set(value)
 function seek(value) { if(!preferences.dialOnlyWake)noteActivity();seekControl.set(Math.max(0,Math.min(duration(),value))); }
 function openSettings() { wakeIdle();if(!$('#settings').open)$('#settings').showModal(); }
 // Dial Double-Press set to Home: straight to Home from anywhere (closing the settings form first if it is open).
-function dialHome(){noteActivity();wheelFeedback();clickSound();if($('#settings').open){$('#settings').close();return;}nav.goHome();drawNavigation();message();}
+function dialHome(){noteActivity();revealDialOverlay();wheelFeedback();clickSound();if($('#settings').open){$('#settings').close();return;}nav.goHome();drawNavigation();message();}
 function menuBack() {
   noteActivity();
+  if(backdropActive()&&!$('#settings').open){
+    if(revealDialOverlay()){drawNavigation();return;}
+    if(nav.stack.length===1){dismissDialOverlay();return;}
+  }
   wheelFeedback();clickSound();
   if($('#settings').open){$('#settings').close();return;}
   if(preferences.interfaceStyle==='zune'&&nav.stack.length===1&&!nav.idlePage){showNow();return;}
@@ -391,6 +488,7 @@ function menuBack() {
 }
 function dialogControls() { return [...$('#settings').querySelectorAll('button:not(:disabled),input,a,summary')]; }
 function rotate(delta) {
+  revealDialOverlay();
   wheelFeedback();
   noteActivity();
   if($('#settings').open){const controls=dialogControls();const i=controls.indexOf(document.activeElement);controls[Math.max(0,Math.min(controls.length-1,i+delta))]?.focus();return;}
@@ -401,8 +499,8 @@ function rotate(delta) {
   // Extra up-turns at the top of the list are normal when turning all the way up: keep counting (or start) instead of cancelling.
   if(!shortcutRow(nav.current))cancelBackHold();else if(!backHold)startBackHold();
 }
-function push(page) { noteActivity();const result=nav.push(page);drawNavigation();return result; }
-function showNow() { if(nav.current.kind!=='now')push({title:'Now Playing',kind:'now'});render(); }
+function push(page) { noteActivity();if(page.kind!=='now')revealDialOverlay();const result=nav.push(page);drawNavigation();return result; }
+function showNow() { if(backdropActive())dismissDialOverlay();if(nav.current.kind!=='now')push({title:'Now Playing',kind:'now'});render(); }
 function returnToSongList() {
   noteActivity();
   if(nav.returnToMusic()){drawNavigation();selectPlayingSong();return;}
@@ -414,7 +512,7 @@ function returnToSongList() {
 }
 function showMusic() { if(preferences.interfaceStyle==='zune'){showLibrary('playlists');return;}push({title:'Music',rows:[{label:'Playlists',action:'playlists',branch:true},{label:'Liked Songs',action:'songs',branch:true}],hint:demo?'Demo library · no audio':'Songs are your Spotify Liked Songs'}); }
 // Value pickers: each key carries its own range, step, and unit.
-function valueSpec(key){return key==='timeout'?{min:1,max:600,step:1,unit:' sec'}:key==='radialWidthPct'?{min:15,max:70,step:5,unit:'%'}:key==='radialHeight'?{min:30,max:100,step:5,unit:'%'}:{min:0,max:100,step:1,unit:'%'};}
+function valueSpec(key){return ['timeout','menuTimeout'].includes(key)?{min:1,max:600,step:1,unit:' sec'}:key==='radialWidthPct'?{min:15,max:70,step:5,unit:'%'}:key==='radialHeight'?{min:30,max:100,step:5,unit:'%'}:{min:preferences.windowMode&&['opacity','idleOpacity'].includes(key)?WINDOW_MIN_OPACITY:0,max:100,step:1,unit:'%'};}
 function valueText(key,value){return value+valueSpec(key).unit;}
 // Size & Position: while Width or Height is being adjusted, preview the unsaved value.
 function radialLayoutNow(){let page=null;try{page=nav.current;}catch{/* Before navigation exists (startup). */}const editing=page?.kind==='visibility'&&['radialWidthPct','radialHeight'].includes(page.key);
@@ -427,7 +525,7 @@ async function showLayout(){push({title:'Size & Position',rows:layoutRows()});co
 // Text Alignment: Auto aligns text toward the docked screen edge; Left or Right fix it.
 function textAlign(){return preferences.radialAlign==='auto'?(preferences.radialSide==='left'?'right':'left'):preferences.radialAlign;}
 function alignName(){return {auto:'Auto',left:'Left',right:'Right'}[preferences.radialAlign];}
-function radialSettingsRows(){return [{label:'Curved Menu',action:'playback-preference',key:'radialCurve',detail:preferences.radialCurve?'On':'Off'},{label:'Text Alignment',action:'radial-align',detail:alignName()},{label:'Screen Edge',action:'radial-side',detail:preferences.radialSide==='left'?'Left':'Right'},{label:'Smoky Background',action:'radial-background',detail:preferences.radialBackground?preferences.radialBackground+'%':'Off',branch:true,showDetail:true},{label:'Text Color',action:'radial-color',key:'primaryHue',detail:radialColorName(preferences.primaryHue),branch:true},{label:'Accent Color',action:'radial-color',key:'accentHue',detail:radialColorName(preferences.accentHue),branch:true}];}
+function radialSettingsRows(){return [{label:'Curved Menu',action:'playback-preference',key:'radialCurve',detail:preferences.radialCurve?'On':'Off'},{label:'Text Alignment',action:'radial-align',detail:alignName()},{label:preferences.windowMode?'Menu Side':'Screen Edge',action:'radial-side',detail:preferences.radialSide==='left'?'Left':'Right'},{label:'Smoky Background',action:'radial-background',detail:preferences.radialBackground?preferences.radialBackground+'%':'Off',branch:true,showDetail:true},{label:'Text Color',action:'radial-color',key:'primaryHue',detail:radialColorName(preferences.primaryHue),branch:true},{label:'Accent Color',action:'radial-color',key:'accentHue',detail:radialColorName(preferences.accentHue),branch:true}];}
 // Settings are grouped by task: Settings > category > setting. Rows marked with › open one more screen to pick a
 // value (volume, colors, devices, interface). Each category's subtitle says what is inside.
 const settingsGroups=[
@@ -444,7 +542,7 @@ function settingsRows(group){
     case 'appearance':return [{label:'Interface',action:'interface',detail:interfaceName(preferences.interfaceStyle),branch:true},...(preferences.interfaceStyle==='radial'?radialSettingsRows():[{label:'Case Color',action:'case-theme',detail:themeName(preferences.appearance),branch:true},{label:'Screen Theme',action:'screen-theme',detail:preferences.screenTheme==='dark'?'Dark':'Light'}])];
     case 'navigation':return [toggle('Reverse Dial Direction','reverseDial'),{label:'Dial Double-Press',action:'double-press',detail:preferences.doublePress==='home'?'Home':'Back'},toggle('Back in Lists','backRow'),toggle('Last Song List on Home','homeLastSongList'),toggle('Hover Shortcuts','hoverBack'),{label:'Mouse Mode Key',action:'mouse-mode-key',detail:mouseModeKeys[preferences.mouseModeKey]},{label:'Click Sounds',action:'clicker',detail:preferences.clicker?'On':'Off'}];
     case 'now-playing':return [toggle('Play Opens Now Playing','playOpensNowPlaying'),toggle('Open Song in Now Playing','songOpensNowPlaying'),toggle('Idle to Now Playing','idleNowPlaying'),toggle('Follow Playing Song','idleFollowSong')];
-    case 'window':return [{label:'Window Mode',action:'window-mode',detail:preferences.windowMode?'On':'Off'},...(preferences.windowMode&&preferences.interfaceStyle==='radial'?[toggle('Now Playing Backdrop','nowPlayingBackdrop')]:[]),{label:'Transparency',action:'visibility',branch:true},...(preferences.interfaceStyle==='radial'?[{label:'Size & Position',action:'radial-layout',branch:true}]:[]),{label:'Keep on Top',action:'pin',detail:pinned?'On':'Off'},{label:'Pin Widget',action:'idle-pin',detail:preferences.idlePinned?'On':'Off'},toggle('Dial Only Wake','dialOnlyWake'),toggle('Mouse Click Through','mousePassthrough'),toggle('Gaming Mode','gamingMode')];
+    case 'window':return [{label:'Window Mode',action:'window-mode',detail:preferences.windowMode?'On':'Off'},...(preferences.windowMode&&preferences.interfaceStyle==='radial'?[toggle('Now Playing Backdrop','nowPlayingBackdrop')]:[]),...(backdropActive()?[{label:'Dial Menu Layout',action:'backdrop-layout',detail:backdropLayoutName()},{label:'Dial Menu Timeout',action:'menu-timeout',key:'menuTimeout',detail:valueText('menuTimeout',preferences.menuTimeout),branch:true,showDetail:true},...(preferences.backdropLayout==='split'?[toggle('Dial Menu Divider','splitDivider')]:[])]:[]),{label:'Transparency',action:'visibility',branch:true},...(preferences.interfaceStyle==='radial'&&!preferences.windowMode?[{label:'Size & Position',action:'radial-layout',branch:true}]:[]),{label:'Keep on Top',action:'pin',detail:pinned?'On':'Off'},{label:backdropActive()?'Pin Dial Menu':'Pin Widget',action:'idle-pin',detail:preferences.idlePinned?'On':'Off'},toggle('Dial Only Wake','dialOnlyWake'),...(preferences.windowMode?[]:[toggle('Mouse Click Through','mousePassthrough')]),toggle('Gaming Mode','gamingMode')];
   }
   return [];
 }
@@ -456,7 +554,7 @@ function showSetting(match) {
   nav.current.selected=nav.current.rows.findIndex(row=>row.group===group.id);drawNavigation();showSettingsGroup(group.id);
   nav.current.selected=nav.current.rows.findIndex(match);drawNavigation();return true;
 }
-function showTransparency(){const value=preferences.visibility;push({title:'Transparency',visibilitySettings:true,rows:[{label:'Mode',action:'visibility-mode',detail:{off:'Off',always:'Always',idle:'Idle Fade'}[value.mode]},{label:'Opacity',action:'visibility-adjust',key:'opacity',detail:value.opacity+'%',branch:true,showDetail:true},{label:'Idle Opacity',action:'visibility-adjust',key:'idleOpacity',detail:value.idleOpacity+'%',branch:true,showDetail:true},{label:'Idle Timeout',action:'visibility-adjust',key:'timeout',detail:value.timeout+' sec',branch:true,showDetail:true}],hint:value.mode==='idle'?'Solid while active · fades after idle':value.mode==='always'?'Fixed opacity · 0% wakes on D100H input':'Select Mode to enable transparency'});}
+function showTransparency(){const value=visibilityNow();push({title:'Transparency',visibilitySettings:true,rows:[{label:'Mode',action:'visibility-mode',detail:{off:'Off',always:'Always',idle:'Idle Fade'}[value.mode]},{label:'Opacity',action:'visibility-adjust',key:'opacity',detail:value.opacity+'%',branch:true,showDetail:true},{label:'Idle Opacity',action:'visibility-adjust',key:'idleOpacity',detail:value.idleOpacity+'%',branch:true,showDetail:true},{label:'Idle Timeout',action:'visibility-adjust',key:'timeout',detail:value.timeout+' sec',branch:true,showDetail:true}],hint:value.mode==='idle'?'Solid while active · fades after idle':value.mode==='always'?(preferences.windowMode?`Fixed opacity · stays at least ${WINDOW_MIN_OPACITY}% in Window Mode`:'Fixed opacity · 0% wakes on D100H input'):'Select Mode to enable transparency'});}
 function showZunePlaybackOptions() {push({title:'Playback',rows:[{label:'Song list',action:'song-list',branch:true},{label:'Volume',action:'volume',branch:true},{label:'Playback device',action:'devices',branch:true},{label:'Now playing',action:'back-now',branch:true}]});}
 function interfaceName(style){return {radial:'turnbit',ipod:'iPod',zune:'Zune'}[style]||'turnbit';}
 function showInterfaces() {const styles=['radial','ipod','zune'];push({title:'Interface',rows:styles.map(style=>({label:interfaceName(style),action:'set-interface',style,detail:preferences.interfaceStyle===style?'✓':''})),hint:'Select an interface · Menu to return'});nav.current.selected=nav.current.rows.findIndex(row=>row.style===preferences.interfaceStyle);drawNavigation();}
@@ -466,7 +564,7 @@ function showCaseThemes() {
   nav.current.selected=nav.current.rows.findIndex(row=>row.theme===preferences.appearance);drawNavigation();
 }
 function savePreferences(patch) {
-  try {const next={...preferences,...patch};localStorage.setItem('turnbit-preferences',JSON.stringify(next));localStorage.removeItem('dialpod-preferences');Object.assign(preferences,next);applyTheme(document.body,preferences.appearance);document.body.dataset.screen=preferences.screenTheme;document.body.dataset.interface=preferences.interfaceStyle;document.body.dataset.edge=preferences.radialSide;document.body.dataset.align=textAlign();api?.setInterface?.(preferences.interfaceStyle,preferences.radialSide,radialLayoutNow())?.catch(error=>message(error.message));syncVisibility();syncRecovery();return true;}
+  try {const next={...preferences,...patch};localStorage.setItem('turnbit-preferences',JSON.stringify(next));localStorage.removeItem('dialpod-preferences');Object.assign(preferences,next);applyTheme(document.body,preferences.appearance);document.body.dataset.windowMode=String(preferences.windowMode);document.body.dataset.screen=preferences.screenTheme;document.body.dataset.interface=preferences.interfaceStyle;document.body.dataset.edge=preferences.radialSide;document.body.dataset.align=textAlign();api?.setInterface?.(preferences.interfaceStyle,preferences.radialSide,radialLayoutNow())?.catch(error=>message(error.message));syncVisibility();syncRecovery();return true;}
   catch {message('Could not save this setting. Please try again.');return false;}
 }
 function toggleCurrentSongBehavior() {
@@ -476,15 +574,22 @@ let pinQueue=Promise.resolve();
 function togglePin(){pinQueue=pinQueue.then(performPinToggle);return pinQueue;}
 function toggleIdlePin(){
   if(!savePreferences({idlePinned:!preferences.idlePinned}))return;
+  if(backdropActive()&&preferences.idlePinned)revealDialOverlay();
   for(const page of nav.stack){const row=page.rows?.find(item=>item.action==='idle-pin');if(row)row.detail=preferences.idlePinned?'On':'Off';}
-  noteActivity();drawNavigation();message(preferences.idlePinned?'Widget pinned · idle paused':'Widget unpinned · idle resumed');
+  noteActivity();drawNavigation();message(backdropActive()?(preferences.idlePinned?'Dial menu pinned':'Dial menu unpinned'):(preferences.idlePinned?'Widget pinned · idle paused':'Widget unpinned · idle resumed'));
 }
 async function performPinToggle() { if(!api)return;try{const next=await api.pin(!pinned);if(!savePreferences({keepOnTop:next})){await api.pin(pinned);return;}pinned=next;$('#pin').textContent=pinned?'◆':'◇';$('#pin').setAttribute('aria-pressed',String(pinned));const row=nav.current.rows.find(r=>r.action==='pin');if(row)row.detail=pinned?'On':'Off';drawNavigation();message(pinned?'Always on Top enabled':'Always on Top disabled');}catch(e){message(e.message);} }
-// Toggling this destroys and recreates the OS window (frame/transparent can't change live), so the
-// current renderer is about to be torn down; there is no window left afterward to update detail/draw.
-let windowModeQueue=Promise.resolve();
-function toggleWindowMode(){windowModeQueue=windowModeQueue.then(performWindowModeToggle);return windowModeQueue;}
-async function performWindowModeToggle() { if(!api)return;try{const next=await api.windowMode(!preferences.windowMode);savePreferences({windowMode:next});message(next?'Window Mode enabled':'Window Mode disabled');}catch(e){message(e.message);} }
+// Save the renderer's preference before requesting its replacement. Ignore duplicate input
+// while switching, and restore the preference if main cannot persist the mode.
+let windowModeChanging=false;
+async function toggleWindowMode(){
+  if(!api||windowModeChanging)return;
+  const previous=preferences.windowMode;
+  windowModeChanging=true;
+  if(!savePreferences({windowMode:!previous})){windowModeChanging=false;return;}
+  try{await api.windowMode(!previous);}
+  catch(error){savePreferences({windowMode:previous});windowModeChanging=false;drawNavigation();message(error.message);}
+}
 function demoLibrary(kind,playlist) {
   if(kind==='playlists')return {items:[{id:'demo-night',name:'After Hours',demoIndexes:[0,1]},{id:'demo-sunday',name:'Slow Days',demoIndexes:[2]}],next:null};
   const indexes=playlist?.demoIndexes||[0,1,2];return {items:indexes.map(i=>({item:demos[i],demoIndex:i})),next:null};
@@ -574,6 +679,7 @@ function followSkippedSong(){
   drawNavigation();
 }
 function followIdleSong(faded=false){
+  if(backdropActive()&&!dialOverlay.visible)return;
   const page=nav.current,fade=preferences.visibility;
   // Fully hidden widgets follow the native fade completion, before their next reveal.
   const wait=fade.mode==='idle'?fade.timeout*1000+650:10000;
@@ -608,12 +714,13 @@ async function playRow(row) {
   if(await command('play-item',value)){if(sourcePath)nav.musicPath=sourcePath;finishSongSelection();}
 }
 async function selectItem(fromDial=false) {
+  if(backdropActive()&&revealDialOverlay()){noteActivity();drawNavigation();return;}
   wheelFeedback(true);
   noteActivity();
   clickSound();
   if($('#settings').open){const focused=document.activeElement;if(focused?.matches('button,a,summary'))focused.click();return;}
   if(nav.current.kind==='color'){const page=nav.current;if(savePreferences({[page.key]:page.value})){nav.back();const row=nav.current.rows.find(item=>item.key===page.key);if(row)row.detail=radialColorName(page.value);drawNavigation();}return;}
-  if(nav.current.kind==='visibility'){const page=nav.current;if(savePreferences(['radialBackground','radialWidthPct','radialHeight'].includes(page.key)?{[page.key]:page.value}:{visibility:{...preferences.visibility,[page.key]:page.value}})){nav.back();const row=nav.current.rows.find(item=>item.key===page.key||(page.key==='radialBackground'&&item.action==='radial-background'));if(row)row.detail=valueText(page.key,page.value);drawNavigation();}return;}
+  if(nav.current.kind==='visibility'){const page=nav.current;if(savePreferences(['radialBackground','radialWidthPct','radialHeight','menuTimeout'].includes(page.key)?{[page.key]:page.value}:{visibility:{...preferences.visibility,[page.key]:page.value}})){nav.back();const row=nav.current.rows.find(item=>item.key===page.key||(page.key==='radialBackground'&&item.action==='radial-background'));if(row)row.detail=valueText(page.key,page.value);drawNavigation();}return;}
   if(nav.current.kind==='now'){if(preferences.interfaceStyle==='zune')showZunePlaybackOptions();else returnToSongList();return;}
   if(nav.current.kind!=='list'){menuBack();return;}
   const row=nav.select();if(!row)return;message();
@@ -625,10 +732,10 @@ async function selectItem(fromDial=false) {
     case 'visibility':showTransparency();break;
     case 'visibility-mode':{const modes=['off','always','idle'];if(savePreferences({visibility:{...preferences.visibility,mode:modes[(modes.indexOf(preferences.visibility.mode)+1)%3]}})){nav.back();showTransparency();}break;}
     case 'radial-layout':showLayout();break;
-    case 'radial-size':push({title:row.label,kind:'visibility',visibilitySettings:true,key:row.key,value:preferences[row.key]});break;
+    case 'radial-size':case 'menu-timeout':push({title:row.label,kind:'visibility',visibilitySettings:true,key:row.key,value:preferences[row.key]});break;
     case 'radial-vertical':if(savePreferences({radialVertical:{top:'center',center:'bottom',bottom:'top'}[preferences.radialVertical]})){row.detail=verticalName();drawNavigation();}break;
     case 'radial-display':{try{knownDisplays=await api.displays();}catch{knownDisplays=[];}const ids=[null,...knownDisplays.map(item=>item.id)],next=ids[(ids.indexOf(preferences.radialDisplay)+1)%ids.length];if(savePreferences({radialDisplay:next})){row.detail=displayName(next);drawNavigation();}break;}
-    case 'visibility-adjust':push({title:row.label,kind:'visibility',visibilitySettings:true,key:row.key,value:preferences.visibility[row.key]});break;
+    case 'visibility-adjust':push({title:row.label,kind:'visibility',visibilitySettings:true,key:row.key,value:visibilityNow()[row.key]});break;
     case 'music':showMusic();break;
     case 'now':showNow();break;
     case 'settings':showSettings();break;
@@ -641,6 +748,7 @@ async function selectItem(fromDial=false) {
     case 'connect':openSettings();break;
     case 'pin':await togglePin();break;
     case 'window-mode':await toggleWindowMode();break;
+    case 'backdrop-layout':if(savePreferences({backdropLayout:preferences.backdropLayout==='split'?'overlay':'split'})){row.detail=backdropLayoutName();revealDialOverlay();drawNavigation();}break;
     case 'idle-pin':toggleIdlePin();break;
     case 'double-press':if(savePreferences({doublePress:preferences.doublePress==='home'?'back':'home'})){row.detail=preferences.doublePress==='home'?'Home':'Back';drawNavigation();}break;
     case 'radial-align':if(savePreferences({radialAlign:{auto:'left',left:'right',right:'auto'}[preferences.radialAlign]})){row.detail=alignName();drawNavigation();}break;
@@ -684,8 +792,13 @@ function hardwareEvent(event){
 function handleHardwareEvent(event) {
   if(event.type==='heartbeat')return;
   if(event.type==='wake'){centerClick.cancel();noteActivity();return;}
-  if(event.type==='command'&&event.command==='center-down'){wheelFeedback(true);noteActivity();return;}
-  if(event.type==='command'&&event.command==='center-click'){noteActivity();centerClick.click();return;}
+  if(event.type==='command'&&event.command==='center-down'){dialRevealPress=revealDialOverlay();if(dialRevealPress)drawNavigation();wheelFeedback(true);noteActivity();return;}
+  if(event.type==='command'&&event.command==='center-click'){
+    noteActivity();
+    if(dialRevealPress){dialRevealPress=false;return;}
+    if(revealDialOverlay()){drawNavigation();return;}
+    centerClick.click();return;
+  }
   if(!(event.type==='command'&&event.command==='touch'))centerClick.flush();
   if(event.type==='dial')return rotate(preferences.reverseDial?-event.delta:event.delta);
   if(event.type!=='command')return;
@@ -758,6 +871,7 @@ $('#wheel').addEventListener('pointerup',finishDrag);$('#wheel').addEventListene
 new ResizeObserver(measureVisibleTitles).observe($('.screen'));
 document.addEventListener('keydown',e=>{
   if(e.target.closest('dialog')||['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))return;
+  if(e.target.closest('button')&&[' ','Enter'].includes(e.key))return;
   if([' ','Enter','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Backspace','Escape'].includes(e.key))e.preventDefault();
   if(e.key===' '&&!e.repeat)command('toggle');if(e.key==='Enter'&&!e.repeat)selectItem();
   if(e.key==='ArrowUp')preferences.interfaceStyle==='zune'?zuneVertical(-1):rotate(-1);if(e.key==='ArrowDown')preferences.interfaceStyle==='zune'?zuneVertical(1):rotate(1);
@@ -770,7 +884,7 @@ document.addEventListener('keydown',e=>{
 $('#visibilityRange').oninput=event=>{if(nav.current.kind==='visibility'){nav.current.value=Number(event.target.value);drawNavigation();}};
 $('#settings').addEventListener('toggle',syncVisibility);
 let lastMouseActivity=0;
-document.addEventListener('pointermove',()=>{if(preferences.mousePassthrough)return;if(Date.now()-lastMouseActivity>250){lastMouseActivity=Date.now();lastVisualActivity=Date.now();syncGamingMode();api?.activity();}},{passive:true});
+document.addEventListener('pointermove',()=>{if(clickThroughActive())return;if(Date.now()-lastMouseActivity>250){lastMouseActivity=Date.now();lastVisualActivity=Date.now();syncGamingMode();api?.activity();}},{passive:true});
 document.addEventListener('pointerdown',()=>noteActivity(),{passive:true,capture:true});
 document.addEventListener('keydown',()=>noteActivity(),{capture:true});
 $('#pin').onclick=togglePin;$('#minimize').onclick=()=>api?.minimize();$('#close').onclick=()=>api?.close();
@@ -786,7 +900,7 @@ if(api){
   syncRecovery();
   api.pin(preferences.keepOnTop).then(value=>{pinned=value;$('#pin').textContent=pinned?'◆':'◇';$('#pin').setAttribute('aria-pressed',String(pinned));const row=nav.current.rows.find(item=>item.action==='pin');if(row)row.detail=pinned?'On':'Off';drawNavigation();}).catch(error=>message(error.message));
   // Main owns the authoritative windowMode (it decides frame/transparent at window creation); resync in case it drifted from this copy.
-  api.windowMode().then(value=>{if(typeof value==='boolean'&&value!==preferences.windowMode)savePreferences({windowMode:value});}).catch(()=>{});
+  api.windowMode().then(value=>{if(typeof value==='boolean'&&value!==preferences.windowMode){savePreferences({windowMode:value});drawNavigation();render();}}).catch(()=>{});
   api.onState(data=>{if(!demo)acceptPlayback(data);});
   api.onAuth(auth=>{if(auth.error){message(auth.error);$('#settingsMessage').textContent=auth.error;return;}if(auth.connected){demo=false;$('#settingsMessage').textContent='Connected.';$('#settings').close();nav.reset(root());drawNavigation();refresh();}else if(!auth.authorizing){demo=true;playing=false;nav.reset(root());drawNavigation();render();}});
   api.onDeviceEvent(hardwareEvent);api.onBridgeError(message);api.onMouseMode?.(mouseModeEvent);syncMouseMode();
@@ -795,7 +909,16 @@ if(api){
   api.onVisibility?.(state=>{const wasHidden=visibilityState.invisible||visibilityState.minimized;Object.assign(visibilityState,state);const hidden=visibilityState.invisible||visibilityState.minimized;document.body.dataset.renderSuspended=String(hidden);if(hidden){if(state.invisible&&preferences.visibility.mode==='idle')followIdleSong(true);radial.stop();trackTransition.reset();}else if(wasHidden){renderStamp=null;drawNavigation();render();poll();}});
   poll();document.addEventListener('visibilitychange',()=>{if(!document.hidden)poll();});
 }else message('Preview only. Run npm start for Spotify and D100H.');
-setInterval(()=>{if(demo&&playing&&!transportHold.direction&&currentProgress()>=duration())command('next');if(idle.tick(!preferences.idlePinned&&preferences.idleNowPlaying&&!$('#settings').open&&!nav.current.loading&&!nav.current.visibilitySettings)){drawNavigation();}followIdleSong();syncGamingMode();renderProgress();},250);
+setInterval(()=>{
+  if(demo&&playing&&!transportHold.direction&&currentProgress()>=duration())command('next');
+  if(backdropActive()){
+    const protectedView=preferences.idlePinned||$('#settings').open||nav.current.loading||nav.current.visibilitySettings||nav.current.kind==='color'||!!backHold||centerClick.pending||$('#radial').contains(document.activeElement)&&document.activeElement.matches('input');
+    // Dial Menu Timeout, read each tick so a new value takes effect straight away.
+    dialOverlay.timeout=preferences.menuTimeout*1000;
+    if(dialOverlay.tick(protectedView)){cancelBackHold();syncDialOverlay();}
+  }else if(idle.tick(!preferences.idlePinned&&preferences.idleNowPlaying&&!$('#settings').open&&!nav.current.loading&&!nav.current.visibilitySettings))drawNavigation();
+  followIdleSong();syncGamingMode();renderProgress();
+},250);
 drawNavigation();render();
 
 $('#radial').addEventListener('wheel',event=>{event.preventDefault();rotate(event.deltaY>0?1:-1);},{passive:false});
@@ -803,6 +926,14 @@ $('#radial').addEventListener('click',event=>{if(nav.current.kind!=='list'&&even
 
 $('#radialVolume').oninput=event=>changeVolume(Number(event.target.value));
 $('#radialSeek').onchange=event=>{seek(Number(event.target.value));event.target.blur();};
+$('#radialBackdropBrowse').onclick=()=>{if(dialOverlay.visible)dismissDialOverlay();else browseFromPlayer();};
+$('#radialBackdropDismiss').onclick=dismissDialOverlay;
+$('#radialBackdropDevice').onclick=()=>{if(demo)openSettings();else showDevices();};
+$('#radialBackdrop').addEventListener('wheel',event=>{
+  if(event.target.matches('input'))return;
+  event.preventDefault();rotate(event.deltaY>0?1:-1);
+},{passive:false});
+for(const button of document.querySelectorAll('[data-backdrop-command]'))button.onclick=()=>command(button.dataset.backdropCommand);
 $('#radialBackdropVolume').oninput=event=>changeVolume(Number(event.target.value));
 $('#radialBackdropSeek').onchange=event=>{seek(Number(event.target.value));event.target.blur();};
 $('#radialSongList').onclick=returnToSongList;

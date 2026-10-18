@@ -9,7 +9,7 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron .",
-    "lint": "node --check src/main.js && node --check src/tray.js && node --check src/mouse-mode.js && node --check src/mouse-mode-preload.js && node --check renderer/mouse-mode.js && node --check src/preload.js && node --check src/spotify.js && node --check src/media-session.js && node --check src/bridge.js && node --check src/visibility.js && node --check src/hardware-wake.js && node --check renderer/track-transition.js && node --check renderer/radial.js && node --check renderer/window-gestures.js && node --check renderer/renderer.js && node --check renderer/navigation.js && node --check renderer/volume.js && node --check renderer/library-cache.js && node --check renderer/center-click.js && node --check renderer/transport-hold.js && node --check renderer/themes.js && node --check ulanzi-plugin/com.turnbit.spotify.ulanziPlugin/app.js",
+    "lint": "node --check src/main.js && node --check src/window-state.js && node --check scripts/install-plugin.js && node --check scripts/restart-studio.js && node --check src/tray.js && node --check src/mouse-mode.js && node --check src/mouse-mode-preload.js && node --check renderer/mouse-mode.js && node --check src/preload.js && node --check src/spotify.js && node --check src/media-session.js && node --check src/bridge.js && node --check src/visibility.js && node --check src/hardware-wake.js && node --check renderer/track-transition.js && node --check renderer/radial.js && node --check renderer/dial-overlay.js && node --check renderer/window-gestures.js && node --check renderer/renderer.js && node --check renderer/navigation.js && node --check renderer/volume.js && node --check renderer/library-cache.js && node --check renderer/center-click.js && node --check renderer/transport-hold.js && node --check renderer/themes.js && node --check ulanzi-plugin/com.turnbit.spotify.ulanziPlugin/app.js",
     "test": "node --test",
     "check": "npm run lint && npm test",
     "plugin:build": "node scripts/build-plugin.js",
@@ -17,7 +17,8 @@
     "studio:restart": "node scripts/restart-studio.js",
     "smoke": "electron scripts/smoke.js",
     "package": "electron-builder --dir",
-    "demo:gif": "electron scripts/make-demo-gif.js"
+    "demo:gif": "electron scripts/make-demo-gif.js",
+    "test:desktop": "electron scripts/verify-window-mode.js && electron scripts/verify-now-playing-backdrop.js"
   },
   "devDependencies": {
     "electron": "^44.7.2",

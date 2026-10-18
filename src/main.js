@@ -11,20 +11,50 @@ const { HardwareWakeGate } = require('./hardware-wake');
 const { MediaSession } = require('./media-session');
 const { createTray } = require('./tray');
 const { MouseMode } = require('./mouse-mode');
+const { fitWindow, readWindowState, writeWindowState } = require('./window-state');
 let mainWindow, spotify, bridge, bridgeError, media, tray, quitting = false;
 let visibility,visibilityTimer,wakeGate,mouseMode;
 // Window Mode: a normal titled, taskbar/dock-visible window instead of the frameless tray widget.
 // Read before the first createWindow() so the initial frame/transparent/skipTaskbar choice is correct from boot.
 let windowMode=false;
+let dockTimer,lastDockHide=0;
+function syncDockVisibility(){
+  if(process.platform!=='darwin')return;
+  clearTimeout(dockTimer);
+  if(windowMode){app.dock?.show().then(()=>{if(!windowMode)syncDockVisibility();}).catch(error=>console.warn('Could not show Dock icon:',error.message));return;}
+  if(!app.dock?.isVisible())return;
+  // Electron ignores repeated hide() calls within one second. Window activation
+  // can also restore the icon, so recheck after the replacement window is shown.
+  const delay=1100-(Date.now()-lastDockHide);
+  if(delay>0){dockTimer=setTimeout(syncDockVisibility,delay);dockTimer.unref();return;}
+  lastDockHide=Date.now();app.dock.hide();
+}
 function windowModeFile(){return path.join(app.getPath('userData'),'window-mode.json');}
-function readWindowMode(){try{return JSON.parse(fs.readFileSync(windowModeFile(),'utf8')).enabled===true;}catch{return false;}}
-function saveWindowMode(enabled){try{fs.writeFileSync(`${windowModeFile()}.tmp`,JSON.stringify({enabled}));fs.renameSync(`${windowModeFile()}.tmp`,windowModeFile());}catch{}}
+let windowState={enabled:false,bounds:{}},placementTimer,windowModeSwitching=false;
+function rememberWindow(){
+  clearTimeout(placementTimer);
+  if(!windowMode||!activeInterface||!mainWindow||mainWindow.isDestroyed()||mainWindow.isMinimized())return;
+  windowState.bounds[activeInterface.split(':')[0]]=mainWindow.getNormalBounds();
+  try{writeWindowState(windowModeFile(),windowState);}catch(error){console.warn('Could not save window placement:',error.message);}
+}
+function restoreWindow(style){
+  const saved=windowState.bounds[style];
+  const area=screen.getDisplayMatching(saved||mainWindow.getBounds()).workArea;
+  const width=style==='radial'?960:380,height=style==='radial'?720:style==='zune'?655:710;
+  const bounds=saved||{x:area.x+(area.width-width)/2,y:area.y+(area.height-height)/2,width,height};
+  mainWindow.setBounds(fitWindow(bounds,area));
+}
 let mousePassthrough=false,mouseIgnored=false,mouseFocusable=true;
+// Window Mode keeps the mouse live no matter what. The title bar buttons (minimize, full screen,
+// close) and the resize edges are the only way to manage a normal window, so neither Mouse Click
+// Through nor a fully faded window may swallow clicks there. The widget has the tray and the D100H
+// to fall back on, so it can still go click-through.
 function syncMousePassthrough(){
   if(!mainWindow||mainWindow.isDestroyed())return;
-  const ignore=mousePassthrough||visibility?.opacity===0;
+  const ignore=!windowMode&&(mousePassthrough||visibility?.opacity===0);
+  const focusable=windowMode||!mousePassthrough;
   if(ignore!==mouseIgnored){mainWindow.setIgnoreMouseEvents(ignore);mouseIgnored=ignore;}
-  if(mouseFocusable===mousePassthrough){mouseFocusable=!mousePassthrough;mainWindow.setFocusable(mouseFocusable);}
+  if(focusable!==mouseFocusable){mouseFocusable=focusable;mainWindow.setFocusable(focusable);}
 }
 let commandQueue = Promise.resolve();
 let activeInterface=null;
@@ -39,7 +69,7 @@ function finishWindowGesture(cancel=false){
   windowGesture=null;
 }
 ipcMain.handle('app:window-gesture',(event,phase,kind)=>{
-  if(event.sender!==mainWindow?.webContents||!activeInterface?.startsWith('radial:'))return;
+  if(windowMode||event.sender!==mainWindow?.webContents||!activeInterface?.startsWith('radial:'))return;
   if(phase==='end'||phase==='cancel'){finishWindowGesture(phase==='cancel');return;}
   if(phase!=='start'||!['move','resize'].includes(kind))return;
   finishWindowGesture();
@@ -72,8 +102,9 @@ function wakeVisibility(force=false){visibility?.wake(force);scheduleVisibility(
 function createWindow(bounds) {
   // Widget mode: frameless/transparent, tray-only. Window Mode: a normal titled, taskbar/dock-visible window.
   const chrome=windowMode?{frame:true,transparent:false,backgroundColor:'#15171a',skipTaskbar:false}:{frame:false,transparent:true,backgroundColor:'#00000000',skipTaskbar:true};
-  mainWindow = new BrowserWindow({ show: false, icon: path.join(__dirname, '../assets/branding/turnbit.ico'), ...(bounds||{width:380,height:710}), minWidth: 360, minHeight: 700, maxWidth: 460, maxHeight: 800, ...chrome, resizable: true, webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: false } });
-  if(process.platform==='darwin'){if(windowMode)app.dock?.show();else app.dock?.hide();}
+  mouseIgnored=false;mouseFocusable=true;
+  mainWindow = new BrowserWindow({ show: false, icon: path.join(__dirname, '../assets/branding/turnbit.ico'), ...(bounds||{width:380,height:710}), minWidth: 360, minHeight: 320, ...chrome, resizable: true, webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: false } });
+  syncDockVisibility();
   // Running from the repo, the process is electron.exe; tell Windows which icon and command to use when pinned
   if(process.platform==='win32'&&!app.isPackaged)mainWindow.setAppDetails({appId:APP_ID,appIconPath:path.join(__dirname,'../assets/branding/turnbit.ico'),appIconIndex:0,relaunchCommand:`"${process.execPath}" "${app.getAppPath()}"`,relaunchDisplayName:'turnbit'});
   let invisible=false;
@@ -81,10 +112,11 @@ function createWindow(bounds) {
   wakeGate=new HardwareWakeGate(visibility);
   scheduleVisibility();
   mainWindow.on('focus',()=>wakeVisibility());
+  for(const event of ['move','resize'])mainWindow.on(event,()=>{clearTimeout(placementTimer);placementTimer=setTimeout(rememberWindow,250);placementTimer.unref();});
   mainWindow.on('blur',()=>finishWindowGesture());
   mainWindow.on('minimize',()=>send('app-visibility',{minimized:true}));mainWindow.on('restore',()=>send('app-visibility',{minimized:false}));
   // Hidden in the tray counts as minimized, so rendering and polling slow down. Closing hides instead of quitting.
-  mainWindow.on('hide',()=>{send('app-visibility',{minimized:true});tray?.refresh();});mainWindow.on('show',()=>{send('app-visibility',{minimized:false});tray?.refresh();});
+  mainWindow.on('hide',()=>{send('app-visibility',{minimized:true});tray?.refresh();});mainWindow.on('show',()=>{send('app-visibility',{minimized:false});tray?.refresh();syncDockVisibility();});
   mainWindow.on('close',event=>{if(!quitting){event.preventDefault();hideWindow();}});
   // Stay hidden until the renderer applies its interface, so the default turnbit layout does not flash at the compact size first.
   mainWindow.once('ready-to-show',()=>{const fallback=setTimeout(revealWindow,1500);fallback.unref();});
@@ -96,6 +128,9 @@ function createWindow(bounds) {
 // cannot change on a live window, so the window is destroyed and recreated. spotify/bridge/tray/
 // mouseMode live outside mainWindow and are untouched, so playback state carries over for free.
 function recreateWindow(nextWindowMode){
+  finishWindowGesture();
+  rememberWindow();
+  clearTimeout(visibilityTimer);
   const bounds=mainWindow&&!mainWindow.isDestroyed()?mainWindow.getBounds():null;
   const wasVisible=mainWindow?.isVisible()??true;
   if(mainWindow&&!mainWindow.isDestroyed())mainWindow.destroy();
@@ -103,6 +138,7 @@ function recreateWindow(nextWindowMode){
   activeInterface=null;
   revealed=!wasVisible;
   createWindow(bounds);
+  windowModeSwitching=false;
 }
 function readSession(file) {
   try { const data = JSON.parse(fs.readFileSync(file, 'utf8')); return { clientId: data.clientId, refreshToken: data.encryptedToken && safeStorage.isEncryptionAvailable() ? safeStorage.decryptString(Buffer.from(data.encryptedToken, 'base64')) : null }; } catch { return {}; }
@@ -133,11 +169,15 @@ ipcMain.handle('app:visibility',(_,value,protectedView,dialOnlyWake,ignoreMouse)
 ipcMain.on('app:activity',()=>wakeVisibility());
 ipcMain.handle('app:mouse-mode',(_,key)=>mouseMode?.setKey(key));
 ipcMain.handle('app:pin', (_, pinned) => { mainWindow.setAlwaysOnTop(!!pinned); return mainWindow.isAlwaysOnTop(); });
-ipcMain.handle('app:window-mode', (_, value) => {
+ipcMain.handle('app:window-mode', (event, value) => {
   if (value === undefined) return windowMode;
   if (typeof value !== 'boolean') throw new Error('Invalid window mode value.');
   if (value === windowMode) return windowMode;
-  saveWindowMode(value);
+  if (windowModeSwitching || event.sender !== mainWindow?.webContents) throw new Error('Window mode is already changing.');
+  // Persist before replacing the window; a failed write leaves the current mode usable.
+  writeWindowState(windowModeFile(),{...windowState,enabled:value});
+  windowState.enabled=value;
+  windowModeSwitching=true;
   setImmediate(() => recreateWindow(value));
   return value;
 });
@@ -158,16 +198,18 @@ ipcMain.handle('app:interface',(_,style,side='left',layout)=>{
   side=side==='right'?'right':'left';
   const size=style==='radial'?radialLayout(layout):null,key=`${style}:${side}${size?':'+JSON.stringify(size):''}`;
   if(!mainWindow||key===activeInterface)return;
-  const previous=activeInterface;activeInterface=key;
+  const previous=activeInterface;
+  if(windowMode&&previous?.split(':')[0]!==style)rememberWindow();
+  activeInterface=key;
   finishWindowGesture(true);
   if(style==='radial'){
     const display=screen.getAllDisplays().find(item=>String(item.id)===size.display)||screen.getDisplayMatching(mainWindow.getBounds()),area=display.bounds;
     const width=Math.min(area.width,Math.max(400,Math.round(area.width*size.width/100))),height=Math.round(area.height*size.height/100);
-    mainWindow.setMinimumSize(320,240);mainWindow.setMaximumSize(Math.max(1200,area.width),Math.max(1000,area.height));
+    mainWindow.setMinimumSize(windowMode?400:320,windowMode?520:240);mainWindow.setMaximumSize(Math.max(1200,area.width),Math.max(1000,area.height));
     if(windowMode){
       // A titled window: native move/resize via the title bar and edges, no forced edge-docking.
       mainWindow.setResizable(true);
-      if(!previous)mainWindow.setBounds({x:area.x+Math.round((area.width-width)/2),y:area.y+Math.round((area.height-height)/2),width,height});
+      if(!previous?.startsWith('radial:'))restoreWindow(style);
       return;
     }
     mainWindow.setResizable(false);
@@ -187,7 +229,9 @@ ipcMain.handle('app:interface',(_,style,side='left',layout)=>{
     return;
   }
   mainWindow.setResizable(true);
+  mainWindow.setMinimumSize(360,style==='zune'?640:700);
   mainWindow.setMaximumSize(460,800);
+  if(windowMode){if(!previous?.startsWith(style+':'))restoreWindow(style);return;}
   if(previous?.startsWith('radial:')){mainWindow.setSize(380,710);mainWindow.center();}
   const [width]=mainWindow.getSize();
   mainWindow.setMinimumSize(360,style==='zune'?640:700);
@@ -202,12 +246,12 @@ function showWindow(){if(!mainWindow||mainWindow.isDestroyed())return;wakeVisibi
 function hideWindow(){finishWindowGesture();if(mainWindow&&!mainWindow.isDestroyed())mainWindow.hide();}
 function trayCommand(command){const next=commandQueue.then(()=>spotify.command(command));commandQueue=next.catch(()=>{});next.catch(error=>send('spotify-state',{error:error.message}));}
 // With no taskbar button, minimize and close both tuck turnbit into the tray.
-ipcMain.handle('app:minimize', () => hideWindow());
+ipcMain.handle('app:minimize', () => windowMode?mainWindow.minimize():hideWindow());
 ipcMain.handle('app:close', () => hideWindow());
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
   app.on('second-instance', () => showWindow());
-  app.on('before-quit', () => { quitting = true;finishWindowGesture(); });
+  app.on('before-quit', () => { quitting = true;finishWindowGesture();rememberWindow(); });
   app.whenReady().then(() => {
     const file = path.join(app.getPath('userData'), 'spotify-session.json'), limits = path.join(app.getPath('userData'), 'rate-limits.json');
     if (process.platform === 'win32') media = new MediaSession(state => spotify?.localChanged(state));
@@ -217,7 +261,8 @@ else {
     const bridgePort = process.env.TURNBIT_BRIDGE_PORT || process.env.DIALPOD_BRIDGE_PORT;
     bridge = createBridge(event => {const action=wakeGate?.handle(event)||'forward';scheduleVisibility();if(action==='forward')send('device-event',event);else if(action==='wake')send('device-event',{type:'wake'});}, Number(bridgePort || 4765));
     bridge.on('error', error => { bridgeError = `D100H bridge unavailable: ${error.message}`; send('bridge-error', bridgeError); });
-    windowMode = readWindowMode();
+    windowState = readWindowState(windowModeFile());
+    windowMode = windowState.enabled;
     createWindow();
     // Keyboard & Mouse Mode wakes turnbit (without stealing focus from the overlay) and forwards mouse input to it.
     mouseMode = new MouseMode({ electron: require('electron'), onEvent: event => { wakeVisibility(true); send('mouse-mode', event); }, onChange: active => { if (active) { wakeVisibility(true); if (!mainWindow.isVisible()) mainWindow.showInactive(); } send('mouse-mode', { type: 'active', active }); } });
@@ -228,5 +273,5 @@ else {
   });
   // A tray app keeps running with no window; Quit is in the tray menu.
   app.on('window-all-closed', () => { if (quitting) app.quit(); });
-  app.on('will-quit', () => { clearTimeout(visibilityTimer);mouseMode?.dispose();globalShortcut.unregisterAll();spotify?.cancelLogin(); media?.stop(); bridge?.close(); tray?.tray.destroy(); });
+  app.on('will-quit', () => { clearTimeout(dockTimer);clearTimeout(placementTimer);clearTimeout(visibilityTimer);mouseMode?.dispose();globalShortcut.unregisterAll();spotify?.cancelLogin(); media?.stop(); bridge?.close(); tray?.tray.destroy(); });
 }
