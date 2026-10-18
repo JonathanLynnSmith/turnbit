@@ -52,7 +52,7 @@ test('loopback bridge forwards validated commands and rejects malformed or websi
   const state=await (await fetch(`${url}/device/state`)).json();assert.equal(state.pluginOnline,true);assert.equal(state.lastEvent.command,'select');assert.equal(state.eventCount,3);
 });
 test('Ulanzi plugin maps transport keys and uses dial release for selection',async()=>{
-  const dir=path.join(__dirname,'../ulanzi-plugin/com.ulanzi.dialpod.ulanziPlugin');
+  const dir=path.join(__dirname,'../ulanzi-plugin/com.turnbit.spotify.ulanziPlugin');
   const manifest=JSON.parse(fs.readFileSync(path.join(dir,'manifest.json')));assert.equal(manifest.Type,'JavaScript');assert.equal(manifest.Actions.length,13);
   for(const action of manifest.Actions){assert.ok(fs.existsSync(path.join(dir,action.Icon)));assert.ok(action.UUID.startsWith(manifest.UUID+'.'));assert.deepEqual(action.Devices,['Dial']);}
   const handlers={},events=[];let connected;

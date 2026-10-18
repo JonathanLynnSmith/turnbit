@@ -62,7 +62,7 @@ No client secret is needed. Your login is saved encrypted by your system's secur
 
 ## Set up the Ulanzi D100H
 
-Install the turnbit plugin into Ulanzi Studio, then restart Studio's background process so it loads (these install scripts currently run on Windows):
+Install the turnbit plugin into Ulanzi Studio, then restart Studio's background process so it loads (Windows and macOS):
 
 ```bash
 npm run plugin:build
@@ -85,7 +85,7 @@ To set this up in one step, import the profile included in the `ulanzi-plugin` f
 **Optional actions** for spare buttons: Like Current Song, Shuffle, Repeat, Pin Widget, Volume Up/Down, and Seek Back/Forward 10s.
 
 > [!TIP]
-> If Ulanzi Studio uses a custom data folder, install with `scripts\install-plugin.ps1 -PluginsDirectory "your path"`.
+> If Ulanzi Studio uses a custom data folder, install with `npm run plugin:install -- "your path"`.
 
 ## Controls
 
