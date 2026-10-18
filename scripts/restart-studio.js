@@ -13,16 +13,33 @@ function studioExePath() {
 const studioExe = studioExePath();
 if (!fs.existsSync(studioExe)) throw new Error(`Ulanzi Studio not found at ${studioExe}`);
 
-// Closing the UI can leave this background process running. Restart only Studio.
-if (process.platform === 'win32') {
-  try { execFileSync('taskkill', ['/F', '/IM', path.basename(studioExe)], { stdio: 'ignore' }); } catch { /* not running */ }
-} else {
-  try {
-    const pids = execFileSync('pgrep', ['-f', studioExe], { encoding: 'utf8' }).trim().split('\n').filter(Boolean);
-    for (const pid of pids) process.kill(Number(pid), 'SIGTERM');
-  } catch { /* not running */ }
+async function restart() {
+  // Closing the UI can leave the background process running. Wait for it to
+  // release its single-instance lock before launching the replacement.
+  if (process.platform === 'win32') {
+    try { execFileSync('taskkill', ['/F', '/IM', path.basename(studioExe)], { stdio: 'ignore' }); }
+    catch (error) { if (error.status !== 128) throw error; }
+  } else {
+    const pattern = '^' + studioExe.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '( |$)';
+    const running = () => {
+      try { return execFileSync('pgrep', ['-f', pattern], { encoding: 'utf8' }).trim().split('\n').filter(Boolean).map(Number); }
+      catch (error) { if (error.status === 1) return []; throw error; }
+    };
+    for (const pid of running()) {
+      try { process.kill(pid, 'SIGTERM'); }
+      catch (error) { if (error.code !== 'ESRCH') throw error; }
+    }
+    const deadline = Date.now() + 5000;
+    while (running().length) {
+      if (Date.now() >= deadline) throw new Error('Ulanzi Studio did not close. Quit it and try again.');
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+  }
+  const args = debug ? ['--webRemoteDebug', '--log'] : [];
+  const child = spawn(studioExe, args, { detached: true, stdio: 'ignore' });
+  await new Promise((resolve, reject) => { child.once('spawn', resolve); child.once('error', reject); });
+  child.unref();
+  console.log('Restarted Ulanzi Studio background process.');
 }
 
-const args = debug ? ['--webRemoteDebug', '--log'] : [];
-spawn(studioExe, args, { detached: true, stdio: 'ignore' }).unref();
-console.log('Restarted Ulanzi Studio background process.');
+restart().catch(error => { console.error(error.message); process.exitCode = 1; });
