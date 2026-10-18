@@ -13,6 +13,12 @@ const { createTray } = require('./tray');
 const { MouseMode } = require('./mouse-mode');
 let mainWindow, spotify, bridge, bridgeError, media, tray, quitting = false;
 let visibility,visibilityTimer,wakeGate,mouseMode;
+// Window Mode: a normal titled, taskbar/dock-visible window instead of the frameless tray widget.
+// Read before the first createWindow() so the initial frame/transparent/skipTaskbar choice is correct from boot.
+let windowMode=false;
+function windowModeFile(){return path.join(app.getPath('userData'),'window-mode.json');}
+function readWindowMode(){try{return JSON.parse(fs.readFileSync(windowModeFile(),'utf8')).enabled===true;}catch{return false;}}
+function saveWindowMode(enabled){try{fs.writeFileSync(`${windowModeFile()}.tmp`,JSON.stringify({enabled}));fs.renameSync(`${windowModeFile()}.tmp`,windowModeFile());}catch{}}
 let mousePassthrough=false,mouseIgnored=false,mouseFocusable=true;
 function syncMousePassthrough(){
   if(!mainWindow||mainWindow.isDestroyed())return;
@@ -63,8 +69,11 @@ function scheduleVisibility(){
   visibilityTimer=setTimeout(()=>{visibility?.tick();scheduleVisibility();},Math.max(1,delay));visibilityTimer.unref();
 }
 function wakeVisibility(force=false){visibility?.wake(force);scheduleVisibility();}
-function createWindow() {
-  mainWindow = new BrowserWindow({ show: false, skipTaskbar: true, icon: path.join(__dirname, '../assets/branding/turnbit.ico'), width: 380, height: 710, minWidth: 360, minHeight: 700, maxWidth: 460, maxHeight: 800, frame: false, transparent: true, backgroundColor: '#00000000', resizable: true, webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: false } });
+function createWindow(bounds) {
+  // Widget mode: frameless/transparent, tray-only. Window Mode: a normal titled, taskbar/dock-visible window.
+  const chrome=windowMode?{frame:true,transparent:false,backgroundColor:'#15171a',skipTaskbar:false}:{frame:false,transparent:true,backgroundColor:'#00000000',skipTaskbar:true};
+  mainWindow = new BrowserWindow({ show: false, icon: path.join(__dirname, '../assets/branding/turnbit.ico'), ...(bounds||{width:380,height:710}), minWidth: 360, minHeight: 700, maxWidth: 460, maxHeight: 800, ...chrome, resizable: true, webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: false } });
+  if(process.platform==='darwin'){if(windowMode)app.dock?.show();else app.dock?.hide();}
   // Running from the repo, the process is electron.exe; tell Windows which icon and command to use when pinned
   if(process.platform==='win32'&&!app.isPackaged)mainWindow.setAppDetails({appId:APP_ID,appIconPath:path.join(__dirname,'../assets/branding/turnbit.ico'),appIconIndex:0,relaunchCommand:`"${process.execPath}" "${app.getAppPath()}"`,relaunchDisplayName:'turnbit'});
   let invisible=false;
@@ -82,6 +91,18 @@ function createWindow() {
   mainWindow.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   mainWindow.webContents.on('will-navigate', event => event.preventDefault());
+}
+// Switching Widget Mode <-> Window Mode changes frame/transparent/skipTaskbar, which Electron
+// cannot change on a live window, so the window is destroyed and recreated. spotify/bridge/tray/
+// mouseMode live outside mainWindow and are untouched, so playback state carries over for free.
+function recreateWindow(nextWindowMode){
+  const bounds=mainWindow&&!mainWindow.isDestroyed()?mainWindow.getBounds():null;
+  const wasVisible=mainWindow?.isVisible()??true;
+  if(mainWindow&&!mainWindow.isDestroyed())mainWindow.destroy();
+  windowMode=nextWindowMode;
+  activeInterface=null;
+  revealed=!wasVisible;
+  createWindow(bounds);
 }
 function readSession(file) {
   try { const data = JSON.parse(fs.readFileSync(file, 'utf8')); return { clientId: data.clientId, refreshToken: data.encryptedToken && safeStorage.isEncryptionAvailable() ? safeStorage.decryptString(Buffer.from(data.encryptedToken, 'base64')) : null }; } catch { return {}; }
@@ -112,6 +133,14 @@ ipcMain.handle('app:visibility',(_,value,protectedView,dialOnlyWake,ignoreMouse)
 ipcMain.on('app:activity',()=>wakeVisibility());
 ipcMain.handle('app:mouse-mode',(_,key)=>mouseMode?.setKey(key));
 ipcMain.handle('app:pin', (_, pinned) => { mainWindow.setAlwaysOnTop(!!pinned); return mainWindow.isAlwaysOnTop(); });
+ipcMain.handle('app:window-mode', (_, value) => {
+  if (value === undefined) return windowMode;
+  if (typeof value !== 'boolean') throw new Error('Invalid window mode value.');
+  if (value === windowMode) return windowMode;
+  saveWindowMode(value);
+  setImmediate(() => recreateWindow(value));
+  return value;
+});
 // Only the first reveal at startup; later interface updates must not pull turnbit back out of the tray.
 let revealed=false;
 function revealWindow(){if(revealed||!mainWindow||mainWindow.isDestroyed())return;revealed=true;if(!mainWindow.isVisible())mainWindow.show();}
@@ -132,11 +161,18 @@ ipcMain.handle('app:interface',(_,style,side='left',layout)=>{
   const previous=activeInterface;activeInterface=key;
   finishWindowGesture(true);
   if(style==='radial'){
-    mainWindow.setResizable(false);
     const display=screen.getAllDisplays().find(item=>String(item.id)===size.display)||screen.getDisplayMatching(mainWindow.getBounds()),area=display.bounds;
     const width=Math.min(area.width,Math.max(400,Math.round(area.width*size.width/100))),height=Math.round(area.height*size.height/100);
+    mainWindow.setMinimumSize(320,240);mainWindow.setMaximumSize(Math.max(1200,area.width),Math.max(1000,area.height));
+    if(windowMode){
+      // A titled window: native move/resize via the title bar and edges, no forced edge-docking.
+      mainWindow.setResizable(true);
+      if(!previous)mainWindow.setBounds({x:area.x+Math.round((area.width-width)/2),y:area.y+Math.round((area.height-height)/2),width,height});
+      return;
+    }
+    mainWindow.setResizable(false);
     const y=area.y+(size.vertical==='top'?0:size.vertical==='bottom'?area.height-height:Math.round((area.height-height)/2));
-    mainWindow.setMinimumSize(320,240);mainWindow.setMaximumSize(Math.max(1200,area.width),Math.max(1000,area.height));mainWindow.setBounds({x:side==='right'?area.x+area.width-width:area.x,y,width,height});
+    mainWindow.setBounds({x:side==='right'?area.x+area.width-width:area.x,y,width,height});
     // Display scaling can round the window a pixel wider than asked; keep a right-docked window flush with the edge.
     if(side==='right'){const actual=mainWindow.getBounds();if(actual.x+actual.width!==area.x+area.width)mainWindow.setPosition(area.x+area.width-actual.width,actual.y);}
     if(!previous){
@@ -181,7 +217,7 @@ else {
     const bridgePort = process.env.TURNBIT_BRIDGE_PORT || process.env.DIALPOD_BRIDGE_PORT;
     bridge = createBridge(event => {const action=wakeGate?.handle(event)||'forward';scheduleVisibility();if(action==='forward')send('device-event',event);else if(action==='wake')send('device-event',{type:'wake'});}, Number(bridgePort || 4765));
     bridge.on('error', error => { bridgeError = `D100H bridge unavailable: ${error.message}`; send('bridge-error', bridgeError); });
-    if (process.platform === 'darwin') app.dock?.hide();
+    windowMode = readWindowMode();
     createWindow();
     // Keyboard & Mouse Mode wakes turnbit (without stealing focus from the overlay) and forwards mouse input to it.
     mouseMode = new MouseMode({ electron: require('electron'), onEvent: event => { wakeVisibility(true); send('mouse-mode', event); }, onChange: active => { if (active) { wakeVisibility(true); if (!mainWindow.isVisible()) mainWindow.showInactive(); } send('mouse-mode', { type: 'active', active }); } });

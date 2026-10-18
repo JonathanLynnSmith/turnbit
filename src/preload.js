@@ -14,6 +14,6 @@ contextBridge.exposeInMainWorld('turnbit', {
   visibility: (settings,protectedView,dialOnlyWake,mousePassthrough)=>ipcRenderer.invoke('app:visibility',settings,protectedView,dialOnlyWake,mousePassthrough),
   activity: ()=>ipcRenderer.send('app:activity'),
   mouseMode: key=>ipcRenderer.invoke('app:mouse-mode',key),
-  hardware: () => ipcRenderer.invoke('app:hardware'), pin: value => ipcRenderer.invoke('app:pin', value), openExternal: url => ipcRenderer.invoke('app:open-external', url), minimize: () => ipcRenderer.invoke('app:minimize'), close: () => ipcRenderer.invoke('app:close'),
+  hardware: () => ipcRenderer.invoke('app:hardware'), pin: value => ipcRenderer.invoke('app:pin', value), windowMode: value => ipcRenderer.invoke('app:window-mode', value), openExternal: url => ipcRenderer.invoke('app:open-external', url), minimize: () => ipcRenderer.invoke('app:minimize'), close: () => ipcRenderer.invoke('app:close'),
   onVisibility: subscribe('app-visibility'), onState: subscribe('spotify-state'), onAuth: subscribe('spotify-auth'), onDeviceEvent: subscribe('device-event'), onMouseMode: subscribe('mouse-mode'), onBridgeError: subscribe('bridge-error')
 });

@@ -20,7 +20,7 @@ turnbit docks a transparent, curved menu along the edge of your screen. Turn the
 - **Targets Spotify only**: play, pause, and skip never land on a YouTube video or other app by mistake
 - **Picks up where you left off**: reconnects to your preferred Spotify device when playback has gone idle
 - **Custom colors** for the menu text and highlights
-- **Lives in the system tray or menu bar** with play controls and an optional Start at Login, instead of a taskbar or Dock icon
+- **Lives in the system tray or menu bar** with play controls and an optional Start at Login, instead of a taskbar or Dock icon — or flip on **Window Mode** in Settings for a normal titled, taskbar/Dock-visible window instead
 
 ## Requirements
 
