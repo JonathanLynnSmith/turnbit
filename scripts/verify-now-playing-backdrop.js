@@ -183,7 +183,7 @@ async function main(){
   assert.equal(glowState.masked,true,'a gradient mask fades it out, so it has no edge');
   assert.equal(glowState.blurred,true,'and it is blurred past recognition');
   assert.equal(await run(`(()=>{const g=$('#radialGlow').getBoundingClientRect();return Math.abs((g.top+g.bottom)/2-innerHeight/2)<2;})()`),true,'centred on the middle of the list rather than sitting low');
-  assert.equal(await run(`(()=>{const g=$('#radialGlow').getBoundingClientRect(),menu=$('#radial').getBoundingClientRect();return g.left<=0&&g.right>=innerWidth&&g.right-g.left>=(menu.right-menu.left)*2;})()`),true,'and spread well past the menu column, out into the page');
+  assert.equal(await run(`(()=>{const g=$('#radialGlow').getBoundingClientRect();return g.left<0&&g.right>innerWidth&&g.width>=innerWidth*1.2;})()`),true,'and spread across the full window with room for the blurred falloff');
   assert.equal(await run(`$('#radialBackdrop').contains($('#radialGlow'))&&!!($('#radialGlow').compareDocumentPosition($('.radial-backdrop-info'))&Node.DOCUMENT_POSITION_FOLLOWING)`),true,'painting under the player, so it reaches behind the controls');
   assert.equal(await run(`Number(getComputedStyle($('#radial')).zIndex||0)>Number(getComputedStyle($('#radialBackdrop')).zIndex||0)`),true,'and under the menu, so the text over it stays crisp');
   assert.equal(await run(`getComputedStyle($('#radialGlow')).pointerEvents`),'none','the glow takes no input of its own');

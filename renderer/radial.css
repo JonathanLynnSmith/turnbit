@@ -295,6 +295,11 @@ body[data-backdrop-active=true] #radialColor{pointer-events:auto}
 body[data-backdrop-active=true]:not([data-backdrop-split=true])[data-dial-overlay=true] .radial-backdrop-info{opacity:0;visibility:hidden;pointer-events:none;transition:opacity .20s ease,visibility 0s .20s}
 body[data-backdrop-active=true]:not([data-backdrop-split=true])[data-dial-overlay=true] #radialBackdropArt{opacity:0}
 
+/* Overlay: the menu has the window to itself while browsing, so it reaches in from its docked edge
+   far enough to sit the selected row near the middle of the screen, rather than hugging that edge.
+   Split View keeps its own half instead. */
+body[data-backdrop-active=true]:not([data-backdrop-split=true]) #radial{width:min(calc(100% - 80px),calc(50% + 150px))}
+
 /* Split View: while the menu is up it takes its docked half of the window instead of covering the
    player, and the player keeps the other, both live. The menu still comes and goes as it always does,
    so the idle timeout collapses it and the player expands over its half. Narrow windows stay on the

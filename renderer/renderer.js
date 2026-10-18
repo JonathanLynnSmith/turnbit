@@ -17,7 +17,7 @@ function cleanLastSongList(value){
 const mouseModeKeys={off:'Off','ctrl-alt-z':'Ctrl+Alt+Z','alt-shift-space':'Alt+Shift+Space','ctrl-alt-space':'Ctrl+Alt+Space',f13:'F13'};
 // Window Mode layout limits: the narrowest window Split View will take, and how far the menu's smoke
 // feathers past the divider. Declared up here because the first paint reads them.
-const SPLIT_MIN_WIDTH=640,SPLIT_HAZE_SPILL=96;
+const SPLIT_MIN_WIDTH=640,SPLIT_HAZE_SPILL=96,WIDE_MENU_BOW=340;
 const preferences = { lastSongList:null, idleFollowSong:true, dialOnlyWake:false, mousePassthrough:false, preferredDevice:null, autoLaunchSpotify:false, gamingMode:false, idlePinned:false, reverseDial:false, doublePress:'back', homeLastSongList:true, backRow:true, hoverBack:true, idleNowPlaying:true, songOpensNowPlaying:true, playOpensNowPlaying:true, keepOnTop:false, keepCurrentSongPosition: true, appearance:'silver', screenTheme:'light', interfaceStyle:'radial', radialSide:'left', radialAlign:'auto', radialWidthPct:35, radialHeight:100, radialVertical:'center', radialDisplay:null, radialCurve:true, radialBackground:24, primaryHue:360, accentHue:145, visibility:{...visibilityDefaults}, clicker:false, mouseModeKey:'ctrl-alt-z', windowMode:false, nowPlayingBackdrop:true, backdropLayout:'overlay', menuTimeout:8, splitDivider:true };
 try { const saved=JSON.parse(localStorage.getItem('turnbit-preferences')||localStorage.getItem('dialpod-preferences')||'{}');if(saved.appearance==='spotify-center')saved.appearance='spotify';for(const key of ['mousePassthrough','dialOnlyWake','idleFollowSong','autoLaunchSpotify','gamingMode','idlePinned','reverseDial','radialCurve','homeLastSongList','backRow','hoverBack','idleNowPlaying','songOpensNowPlaying','playOpensNowPlaying','windowMode','nowPlayingBackdrop','splitDivider'])if(typeof saved[key]==='boolean')preferences[key]=saved[key];preferences.lastSongList=cleanLastSongList(saved.lastSongList);if(saved.preferredDevice&&typeof saved.preferredDevice.id==='string'&&saved.preferredDevice.id.length>0&&saved.preferredDevice.id.length<=256&&typeof saved.preferredDevice.name==='string'&&saved.preferredDevice.name.length<=256)preferences.preferredDevice={id:saved.preferredDevice.id,name:saved.preferredDevice.name,type:String(saved.preferredDevice.type||'').slice(0,64)};if(['back','home'].includes(saved.doublePress))preferences.doublePress=saved.doublePress;if(typeof saved.keepOnTop==='boolean')preferences.keepOnTop=saved.keepOnTop;if(typeof saved.keepCurrentSongPosition==='boolean')preferences.keepCurrentSongPosition=saved.keepCurrentSongPosition;if(themes.some(theme=>theme.id===saved.appearance))preferences.appearance=saved.appearance;if(['light','dark'].includes(saved.screenTheme))preferences.screenTheme=saved.screenTheme;else if(preferences.appearance==='spotify')preferences.screenTheme='dark';if(['ipod','zune','radial'].includes(saved.interfaceStyle))preferences.interfaceStyle=saved.interfaceStyle;for(const [key,min,max] of [['radialWidthPct',15,70],['radialHeight',30,100]])if(Number.isFinite(saved[key]))preferences[key]=Math.max(min,Math.min(max,Math.round(saved[key])));if(['top','center','bottom'].includes(saved.radialVertical))preferences.radialVertical=saved.radialVertical;if(saved.radialDisplay===null||typeof saved.radialDisplay==='string')preferences.radialDisplay=saved.radialDisplay;if(['auto','left','right'].includes(saved.radialAlign))preferences.radialAlign=saved.radialAlign;if(['left','right'].includes(saved.radialSide))preferences.radialSide=saved.radialSide;if(Number.isFinite(saved.radialBackground))preferences.radialBackground=Math.max(0,Math.min(100,Math.round(saved.radialBackground)));for(const key of ['primaryHue','accentHue'])if(Number.isFinite(saved[key]))preferences[key]=Math.max(0,Math.min(360,Math.round(saved[key])));if(saved.visibility&&typeof saved.visibility==='object')preferences.visibility=cleanVisibility(saved.visibility);if(typeof saved.clicker==='boolean')preferences.clicker=saved.clicker;if(Object.hasOwn(mouseModeKeys,saved.mouseModeKey))preferences.mouseModeKey=saved.mouseModeKey;if(['overlay','split'].includes(saved.backdropLayout))preferences.backdropLayout=saved.backdropLayout;if(Number.isFinite(saved.menuTimeout))preferences.menuTimeout=Math.max(1,Math.min(600,Math.round(saved.menuTimeout))); } catch {}
 applyTheme(document.body,preferences.appearance);document.body.dataset.windowMode=String(preferences.windowMode);document.body.dataset.screen=preferences.screenTheme;document.body.dataset.interface=preferences.interfaceStyle;document.body.dataset.edge=preferences.radialSide;document.body.dataset.align=textAlign();syncPlayerColumn();api?.setInterface?.(preferences.interfaceStyle,preferences.radialSide,radialLayoutNow())?.catch(error=>message(error.message));
@@ -180,7 +180,9 @@ function drawNavigation() {
 const radial=new window.RadialCarousel($('#radialLabels'),{
   activate:i=>{nav.current.selected=i;drawNavigation();selectItem();},
   reducedMotion:()=>reducedMotion.matches,
-  curved:()=>preferences.radialCurve
+  curved:()=>preferences.radialCurve,
+  // The overlay has the whole window to itself, so its arc spreads wider than the docked widget's.
+  bow:()=>wideMenu()?WIDE_MENU_BOW:270
 });
 const trackTransition=new window.TrackTransition($('#radialNow'),{reducedMotion:()=>reducedMotion.matches});
 function radialColor(hue,accent=false){return hue===360?'#eef7f5':`hsl(${hue} 75% ${accent?68:79}%)`;}
@@ -215,7 +217,7 @@ function updateSmokeShape(opacity=updateSmokeShape.opacity??preferences.radialBa
   updateSmokeShape.opacity=opacity;const host=$('#radial'),canvas=$('#radialHaze');if(!canvas)return;
   // Split View keeps the smoke over the menu's own half, feathering out just past the divider.
   const split=splitActive(),menu=host.clientWidth;
-  const width=split?menu+SPLIT_HAZE_SPILL:innerWidth,height=host.clientHeight,radiusX=Math.min(270,menu*.52),radiusY=Math.max(100,height/2-70);
+  const width=split?menu+SPLIT_HAZE_SPILL:innerWidth,height=host.clientHeight,radiusX=Math.min(radial.bow(),menu*.52),radiusY=Math.max(100,height/2-70);
   const short=preferences.radialHeight<100,vertical=preferences.radialVertical,fadeTop=short&&vertical!=='top',fadeBottom=short&&vertical!=='bottom',curved=preferences.radialCurve;
   const key=[width,height,menu,curved,fadeTop,fadeBottom,opacity].join(':');if(!height||!width||updateSmokeShape.key===key)return;updateSmokeShape.key=key;
   canvas.style.width=split?width+'px':'';
@@ -243,6 +245,9 @@ function backdropActive(){return preferences.windowMode&&preferences.nowPlayingB
 // comes and goes the same way, so the idle timeout collapses it and the player expands to fill the
 // window. Two columns need room, so a window narrower than SPLIT_MIN_WIDTH uses the overlay instead.
 function splitActive(){return backdropActive()&&preferences.backdropLayout==='split'&&innerWidth>=SPLIT_MIN_WIDTH;}
+// Overlay: the menu is alone on screen while browsing, so it reaches in from its docked edge to put
+// the selected row near the middle of the window, and its labels bow further out along the way.
+function wideMenu(){return backdropActive()&&!splitActive();}
 function backdropLayoutName(){return preferences.backdropLayout==='split'?'Split View':'Overlay';}
 // The player stacks artwork above its text when its column is too narrow to hold both side by side:
 // the whole window, or the half left over while Split View has the menu up beside it.
