@@ -1,7 +1,7 @@
 #radial{display:none}
 body[data-interface=radial]{padding:0;background:transparent!important;color:#eef7f5}
 body[data-interface=radial] .ipod{display:none!important}
-body[data-interface=radial] #radial{display:block;position:relative;width:min(520px,calc(100% - 80px));height:100%;overflow:visible;font-family:'Segoe UI Variable Display','Segoe UI',sans-serif;font-weight:300;user-select:none}
+body[data-interface=radial] #radial{display:block;position:relative;z-index:1;width:min(520px,calc(100% - 80px));height:100%;overflow:visible;font-family:'Segoe UI Variable Display','Segoe UI',sans-serif;font-weight:300;user-select:none}
 #radialLabels{position:absolute;left:0;right:0;top:50%;height:100%;transform:translateY(-50%);overflow:visible}
 .radial-label{position:absolute;width:350px;max-width:calc(100% - 115px);padding:9px 2px;background:none;border:0;border-radius:0;color:#edf7f5;text-align:left;font:300 25px/1.3 'Segoe UI Variable Display','Segoe UI',sans-serif;letter-spacing:.2px;transform-origin:left center;cursor:pointer;box-shadow:none;will-change:transform,opacity;white-space:nowrap;text-shadow:0 1px 2px #000b,0 3px 12px #0006,0 0 calc(var(--light)*13px) #d7fff329}
 .radial-label>span{display:block;overflow:hidden;text-overflow:ellipsis;padding:2px 0}
@@ -217,3 +217,33 @@ body[data-back-hold=true] #radial .radial-label.radial-control :is(.row-icon-bac
 /* Backdrop behind the turnbit menu: one smooth alpha field drawn by updateSmokeShape(), mirrored when docked right. */
 #radialHaze{position:absolute;top:0;left:0;width:100vw;height:100%;pointer-events:none}
 body[data-edge=right] #radialHaze{left:auto;right:0;transform:scaleX(-1)}
+
+/* Window Mode's Now Playing Backdrop: the current track's artwork fills the whole window, blurred
+   and dimmed for legibility, with the radial menu floating on top. Shown/hidden via [hidden], not display,
+   matching every other radial screen (#radialNow, #radialColor, ...). */
+#radialBackdrop{position:fixed;inset:0;z-index:0;overflow:hidden;color:#f1faf6;text-shadow:0 2px 10px #000a}
+#radialBackdropArt{position:absolute;inset:-60px;background-size:cover;background-position:center;filter:blur(44px) saturate(1.15) brightness(.55)}
+.radial-backdrop-scrim{position:absolute;inset:0;background:linear-gradient(180deg,#0a0e0d59 0%,#0a0e0d26 30%,#0a0e0d8c 72%,#0a0e0dd1 100%)}
+.radial-backdrop-info{position:absolute;left:50%;bottom:40px;transform:translateX(-50%);width:min(420px,calc(100% - 80px));display:flex;flex-direction:column;align-items:center;text-align:center;animation:radial-panel-in .32s cubic-bezier(.2,.8,.2,1)}
+.radial-backdrop-cover{width:128px;aspect-ratio:1;margin:0 0 20px;overflow:hidden;border-radius:9px;background:linear-gradient(145deg,#263b3a,#122321);box-shadow:0 20px 48px -10px #000a;display:grid;place-items:center}
+.radial-backdrop-cover img{width:100%;height:100%;object-fit:cover;display:block}
+.radial-backdrop-title{font:400 24px/1.25 'Segoe UI Variable Display','Segoe UI',sans-serif;letter-spacing:-.3px;margin:0 0 7px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.radial-backdrop-artist{font-size:13px;font-weight:400;color:#d2e5df;margin:0 0 3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.radial-backdrop-album{font-size:11px;letter-spacing:.5px;color:#b4ccc2;opacity:.75;margin:0 0 16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.radial-backdrop-info .playback-indicators{justify-content:center;margin:0 0 16px}
+.radial-backdrop-timeline{width:100%}
+.radial-backdrop-timeline input[type=range]{appearance:none;-webkit-appearance:none;display:block;width:100%;height:16px;padding:0;margin:0;background:transparent;cursor:pointer;accent-color:#e1f5ed}
+.radial-backdrop-timeline input[type=range]::-webkit-slider-runnable-track{height:3px;border:0;border-radius:3px;background:linear-gradient(to right,#d8f5e9 var(--fill),#d8f5e933 var(--fill));box-shadow:0 1px 5px #0005}
+.radial-backdrop-timeline input[type=range]::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:9px;height:9px;border:0;border-radius:50%;margin-top:-3px;background:#f0fff8;box-shadow:0 0 9px #e5fff04d}
+.radial-backdrop-timeline>div{display:flex;justify-content:space-between;font-size:10px;letter-spacing:1px;font-variant-numeric:tabular-nums;color:#c2d8cf;margin-top:4px}
+.radial-backdrop-volume{display:flex;align-items:center;gap:13px;width:100%;margin-top:18px;font-size:10px;letter-spacing:.5px;color:#c2d8cf}
+.radial-backdrop-volume input{min-width:0;flex:1;accent-color:#e1f5ed}
+.radial-backdrop-volume output{min-width:32px;text-align:right;font-variant-numeric:tabular-nums}
+@media(max-height:620px){.radial-backdrop-cover{width:86px;margin-bottom:12px}.radial-backdrop-title{font-size:19px}.radial-backdrop-info{bottom:26px}}
+@media(prefers-reduced-motion:reduce){.radial-backdrop-info{animation:none}}
+
+/* The carousel centers itself within #radialLabels' own box (radial.js reads its clientHeight), so
+   shrinking that box from the top - rather than adding a bottom offset that fights the base rule's
+   top:50%/translateY(-50%) centering - reliably keeps labels out of the info panel's strip. */
+body[data-backdrop-active=true] #radialLabels{top:0;height:calc(100% - 250px);transform:none}
+@media(max-height:620px){body[data-backdrop-active=true] #radialLabels{height:calc(100% - 160px)}}

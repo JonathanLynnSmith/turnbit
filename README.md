@@ -21,6 +21,7 @@ turnbit docks a transparent, curved menu along the edge of your screen. Turn the
 - **Picks up where you left off**: reconnects to your preferred Spotify device when playback has gone idle
 - **Custom colors** for the menu text and highlights
 - **Lives in the system tray or menu bar** with play controls and an optional Start at Login, instead of a taskbar or Dock icon — or flip on **Window Mode** in Settings for a normal titled, taskbar/Dock-visible window instead
+- **Now Playing Backdrop** (Window Mode, radial skin): the current album art fills the whole window, blurred and dimmed, with the menu floating on top and Now Playing's info — art, title, seek, volume — always visible underneath
 
 ## Requirements
 

@@ -2,8 +2,13 @@
 // that toggling destroys/recreates mainWindow exactly once without crashing.
 const {app,BrowserWindow}=require('electron');
 app.disableHardwareAcceleration();
-const path=require('node:path');
-app.setPath('userData',path.join(app.getPath('temp'),'turnbit-window-mode-test'));
+const path=require('node:path'),fs=require('node:fs'),os=require('node:os');
+// Fresh each run: a prior failed run can leave window-mode.json persisted true, which would make
+// the first windowMode(true) call below a no-op (already true) and this script would hang waiting
+// for a recreation that never happens.
+const userData=path.join(os.tmpdir(),'turnbit-window-mode-test');
+fs.rmSync(userData,{recursive:true,force:true});
+app.setPath('userData',userData);
 process.env.TURNBIT_BRIDGE_PORT='4803';
 require('../src/main');
 const assert=require('node:assert/strict');
