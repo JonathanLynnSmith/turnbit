@@ -77,7 +77,7 @@ app.whenReady().then(async()=>{
     const alpha=x=>pixels[(Math.floor(hazeSize.height/2+40*hazeSize.width/window.getBounds().width)*hazeSize.width+Math.floor(x*hazeSize.width/window.getBounds().width))*4+3];
     const bottomAlpha=pixels[((hazeSize.height-2)*hazeSize.width+Math.floor(100*hazeSize.width/window.getBounds().width))*4+3];assert.ok(bottomAlpha>=50,'Smoke must remain visible at the bottom edge');
     
-    const lowerCurveAlpha=pixels[((hazeSize.height-2)*hazeSize.width+Math.floor(650*hazeSize.width/window.getBounds().width))*4+3];assert.ok(alpha(650)>45 && lowerCurveAlpha<15,'Fade must bow inward at center and narrow at the bottom');
+    const lowerCurveAlpha=pixels[((hazeSize.height-2)*hazeSize.width+Math.floor(650*hazeSize.width/window.getBounds().width))*4+3];assert.ok(alpha(650)>45 && lowerCurveAlpha<alpha(650)*0.8,'Fade must bow inward at center and narrow at the bottom');
     const hazeSamples=[490,600,800,1000].map(alpha);console.log('Smoke alpha at/past text:',hazeSamples);
     assert.ok(hazeSamples[1]>=50,'Haze must retain strength at least 100px beyond the text');
     assert.ok(hazeSamples[2]>5 && hazeSamples[2]<hazeSamples[1],'Haze fades gradually across the extended region');

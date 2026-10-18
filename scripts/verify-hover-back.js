@@ -49,7 +49,7 @@ app.whenReady().then(async()=>{try{
   assert.equal(p.first,'Back','Back in Lists on restores the row');assert.equal(p.highlighted,'Back in Lists');
   assert.deepEqual(await js(`[preferences.backRow,JSON.parse(localStorage.getItem('dialpod-preferences')).backRow]`),[true,true],'setting is saved');
   // Home: Now Playing sits on top as a shortcut; Home opens on Music; resting on it opens Now Playing.
-  const home=async style=>{await js(`savePreferences({interfaceStyle:'${style}',hoverBack:true,idleNowPlaying:false});demo=true;nav.reset(root());drawNavigation();`);await wait(200);};
+  const home=async style=>{await js(`savePreferences({interfaceStyle:'${style}',hoverBack:true,idleNowPlaying:false,lastSongList:null});demo=true;nav.reset(root());drawNavigation();`);await wait(200);};
   for(const style of ['radial','ipod']){
     await home(style);p=await page();assert.equal(p.first,'Now Playing',`${style}: Now Playing is first on Home`);assert.equal(p.highlighted,'Liked Songs','Home opens on Music');
     await turn(-1);await turn(-1);p=await page();assert.equal(p.highlighted,'Now Playing');assert.equal(p.hold,'true','ring starts on the Home shortcut');

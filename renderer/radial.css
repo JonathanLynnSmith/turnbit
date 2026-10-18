@@ -1,7 +1,7 @@
 #radial{display:none}
 body[data-interface=radial]{padding:0;background:transparent!important;color:#eef7f5}
 body[data-interface=radial] .ipod{display:none!important}
-body[data-interface=radial] #radial{display:block;position:relative;width:min(520px,100%);height:100%;overflow:visible;font-family:'Segoe UI Variable Display','Segoe UI',sans-serif;font-weight:300;user-select:none}
+body[data-interface=radial] #radial{display:block;position:relative;width:min(520px,calc(100% - 80px));height:100%;overflow:visible;font-family:'Segoe UI Variable Display','Segoe UI',sans-serif;font-weight:300;user-select:none}
 #radialLabels{position:absolute;left:0;right:0;top:50%;height:100%;transform:translateY(-50%);overflow:visible}
 .radial-label{position:absolute;width:350px;max-width:calc(100% - 115px);padding:9px 2px;background:none;border:0;border-radius:0;color:#edf7f5;text-align:left;font:300 25px/1.3 'Segoe UI Variable Display','Segoe UI',sans-serif;letter-spacing:.2px;transform-origin:left center;cursor:pointer;box-shadow:none;will-change:transform,opacity;white-space:nowrap;text-shadow:0 1px 2px #000b,0 3px 12px #0006,0 0 calc(var(--light)*13px) #d7fff329}
 .radial-label>span{display:block;overflow:hidden;text-overflow:ellipsis;padding:2px 0}
@@ -12,8 +12,9 @@ body[data-interface=radial] #radial{display:block;position:relative;width:min(52
 .radial-label:disabled{cursor:default}
 #radialContext,#radialStatus{text-align:left;position:absolute;left:32px;right:32px;pointer-events:none;font-size:9px;letter-spacing:2.5px;color:#d1e9df;opacity:.45;text-shadow:0 1px 4px #000;z-index:1}
 #radialContext{top:28px}#radialStatus{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;bottom:28px;font-variant-numeric:tabular-nums;letter-spacing:1.8px}
-body[data-edge=left] .radial-label{text-align:right;transform-origin:right center}
-body[data-edge=left] #radialContext,body[data-edge=left] #radialStatus{text-align:right}
+/* List text alignment follows Text Alignment (data-align); panel placement follows the docked edge (data-edge). */
+body[data-align=right] .radial-label{text-align:right;transform-origin:right center}
+body[data-align=right] #radialContext,body[data-align=right] #radialStatus{text-align:right}
 body[data-interface=radial] dialog{color:#29343c}
 @media(prefers-reduced-motion:reduce){.radial-label{will-change:auto}}
 
@@ -55,10 +56,7 @@ body[data-edge=left] :is(#radialSongList,.radial-song-list){margin-left:auto}
 @media(prefers-reduced-motion:reduce){#radialLabels{animation:none}:is(#radialSongList,.radial-song-list){transition:none}}
 
 /* A broad scrim holds its strength past the text before an eased oval falloff. */
-#radial::before{content:'';position:absolute;inset:0;width:min(1040px,100vw);pointer-events:none;opacity:var(--smoke-opacity,.24);background:linear-gradient(to right,#000 0%,#000 52%,#000000f5 60%,#000000d1 68%,#00000094 78%,#00000047 88%,#00000014 95%,#0000 100%);mask-image:none;transition:opacity .12s ease}
 body[data-edge=right] #radial{margin-left:auto}
-body[data-edge=right] #radial::before{left:auto;right:0;background:linear-gradient(to left,#000 0%,#000 52%,#000000f5 60%,#000000d1 68%,#00000094 78%,#00000047 88%,#00000014 95%,#0000 100%)}
-@media(prefers-reduced-motion:reduce){#radial::before{transition:none}}
 
 /* Edge-docked playback: artwork anchors the composition; controls step inward. */
 :is(#radialNow,.radial-now-snapshot){left:28px;right:auto;width:min(340px,calc(100% - 56px))}
@@ -103,8 +101,6 @@ body[data-interface=radial] :is(#radialNow,.radial-now-snapshot)::before{display
 body[data-edge=right] :is(#radialNow,.radial-now-snapshot) .radial-art{margin-left:auto;margin-right:28px}
 
 /* Match the wheel ellipse; feather only horizontally to retain full-height shading. */
-#radial::before{background:var(--smoke-shape) no-repeat 0 0 / 100% 100%;mask-image:none}
-body[data-edge=right] #radial::before{background:var(--smoke-shape) no-repeat 0 0 / 100% 100%;transform:scaleX(-1)}
 
 /* Let playback content reach the same inward line as the centered wheel label. */
 :is(#radialNow,.radial-now-snapshot){width:min(418px,calc(100% - 102px))}
@@ -127,7 +123,7 @@ body[data-edge=right] #radial::before{background:var(--smoke-shape) no-repeat 0 
 .radial-mini .mini-times{display:flex;align-items:center;flex:none;color:#c2d8cf;white-space:nowrap;font-variant-numeric:tabular-nums}
 .radial-mini .mini-times b{font-size:9px;line-height:1;font-weight:400;letter-spacing:.15px}.radial-mini .mini-times b:first-child{color:#dfede6}.radial-mini .mini-times b:last-child{color:#a9bfb5}
 .radial-mini .mini-times b+b::before{content:' / ';white-space:pre;color:#a8c3b6}
-body[data-edge=right] .radial-mini .mini-info{right:auto;left:0}
+body[data-align=left] .radial-mini .mini-info{right:auto;left:0}
 @keyframes mini-reveal{from{opacity:0}to{opacity:1}}
 .radial-mini .mini-cover::after{content:'';position:absolute;inset:0;pointer-events:none;border:1px solid #e8f8ef12;border-radius:inherit}
 @media(prefers-reduced-motion:reduce){.radial-mini{animation:none}.radial-mini .mini-progress i{transition:none;will-change:auto}}
@@ -159,12 +155,12 @@ body[data-edge=right] #radialColor{left:auto;right:72px}
 
 /* Compact playback row: artwork beside a stable metadata and timeline column. */
 .radial-label.has-mini{width:250px;max-width:calc(100% - 145px);height:80px;text-align:left}
-body[data-edge=left] .radial-label.has-mini{text-align:left}
+body[data-align=right] .radial-label.has-mini{text-align:left}
 .radial-label.has-mini>span,.radial-label.has-mini>small{text-align:left}
 .radial-label.has-mini>span{position:absolute;left:2px;right:2px;top:2px}
 .radial-label.has-mini>small{position:absolute;left:2px;right:2px;top:41px}
 .radial-mini .mini-cover{left:-72px;top:6px}
-.radial-mini .mini-info,body[data-edge=right] .radial-mini .mini-info{left:2px;right:2px;top:64px;bottom:auto;width:auto;display:flex;flex-direction:column;align-items:stretch;gap:6px}
+.radial-mini .mini-info,body[data-align=left] .radial-mini .mini-info{left:2px;right:2px;top:64px;bottom:auto;width:auto;display:flex;flex-direction:column;align-items:stretch;gap:6px}
 .radial-mini .mini-progress{flex:none;width:100%}
 .radial-label>span>span{display:inline-block;min-width:100%;padding:0}
 .radial-label>span.scrolling-title{text-overflow:clip}
@@ -182,10 +178,10 @@ body[data-edge=left] .radial-label.has-mini{text-align:left}
 @media(prefers-reduced-motion:reduce){.radial-label>span.scrolling-title>span{animation:none}.radial-label>span.scrolling-title>span>span[aria-hidden=true]{display:none}}
 /* Align each label's inward edge to the oval, including short marquee titles. */
 .radial-label>span>span{min-width:0}
-body[data-edge=left] .radial-label.has-mini,body[data-edge=left] .radial-label.has-mini>span,body[data-edge=left] .radial-label.has-mini>small{text-align:right}
-body[data-edge=left] .radial-mini .mini-times{justify-content:flex-end}
+body[data-align=right] .radial-label.has-mini,body[data-align=right] .radial-label.has-mini>span,body[data-align=right] .radial-label.has-mini>small{text-align:right}
+body[data-align=right] .radial-mini .mini-times{justify-content:flex-end}
 .radial-label>span.scrolling-title{text-align:left}
-body[data-edge=left] .radial-label.has-mini>span.scrolling-title{text-align:left}
+body[data-align=right] .radial-label.has-mini>span.scrolling-title{text-align:left}
 /* Brief hardware-action feedback; hidden between commands. */
 #actionNotice{display:none}
 body[data-interface=radial] #actionNotice:not([hidden]){display:block;position:fixed;bottom:44px;left:72px;max-width:360px;color:#e0eee8;font:400 12px/1.6 'Segoe UI',sans-serif;text-shadow:0 2px 8px #000;pointer-events:none;animation:mini-reveal .2s ease-out}
@@ -217,3 +213,7 @@ body[data-render-suspended=true] *{animation-play-state:paused!important}
 #radial .radial-label.radial-control .row-icon{width:1.1em;height:1.1em;margin-right:.55em;vertical-align:-.18em;background:var(--radial-accent)}
 /* Hover to Go Back: the accent ring fills while the hold counts down. */
 body[data-back-hold=true] #radial .radial-label.radial-control :is(.row-icon-back,.row-icon-now,.row-icon-more){background:conic-gradient(var(--radial-accent) calc(var(--back-hold,0)*1turn),color-mix(in srgb,var(--radial-accent) 28%,transparent) 0)}
+
+/* Backdrop behind the turnbit menu: one smooth alpha field drawn by updateSmokeShape(), mirrored when docked right. */
+#radialHaze{position:absolute;top:0;left:0;width:100vw;height:100%;pointer-events:none}
+body[data-edge=right] #radialHaze{left:auto;right:0;transform:scaleX(-1)}

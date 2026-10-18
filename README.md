@@ -13,7 +13,7 @@ turnbit docks a transparent, curved menu along the edge of your screen. Turn the
 ## Features
 
 - **Floating radial menu** that docks to the left or right screen edge, with a soft backdrop you can tune or turn off
-- **Browse your library**: Liked Songs and Playlists right on Home, plus **Last Song List** to jump back to where you were
+- **Browse your library**: Liked Songs and Playlists right on Home, with **Last Song List** at the top to jump back to where you were
 - **Now Playing** with album art, a seek bar, volume, like, shuffle, and repeat
 - **Hardware control** with the Ulanzi D100H dial and macro buttons, even while turnbit is in the background
 - **Stays out of the way**: optional transparency, idle fade, and a Gaming Mode that pauses animations
@@ -100,7 +100,7 @@ To set this up in one step, import the profile included in the `ulanzi-plugin` f
 | Play / Pause | Pause or resume. From a menu, the first press opens Now Playing. |
 | Previous / Next | Tap to skip. Hold to rewind or fast-forward. |
 
-Every list below Home starts with a **Back** row, so you can get around with the dial alone. Turn up past the first item and press, or just rest on it for a second: a small ring fills and turnbit goes back on its own. Home works the same way: **Now Playing** sits above Liked Songs, so turn up and rest on it to open Now Playing. At the end of a long list, rest on **Load more** to load the next songs.
+Every list below Home starts with a **Back** row, so you can get around with the dial alone. Turn up past the first item and press, or just rest on it for a second: a small ring fills and turnbit goes back on its own. Home works the same way: **Now Playing** sits at the top of Home, so turn up and rest on it to open Now Playing. At the end of a long list, rest on **Load more** to load the next songs.
 
 ### Keyboard
 
@@ -117,6 +117,19 @@ These work when turnbit has focus.
 
 If turnbit is fully transparent and you lose track of it, press **Ctrl + Alt + Shift + D** to bring it back.
 
+### Keyboard & Mouse Mode
+
+No dial nearby? Hold **Ctrl + Alt + Z** (change it in Settings > Navigation > Mouse Mode Key) and use the mouse, wherever the cursor is. The cursor hides while the mode is on, and the mouse goes back to normal when you let go.
+
+| Input | What it does |
+| --- | --- |
+| Scroll | Move through the menu. On Now Playing, change the volume. |
+| Left click | Select |
+| Right click | Go back |
+| Middle click | Play / Pause |
+
+A quick tap of the shortcut keeps the mode on without holding it. Tap again, press **Esc**, switch apps, or leave the mouse alone for 20 seconds to turn it off. The **F13** option suits a mouse side button or macro key mapped to F13 in the mouse's software.
+
 ## Settings
 
 All settings are saved between restarts.
@@ -132,6 +145,8 @@ Settings are grouped into five categories. On/off settings sit inside a category
 | Playback | Keep Song Position | Selecting the song that is already playing opens Now Playing instead of restarting it | On |
 | Playback | Spotify Connection | Connect or disconnect your Spotify account |  |
 | Appearance | Interface | turnbit, or the iPod and Zune extras | turnbit |
+| Appearance | Curved Menu | Lays the turnbit menu out along a curve; off shows a straight list | On |
+| Appearance | Text Alignment | Aligns menu text: Auto (toward the docked edge), Left, or Right | Auto |
 | Appearance | Screen Edge | Docks the menu on the left or right | Left |
 | Appearance | Smoky Background | Strength of the dark backdrop behind the menu | 24% |
 | Appearance | Text Color | Color of the menu text |  |
@@ -141,13 +156,16 @@ Settings are grouped into five categories. On/off settings sit inside a category
 | Navigation | Reverse Dial Direction | Flips the dial's direction | Off |
 | Navigation | Dial Double-Press | What a double-press of the dial does: go Back one level, or go Home | Back |
 | Navigation | Back in Lists | Shows a Back row at the top of every list below Home | On |
+| Navigation | Last Song List on Home | Shows Last Song List at the top of Home, above Liked Songs, to reopen the list you were browsing | On |
 | Navigation | Hover Shortcuts | Resting for a second on Back, Now Playing (top of Home), or Load more (end of a long list) runs it, with a ring showing the countdown | On |
+| Navigation | Mouse Mode Key | Shortcut you hold for Keyboard & Mouse Mode: Ctrl+Alt+Z, Alt+Shift+Space, Ctrl+Alt+Space, F13, or Off. If another app already uses it, turnbit says so; pick another. | Ctrl+Alt+Z |
 | Navigation | Click Sounds | Soft clicks while browsing | Off |
 | Now Playing | Play Opens Now Playing | Pressing Play on any other screen opens Now Playing without playing or pausing. Off: Play plays or pauses and you stay on the current screen | On |
 | Now Playing | Open Song in Now Playing | Choosing a song opens Now Playing | On |
 | Now Playing | Idle to Now Playing | Switches to Now Playing after 10 seconds without input | On |
 | Now Playing | Follow Playing Song | Recenters the playing song with a quick, smooth animation on wake after the idle fade timeout (10 seconds when idle fading is off) | On |
 | Window | Transparency | Off, Always, or Idle Fade, with opacity and idle timeout | Off |
+| Window | Size & Position | turnbit interface: which display, width (15 to 70% of the screen, never under 400 px), height (30 to 100%), and vertical position; width and height preview live | Automatic, 35%, 100%, Center |
 | Window | Keep on Top | Keeps turnbit above other windows | Off |
 | Window | Pin Widget | Pauses idle fading and the switch to Now Playing | Off |
 | Window | Dial Only Wake | While turnbit is faded out, media buttons control playback without waking it or changing screens; turn or press the dial to wake it | Off |

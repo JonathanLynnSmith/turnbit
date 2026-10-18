@@ -19,10 +19,10 @@ app.whenReady().then(async()=>{try{
   assert.equal((await page()).highlighted,'Playback','Settings opens on the first category');
   const expected={
     playback:'Volume, Playback Device, Preferred Device, Open Spotify Automatically, Keep Song Position, Spotify Connection',
-    appearance:'Interface, Screen Edge, Smoky Background, Text Color, Accent Color',
-    navigation:'Reverse Dial Direction, Dial Double-Press, Back in Lists, Hover Shortcuts, Click Sounds',
+    appearance:'Interface, Curved Menu, Text Alignment, Screen Edge, Smoky Background, Text Color, Accent Color',
+    navigation:'Reverse Dial Direction, Dial Double-Press, Back in Lists, Last Song List on Home, Hover Shortcuts, Mouse Mode Key, Click Sounds',
     'now-playing':'Play Opens Now Playing, Open Song in Now Playing, Idle to Now Playing, Follow Playing Song',
-    window:'Transparency, Keep on Top, Pin Widget, Dial Only Wake, Mouse Click Through, Gaming Mode'};
+    window:'Transparency, Size & Position, Keep on Top, Pin Widget, Dial Only Wake, Mouse Click Through, Gaming Mode'};
   for(const [id,want] of Object.entries(expected)){
     await js(`nav.reset(root());showSettings();nav.current.selected=nav.current.rows.findIndex(r=>r.group==='${id}');drawNavigation();`);await click();
     assert.equal(await labels(),want,`${id} contents`);assert.equal((await page()).depth,3,`${id}: settings are two levels below Home`);
@@ -40,7 +40,23 @@ app.whenReady().then(async()=>{try{
   assert.equal(await js(`nav.current.rows[nav.current.selected].detail`),'On');assert.deepEqual(await js(`[preferences.gamingMode,JSON.parse(localStorage.getItem('dialpod-preferences')).gamingMode]`),[true,true],'saved');
   await menu();p=await page();assert.equal(p.title,'Settings');assert.equal(p.highlighted,'Window','back lands on the category');
   await js(`savePreferences({gamingMode:false});`);
+  // Curved Menu: on, labels bow along the oval (different offsets); off, they form a straight column (one offset).
+  const offsets=()=>js(`[...radial.nodes.values()].filter(n=>Number(n.style.opacity)>0.05).map(n=>Math.round(parseFloat(n.style.right||n.style.left)))`);
+  await js(`savePreferences({interfaceStyle:'radial',radialCurve:true});nav.reset(root());showLibrary('songs');`);await wait(300);await js(`nav.current.rows.push(...Array.from({length:12},(_,i)=>({label:'Song '+i,action:'placeholder'})));nav.current.selected=4;drawNavigation();`);await wait(700);
+  assert.ok(new Set(await offsets()).size>1,'curved: labels bow along the oval');
+  await js(`nav.goHome();showSetting(r=>r.key==='radialCurve');`);assert.equal((await page()).title,'Appearance');await click();
+  assert.deepEqual(await js(`[preferences.radialCurve,JSON.parse(localStorage.getItem('dialpod-preferences')).radialCurve]`),[false,false],'Curved Menu off is saved');
+  await js(`nav.reset(root());showLibrary('songs');`);await wait(300);await js(`nav.current.rows.push(...Array.from({length:12},(_,i)=>({label:'Song '+i,action:'placeholder'})));nav.current.selected=4;drawNavigation();`);await wait(700);
+  assert.equal(new Set(await offsets()).size,1,'straight: every label shares one offset');await js(`savePreferences({radialCurve:true});`);
+  // Text Alignment cycles Auto -> Left -> Right -> Auto; Auto aligns toward the docked edge (left edge: right-aligned).
+  const align=()=>js(`[document.body.dataset.align,getComputedStyle(document.querySelector('.radial-label')).textAlign,nav.current.rows[nav.current.selected].detail]`);
+  await js(`savePreferences({interfaceStyle:'radial',radialSide:'left',radialAlign:'auto'});nav.reset(root());showSetting(r=>r.action==='radial-align');`);await wait(200);
+  assert.deepEqual(await align(),['right','right','Auto'],'Auto on the left edge aligns right');
+  await click();assert.deepEqual(await align(),['left','left','Left'],'Left');await click();assert.deepEqual(await align(),['right','right','Right'],'Right');
+  await js(`savePreferences({radialSide:'right'});drawNavigation();`);assert.equal((await align())[0],'right','a fixed side ignores the docked edge');
+  await click();assert.deepEqual(await align(),['left','left','Auto'],'Auto on the right edge aligns left');
+  assert.equal(await js(`JSON.parse(localStorage.getItem('dialpod-preferences')).radialAlign`),'auto','saved');await js(`savePreferences({radialSide:'left'});`);
   const all=await js(`settingsGroups.flatMap(g=>settingsRows(g.id).map(r=>r.label)).join('|')`);
   for(const old of ['Apperance','Clicker','Primary Color','Screen edge'])assert.ok(!all.split('|').includes(old),`old label "${old}" is gone`);
-  console.log('Settings: five categories with subtitles, two levels deep, Appearance matches the interface (and rebuilds on switch), toggles save, back lands on the category, clearer labels.');app.quit();
+  console.log('Settings: five categories with subtitles, two levels deep, Appearance matches the interface (and rebuilds on switch), toggles save, back lands on the category, clearer labels, Curved Menu straightens the list, Text Alignment cycles Auto/Left/Right.');app.quit();
 }catch(error){console.error(error);app.exit(1);}});
