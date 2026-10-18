@@ -1,7 +1,7 @@
 // Move retained labels along a circular path, rather than tweening straight chords.
 class RadialCarousel {
-  constructor(element,{activate,reducedMotion,curved=()=>true}){
-    Object.assign(this,{element,activate,reducedMotion,curved});this.nodes=new Map();this.page=null;this.position=0;this.target=0;this.frame=0;
+  constructor(element,{activate,reducedMotion,curved=()=>true,bow=()=>270}){
+    Object.assign(this,{element,activate,reducedMotion,curved,bow});this.nodes=new Map();this.page=null;this.position=0;this.target=0;this.frame=0;
   }
   stop(){cancelAnimationFrame(this.frame);this.frame=0;}
   snapTo(index){this.stop();this.motion=null;this.position=this.target=index;}
@@ -64,7 +64,7 @@ class RadialCarousel {
   rowStep(){return Math.max(54,Math.min(76,this.element.clientHeight*.105));}
   paint(){
     const height=this.element.clientHeight,width=this.element.clientWidth;
-    const radiusX=Math.min(270,width*.52),radiusY=Math.max(100,height/2-70),right=document.body.dataset.edge==='left';
+    const radiusX=Math.min(this.bow(),width*.52),radiusY=Math.max(100,height/2-70),right=document.body.dataset.edge==='left';
     // Reserve space on both sides of the richer playback row, while keeping
     // every label on the same oval and the selected row vertically centered.
     const rowY=i=>i*this.rowStep()+this.miniIndices.reduce((extra,mini)=>extra+(i>mini?48:i===mini?24:0),0);

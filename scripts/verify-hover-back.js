@@ -1,7 +1,7 @@
 const {app,BrowserWindow}=require('electron');
 const path=require('node:path'),assert=require('node:assert/strict');
 app.disableHardwareAcceleration();app.setPath('userData',path.join(app.getPath('temp'),'turnbit-hover-back-test'));
-process.env.DIALPOD_BRIDGE_PORT='4794';require('../src/main');
+process.env.TURNBIT_BRIDGE_PORT='4794';require('../src/main');
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 // Hover to Go Back: turning onto Back and resting for 1s goes back; turning away cancels; both pieces are settings.
 app.whenReady().then(async()=>{try{
@@ -47,7 +47,7 @@ app.whenReady().then(async()=>{try{
   await turn(-1);await wait(1300);assert.equal((await page()).title,'Music','No Back row means no hover back');
   await js(`nav.reset(root());showSetting(r=>r.key==='backRow');`);await click();p=await page();
   assert.equal(p.first,'Back','Back in Lists on restores the row');assert.equal(p.highlighted,'Back in Lists');
-  assert.deepEqual(await js(`[preferences.backRow,JSON.parse(localStorage.getItem('dialpod-preferences')).backRow]`),[true,true],'setting is saved');
+  assert.deepEqual(await js(`[preferences.backRow,JSON.parse(localStorage.getItem('turnbit-preferences')).backRow]`),[true,true],'setting is saved');
   // Home: Now Playing sits on top as a shortcut; Home opens on Music; resting on it opens Now Playing.
   const home=async style=>{await js(`savePreferences({interfaceStyle:'${style}',hoverBack:true,idleNowPlaying:false,lastSongList:null});demo=true;nav.reset(root());drawNavigation();`);await wait(200);};
   for(const style of ['radial','ipod']){

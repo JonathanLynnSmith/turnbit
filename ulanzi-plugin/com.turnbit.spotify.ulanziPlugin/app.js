@@ -1,6 +1,6 @@
 // Official Ulanzi HTML SDK owns the Studio WebSocket connection.
 // A Studio connection indicates plugin availability, not physical BLE pairing.
-const UUID = 'com.ulanzi.ulanzistudio.dialpod';
+const UUID = 'com.turnbit.spotify';
 const BRIDGE = 'http://127.0.0.1:4765/device/event';
 const actions = new Set(['pin','like','shuffle','repeat','toggle','previous','next','volume-up','volume-down','seek-back','seek-forward','menu']);
 const pendingEvents=[];
@@ -18,7 +18,7 @@ async function drain() {
   try{while(pendingEvents.length){
     const event=pendingEvents.shift();
     try { const response=await fetch(BRIDGE,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(event),signal:AbortSignal.timeout(2000)});if(!response.ok)throw new Error(`Bridge HTTP ${response.status}`); }
-    catch(error){pendingEvents.length=0;console.warn('[DialPod] Keep the desktop widget running:',error.message);break;}
+    catch(error){pendingEvents.length=0;console.warn('[turnbit] Keep the desktop widget running:',error.message);break;}
   }}finally{sending=false;}
 }
 function action(message) { return (message.uuid || message.context?.split('___')[0] || '').split('.').pop(); }

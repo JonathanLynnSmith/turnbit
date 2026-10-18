@@ -25,5 +25,5 @@ function applyTheme(body,id){
     if(value)body.style.setProperty(`--shell-${key}`,value);else body.style.removeProperty(`--shell-${key}`);
   }
 }
-if(typeof module!=='undefined')module.exports={themes,applyTheme};else window.DialPodThemes={themes,applyTheme};
+if(typeof module!=='undefined')module.exports={themes,applyTheme};else window.TurnbitThemes={themes,applyTheme};
 })();

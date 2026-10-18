@@ -21,7 +21,7 @@ Photo references inspected:
 The wallpaper is an original vector approximation, not a copied photo asset.
 Reference photographs remain under artifacts and are not packaged in the app.
 
-DialPod still browses Spotify playlists and Liked Songs. It does not fabricate
+turnbit still browses Spotify playlists and Liked Songs. It does not fabricate
 video, FM radio, social, marketplace, or local-library functions. Screen Light
 mode and alternative case finishes are retained as optional customizations.
 The D100H dial substitutes for touchpad scrolling; Center playback options,

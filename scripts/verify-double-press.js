@@ -1,7 +1,7 @@
 const {app,BrowserWindow}=require('electron');
 const path=require('node:path'),assert=require('node:assert/strict');
 app.disableHardwareAcceleration();app.setPath('userData',path.join(app.getPath('temp'),'turnbit-double-press-test'));
-process.env.DIALPOD_BRIDGE_PORT='4801';require('../src/main');
+process.env.TURNBIT_BRIDGE_PORT='4801';require('../src/main');
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 // Dial Double-Press: Back (one level, like Menu) or Home (straight to Home). The Menu button is unaffected.
 app.whenReady().then(async()=>{try{
@@ -20,7 +20,7 @@ app.whenReady().then(async()=>{try{
     await js(`nav.reset(root());showSetting(r=>r.action==='double-press');`);
     assert.equal((await page()).highlighted,'Dial Double-Press');await click();
     assert.equal(await js(`nav.current.rows[nav.current.selected].detail`),'Home','setting shows Home');
-    assert.deepEqual(await js(`[preferences.doublePress,JSON.parse(localStorage.getItem('dialpod-preferences')).doublePress]`),['home','home'],'setting is saved');
+    assert.deepEqual(await js(`[preferences.doublePress,JSON.parse(localStorage.getItem('turnbit-preferences')).doublePress]`),['home','home'],'setting is saved');
     await intoPlaylist();await doublePress();let p=await page();assert.equal(p.title,'turnbit',`${style}: Home mode goes straight Home`);assert.equal(p.highlighted,'Playlists','Home keeps its highlight');
     await intoPlaylist();await menu();assert.equal((await page()).title,'Playlists','Menu button still goes back one level');
     await intoPlaylist();await js(`nav.current.selected=nav.current.rows.findIndex(r=>r.action==='song');drawNavigation();`);await click();assert.equal((await page()).kind,'now');

@@ -1,6 +1,6 @@
 // Capture the pointer so a gesture continues beyond the small visible handle.
 (()=>{
-  const api=window.dialpod;
+  const api=window.turnbit;
   for(const [id,kind] of [['windowMove','move'],['windowResize','resize']]){
     const handle=document.getElementById(id);let active=false,pending;
     handle.addEventListener('pointerdown',event=>{

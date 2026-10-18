@@ -1,7 +1,7 @@
 const {app,BrowserWindow}=require('electron');
 const path=require('node:path'),assert=require('node:assert/strict');
-app.disableHardwareAcceleration();app.setPath('userData',path.join(app.getPath('temp'),'dialpod-wake-test'));
-process.env.DIALPOD_BRIDGE_PORT='4770';require('../src/main');
+app.disableHardwareAcceleration();app.setPath('userData',path.join(app.getPath('temp'),'turnbit-wake-test'));
+process.env.TURNBIT_BRIDGE_PORT='4770';require('../src/main');
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 app.whenReady().then(async()=>{
   try{

@@ -1,7 +1,7 @@
 const {app,BrowserWindow,screen}=require('electron');
 const path=require('node:path'),assert=require('node:assert/strict'),fs=require('node:fs');
-app.disableHardwareAcceleration();app.setPath('userData',path.join(app.getPath('temp'),'dialpod-radial-test'));
-process.env.DIALPOD_BRIDGE_PORT='4771';require('../src/main');
+app.disableHardwareAcceleration();app.setPath('userData',path.join(app.getPath('temp'),'turnbit-radial-test'));
+process.env.TURNBIT_BRIDGE_PORT='4771';require('../src/main');
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 app.whenReady().then(async()=>{
   try{
@@ -60,7 +60,7 @@ app.whenReady().then(async()=>{
     await js(`playing=false;render();`);await check(`radial.nodes.get(2).querySelector('.radial-mini small').textContent.includes('Paused')`);
     await js(`playing=true;command('next');`);await check(`!radial.nodes.get(2).classList.contains('has-mini') && radial.nodes.get(3).classList.contains('has-mini') && document.querySelectorAll('.radial-label.has-mini').length===1`);
     await js(`index=1;progress=42000;updated=Date.now();render();`);await wait(300);
-    try{fs.writeFileSync(path.join(__dirname,'../artifacts/dialpod-song-list-mini.png'),(await window.webContents.capturePage()).toPNG());}catch{}
+    try{fs.writeFileSync(path.join(__dirname,'../artifacts/turnbit-song-list-mini.png'),(await window.webContents.capturePage()).toPNG());}catch{}
 
     // Large libraries retain only the nearby labels and keep exact selection.
     await js(`push({title:'Long library',rows:Array.from({length:1000},(_,i)=>({label:'Song '+i,action:'placeholder'}))});`);
@@ -85,10 +85,10 @@ app.whenReady().then(async()=>{
     await js(`showNow();progress=42000;updated=Date.now();render();`);await wait(400);
     // Composite over a neutral desktop solely for a legible review artifact.
     await js(`document.documentElement.style.background='#9da9b1';`);
-    try{const image=await Promise.race([window.webContents.capturePage(),wait(6000).then(()=>{throw Error('capture timeout');})]);fs.writeFileSync(path.join(__dirname,'../artifacts/dialpod-radial-now.png'),image.toPNG());}catch(error){console.warn('Screenshot unavailable:',error.message);}
+    try{const image=await Promise.race([window.webContents.capturePage(),wait(6000).then(()=>{throw Error('capture timeout');})]);fs.writeFileSync(path.join(__dirname,'../artifacts/turnbit-radial-now.png'),image.toPNG());}catch(error){console.warn('Screenshot unavailable:',error.message);}
     const shot=async name=>{try{const image=await Promise.race([window.webContents.capturePage(),wait(5000).then(()=>{throw Error('capture timeout');})]);fs.writeFileSync(path.join(__dirname,'../artifacts',name),image.toPNG());}catch(error){console.warn('Screenshot unavailable:',error.message);}};
-    await js(`nav.back();drawNavigation();`);await wait(350);await shot('dialpod-radial-polished-menu.png');
-    await js(`savePreferences({radialSide:'right'});showNow();`);await wait(400);await shot('dialpod-radial-polished-right.png');
+    await js(`nav.back();drawNavigation();`);await wait(350);await shot('turnbit-radial-polished-menu.png');
+    await js(`savePreferences({radialSide:'right'});showNow();`);await wait(400);await shot('turnbit-radial-polished-right.png');
     await check(`getComputedStyle(document.querySelector('#radialContext')).textAlign==='right' && getComputedStyle(document.querySelector('#radialNow')).right==='72px'`);
     await js(`savePreferences({radialSide:'left'});`);
     await js(`nav.reset(root());showSetting(row=>row.action==='radial-background');`);
@@ -100,7 +100,7 @@ app.whenReady().then(async()=>{
     await js(`pinned=false;savePreferences({keepOnTop:false});api.pin(false);`);await wait(200);
     await js(`showSetting(row=>row.action==='pin');`);await select();
     await wait(400);assert.equal(window.isAlwaysOnTop(),true,JSON.stringify(await js(`({pinned,keep:preferences.keepOnTop,page:nav.current.title,selected:nav.current.selected,row:nav.current.rows[nav.current.selected],message:document.querySelector('#message').textContent})`)));await check(`preferences.keepOnTop && nav.current.rows.find(row=>row.action==='pin').detail==='On'`);
-    window.webContents.reload();await new Promise(resolve=>window.webContents.once('did-finish-load',resolve));await wait(400);assert.equal(window.isAlwaysOnTop(),true,JSON.stringify(await js(`({pinned,keep:preferences.keepOnTop,page:nav.current.title,stored:localStorage.getItem('dialpod-preferences')})`)));await check(`preferences.keepOnTop && pinned`);
+    window.webContents.reload();await new Promise(resolve=>window.webContents.once('did-finish-load',resolve));await wait(400);assert.equal(window.isAlwaysOnTop(),true,JSON.stringify(await js(`({pinned,keep:preferences.keepOnTop,page:nav.current.title,stored:localStorage.getItem('turnbit-preferences')})`)));await check(`preferences.keepOnTop && pinned`);
     await js(`showSetting(row=>row.action==='pin');`);await select();await wait(400);assert.equal(window.isAlwaysOnTop(),false);await check(`!preferences.keepOnTop`);
     await js(`showSetting(row=>row.key==='accentHue');`);await select();
     await check(`nav.current.kind==='color' && nav.current.value===145 && !document.querySelector('#radialColor').hidden && nav.current.visibilitySettings`);
@@ -113,9 +113,9 @@ app.whenReady().then(async()=>{
     await js(`nav.reset(root());showLibrary('songs');`);await wait(200);await js(`index=1;playing=true;render();`);await wait(100);
     await check(`getComputedStyle(radial.nodes.get(2).children[0]).color!==getComputedStyle(radial.nodes.get(1).children[0]).color && radial.nodes.get(2).classList.contains('has-mini')`);
     await js(`showSetting(row=>row.key==='accentHue');`);await select();await wait(300);
-    try{fs.writeFileSync(path.join(__dirname,'../artifacts/dialpod-color-picker.png'),(await window.webContents.capturePage()).toPNG());}catch{}
+    try{fs.writeFileSync(path.join(__dirname,'../artifacts/turnbit-color-picker.png'),(await window.webContents.capturePage()).toPNG());}catch{}
     await back();await js(`savePreferences({primaryHue:360,accentHue:145});drawNavigation();`);
-    await check(`!nav.current.rows.some(row=>row.action==='background-blur') && !('backgroundBlur' in window.dialpod)`);
+    await check(`!nav.current.rows.some(row=>row.action==='background-blur') && !('backgroundBlur' in window.turnbit)`);
     await js(`demo=true;nav.reset(root());render();`);
     await command({type:'command',command:'like'});await check(`document.querySelector('#actionNotice').textContent.includes('Liked Songs') && !document.querySelector('#actionNotice').hidden && nav.current.kind==='list'`);
     await command({type:'command',command:'shuffle'});await check(`demoShuffle && document.querySelector('#actionNotice').textContent==='Shuffle on'`);
@@ -125,7 +125,7 @@ app.whenReady().then(async()=>{
     await command({type:'command',command:'like'});await check(`document.querySelector('#radialNow [data-mode=like]').dataset.active==='false' && nav.current.kind==='now'`);
     await js(`demo=false;playback={item:{uri:'spotify:track:aaaaaaaaaaaaaaaaaaaaaa',name:'Indicator check',artists:[{name:'Artist'}],album:{name:'Album'},duration_ms:200000},liked:true,shuffle_state:true,repeat_state:'track'};render();`);
     await check(`document.querySelectorAll('#radialNow .playback-indicators [data-active=true]').length===3 && getComputedStyle(document.querySelector('#radialNow .repeat-one')).display!=='none'`);
-    await wait(600);try{fs.writeFileSync(path.join(__dirname,'../artifacts/dialpod-playback-icons.png'),(await window.webContents.capturePage()).toPNG());}catch{}
+    await wait(600);try{fs.writeFileSync(path.join(__dirname,'../artifacts/turnbit-playback-icons.png'),(await window.webContents.capturePage()).toPNG());}catch{}
     await js(`savePreferences({keepOnTop:false,idlePinned:false});pinned=false;api.pin(false);`);
     await command({type:'command',command:'pin'});await wait(400);assert.equal(window.isAlwaysOnTop(),false);await check(`preferences.idlePinned&&!preferences.keepOnTop&&!pinned`);
     await js(`savePreferences({idleNowPlaying:true,visibility:{mode:'idle',opacity:70,idleOpacity:0,timeout:1}});nav.reset(root());idle.lastActivity=Date.now()-11000;drawNavigation();lastMouseActivity=Date.now()+60000;`);await wait(2200);

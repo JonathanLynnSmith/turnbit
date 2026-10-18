@@ -20,7 +20,9 @@ turnbit docks a transparent, curved menu along the edge of your screen. Turn the
 - **Targets Spotify only**: play, pause, and skip never land on a YouTube video or other app by mistake
 - **Picks up where you left off**: reconnects to your preferred Spotify device when playback has gone idle
 - **Custom colors** for the menu text and highlights
-- **Lives in the system tray or menu bar** with play controls and an optional Start at Login, instead of a taskbar or Dock icon
+- **Lives in the system tray or menu bar** with play controls and an optional Start at Login. Turn on **Window Mode** in Settings for a titled window with a taskbar/Dock icon, native minimize, and a saved size and position for each interface.
+- **Now Playing Backdrop** (Window Mode, turnbit interface): a large player with album art, bold track information, and playback controls. A soft glow behind the middle of the dial menu picks up the colour of the playing artwork. Now Playing fades out as the curved dial menu enters its own browsing screen, then returns when you select a song or finish browsing.
+- **Split View** (Now Playing Backdrop): while the menu is up it takes its docked half of the window and the player keeps the other, both live, so browsing never covers the song you are playing. The menu still bows out on the idle timeout, and the player expands to fill the window.
 
 ## Requirements
 
@@ -62,7 +64,7 @@ No client secret is needed. Your login is saved encrypted by your system's secur
 
 ## Set up the Ulanzi D100H
 
-Install the turnbit plugin into Ulanzi Studio, then restart Studio's background process so it loads (these install scripts currently run on Windows):
+Install the turnbit plugin into Ulanzi Studio, then restart Studio's background process so it loads (Windows and macOS):
 
 ```bash
 npm run plugin:build
@@ -85,7 +87,7 @@ To set this up in one step, import the profile included in the `ulanzi-plugin` f
 **Optional actions** for spare buttons: Like Current Song, Shuffle, Repeat, Pin Widget, Volume Up/Down, and Seek Back/Forward 10s.
 
 > [!TIP]
-> If Ulanzi Studio uses a custom data folder, install with `scripts\install-plugin.ps1 -PluginsDirectory "your path"`.
+> If Ulanzi Studio uses a custom data folder, install with `npm run plugin:install -- "your path"`.
 
 ## Controls
 
@@ -101,6 +103,26 @@ To set this up in one step, import the profile included in the `ulanzi-plugin` f
 | Previous / Next | Tap to skip. Hold to rewind or fast-forward. |
 
 Every list below Home starts with a **Back** row, so you can get around with the dial alone. Turn up past the first item and press, or just rest on it for a second: a small ring fills and turnbit goes back on its own. Home works the same way: **Now Playing** sits at the top of Home, so turn up and rest on it to open Now Playing. At the end of a long list, rest on **Load more** to load the next songs.
+
+### Window player
+
+With **Window Mode** and **Now Playing Backdrop** on, the window opens on the current song. **Dial Menu Layout** chooses how the menu shares the window:
+
+**Overlay** (the default) gives one view at a time. Turn the dial to fade into the curved browsing menu; the artwork and player controls disappear while you browse. An initial dial press opens the menu; the next press selects. **Browse**, Up/Down, or scrolling also opens the menu.
+
+**Split View** changes what happens while the menu is up: instead of covering the player, the menu takes whichever side **Screen Edge** docks it to and the player slides over to the other, separated by a hairline you can turn off with **Dial Menu Divider**. Both stay live, so you can browse with the dial and still reach the player's controls with the mouse. The menu opens and closes exactly as it does in the overlay — an opening press, **Browse**, Up/Down or scrolling brings it in, and the idle timeout takes it away again, expanding the player over its half. **Pin Dial Menu** holds the split open; **Open Song in Now Playing** collapses it when you pick a song.
+
+Two columns need room, so a window under 640 px wide falls back to the overlay until you widen it again. The player puts its artwork beside the track text whenever its own column is wide enough, and stacks them when it is not — so it may restack as the menu comes and goes.
+
+In both layouts, after **Dial Menu Timeout** (8 seconds by default, adjustable from 1 to 600) without navigation, the menu fades out and Now Playing returns; browsing keeps its page and selection. Selecting a song, choosing **Now Playing**, or clicking the empty browsing area also returns to the player. **Pin Dial Menu** keeps browsing open; value and color pickers stay open while you edit. Reduced-motion settings switch between views without animation.
+
+An ambient glow, tinted by the playing artwork, sits behind the middle of the dial menu and washes outward across the window — behind the artwork and the player's controls — fading to nothing before any edge. It is the cover itself, blurred until little more than its average colour is left, so a cover's own bright and dark areas cannot pull the glow off centre, and it is masked rather than clipped, so there is no cutoff anywhere. It follows the song, fades away when nothing is playing, and paints under every control, so the text over it stays crisp. The floating widget keeps its plain dark haze.
+
+Play/Pause, Previous/Next, Like, Shuffle, Repeat, seek, and volume operate directly on the large player. Hardware playback controls also work while browsing. **Transparency** applies here too, never fading below 20% so the title bar stays grabbable. The iPod and Zune interfaces keep their existing behavior.
+
+### The iPod and Zune interfaces are paused
+
+Both still ship and stay selectable under Settings → Appearance → Interface, and shared behavior keeps working for them. They are simply not being developed for now, so the turnbit interface gets the attention. Their own suite is kept intact at `npm run smoke:paused`, and no routine command runs it. See [CLAUDE.md](CLAUDE.md) for what that means while working in this repo.
 
 ### Keyboard
 
@@ -144,10 +166,10 @@ Settings are grouped into five categories. On/off settings sit inside a category
 | Playback | Open Spotify Automatically | Starts the Spotify desktop app if no device is available | Off |
 | Playback | Keep Song Position | Selecting the song that is already playing opens Now Playing instead of restarting it | On |
 | Playback | Spotify Connection | Connect or disconnect your Spotify account |  |
-| Appearance | Interface | turnbit, or the iPod and Zune extras | turnbit |
+| Appearance | Interface | turnbit, or the paused iPod and Zune extras | turnbit |
 | Appearance | Curved Menu | Lays the turnbit menu out along a curve; off shows a straight list | On |
 | Appearance | Text Alignment | Aligns menu text: Auto (toward the docked edge), Left, or Right | Auto |
-| Appearance | Screen Edge | Docks the menu on the left or right | Left |
+| Appearance | Screen Edge / Menu Side | Chooses the left or right edge for the widget or window menu | Left |
 | Appearance | Smoky Background | Strength of the dark backdrop behind the menu | 24% |
 | Appearance | Text Color | Color of the menu text |  |
 | Appearance | Accent Color | Color of the current song, progress, and Now Playing controls |  |
@@ -164,12 +186,18 @@ Settings are grouped into five categories. On/off settings sit inside a category
 | Now Playing | Open Song in Now Playing | Choosing a song opens Now Playing | On |
 | Now Playing | Idle to Now Playing | Switches to Now Playing after 10 seconds without input | On |
 | Now Playing | Follow Playing Song | Recenters the playing song with a quick, smooth animation on wake after the idle fade timeout (10 seconds when idle fading is off) | On |
-| Window | Transparency | Off, Always, or Idle Fade, with opacity and idle timeout | Off |
-| Window | Size & Position | turnbit interface: which display, width (15 to 70% of the screen, never under 400 px), height (30 to 100%), and vertical position; width and height preview live | Automatic, 35%, 100%, Center |
+| Window | Window Mode | Uses a titled window with a taskbar/Dock icon; saves each interface's size and position. The mouse always stays in control here, so the title bar buttons and resize edges keep working | Off |
+| Window | Now Playing Backdrop | Large Now Playing screen that fades into a separate dial browsing view; available in Window Mode with the turnbit interface | On |
+| Window | Dial Menu Layout | Overlay covers the player while you browse; Split View sets the menu beside it instead, and the player expands again when the menu goes idle (overlay below 640 px wide) | Overlay |
+| Window | Dial Menu Timeout | Seconds without navigation before the dial menu hides and the window player returns; **Pin Dial Menu** holds it open instead | 8 sec |
+| Window | Dial Menu Divider | Shows the hairline between the menu and the player in Split View | On |
+| Window | Transparency | Off, Always, or Idle Fade, with opacity and idle timeout; applies to the widget and the window player alike. Window Mode keeps opacity at 20% or above so the window stays visible enough to grab | Off |
+| Window | Size & Position | Widget Mode with the turnbit interface: which display, width (15 to 70% of the screen, never under 400 px), height (30 to 100%), and vertical position; width and height preview live | Automatic, 35%, 100%, Center |
 | Window | Keep on Top | Keeps turnbit above other windows | Off |
 | Window | Pin Widget | Pauses idle fading and the switch to Now Playing | Off |
+| Window | Pin Dial Menu | Keeps the dial browsing screen open; replaces Pin Widget in this view | Off |
 | Window | Dial Only Wake | While turnbit is faded out, media buttons control playback without waking it or changing screens; turn or press the dial to wake it | Off |
-| Window | Mouse Click Through | Mouse input passes through the whole widget to windows behind it, even while visible. Use the D100H to navigate and turn this setting off. | Off |
+| Window | Mouse Click Through | Widget Mode only: mouse input passes through the whole widget to windows behind it, even while visible. Use the D100H to navigate and turn this setting off. Hidden in Window Mode, where the mouse has to reach the title bar | Off |
 | Window | Gaming Mode | Pauses decorative animations when you are not using turnbit | Off |
 
 Next and Previous animate the current song list to the newly playing song. Idle centering uses a short, eased animation when the widget wakes.
@@ -214,7 +242,8 @@ TURNBIT_DEBUG_API=1 npm start
 | --- | --- |
 | `npm start` | Run turnbit |
 | `npm run check` | Syntax checks and unit tests |
-| `npm run smoke` | Drive the real app in demo mode with simulated dial input |
+| `npm run test:desktop` | Check Window Mode, saved placement, the large player, real bridge input, menu dismissal, responsive layout, and keyboard/mouse controls in isolated sessions |
+| `npm run smoke:paused` | Drive the real app in demo mode with simulated dial input, across the paused iPod and Zune interfaces |
 | `npm run package` | Build the standalone app |
 | `npm run plugin:build` | Build the Ulanzi plugin |
 | `npm run plugin:install` | Install the plugin into Ulanzi Studio |

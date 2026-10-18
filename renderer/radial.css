@@ -1,7 +1,7 @@
 #radial{display:none}
 body[data-interface=radial]{padding:0;background:transparent!important;color:#eef7f5}
 body[data-interface=radial] .ipod{display:none!important}
-body[data-interface=radial] #radial{display:block;position:relative;width:min(520px,calc(100% - 80px));height:100%;overflow:visible;font-family:'Segoe UI Variable Display','Segoe UI',sans-serif;font-weight:300;user-select:none}
+body[data-interface=radial] #radial{display:block;position:relative;z-index:1;width:min(520px,calc(100% - 80px));height:100%;overflow:visible;font-family:'Segoe UI Variable Display','Segoe UI',sans-serif;font-weight:300;user-select:none}
 #radialLabels{position:absolute;left:0;right:0;top:50%;height:100%;transform:translateY(-50%);overflow:visible}
 .radial-label{position:absolute;width:350px;max-width:calc(100% - 115px);padding:9px 2px;background:none;border:0;border-radius:0;color:#edf7f5;text-align:left;font:300 25px/1.3 'Segoe UI Variable Display','Segoe UI',sans-serif;letter-spacing:.2px;transform-origin:left center;cursor:pointer;box-shadow:none;will-change:transform,opacity;white-space:nowrap;text-shadow:0 1px 2px #000b,0 3px 12px #0006,0 0 calc(var(--light)*13px) #d7fff329}
 .radial-label>span{display:block;overflow:hidden;text-overflow:ellipsis;padding:2px 0}
@@ -214,6 +214,150 @@ body[data-render-suspended=true] *{animation-play-state:paused!important}
 /* Hover to Go Back: the accent ring fills while the hold counts down. */
 body[data-back-hold=true] #radial .radial-label.radial-control :is(.row-icon-back,.row-icon-now,.row-icon-more){background:conic-gradient(var(--radial-accent) calc(var(--back-hold,0)*1turn),color-mix(in srgb,var(--radial-accent) 28%,transparent) 0)}
 
+/* Ambient glow: the playing artwork, blurred until little more than its average colour is left, then
+   masked to a broad oval centred on the middle of the menu. The mask carries the whole falloff, so the
+   colour washes along the label curve and outward across the page — behind the player's controls too —
+   and reaches nothing before any frame edge. It sits above the scrim and below every piece of content,
+   so the text over it stays crisp. Blurring to an average, rather than sampling a pixel, keeps the
+   artwork's own light and dark areas from pulling the glow off centre. */
+#radialGlow{position:absolute;inset:-12%;background-size:cover;background-position:center;filter:blur(150px) saturate(.85);opacity:0;pointer-events:none;transition:opacity .5s ease;-webkit-mask-image:var(--glow-mask);mask-image:var(--glow-mask)}
+#radialBackdrop{--glow-mask:radial-gradient(ellipse 50% 44% at 32% 50%,#000,#000e 16%,#000a 34%,#0005 54%,#0002 72%,transparent 88%)}
+body[data-edge=right] #radialBackdrop{--glow-mask:radial-gradient(ellipse 50% 44% at 68% 50%,#000,#000e 16%,#000a 34%,#0005 54%,#0002 72%,transparent 88%)}
+@media(prefers-reduced-motion:reduce){#radialGlow{transition:none}}
+
 /* Backdrop behind the turnbit menu: one smooth alpha field drawn by updateSmokeShape(), mirrored when docked right. */
 #radialHaze{position:absolute;top:0;left:0;width:100vw;height:100%;pointer-events:none}
 body[data-edge=right] #radialHaze{left:auto;right:0;transform:scaleX(-1)}
+
+/* The native frame owns window movement and resizing in Window Mode. */
+body[data-window-mode=true][data-interface=radial] .window-handle{display:none}
+
+/* Two window views share the frame. The player leaves before browsing takes focus. */
+#radialBackdrop{position:fixed;inset:0;z-index:0;overflow:hidden;background:#101214;color:#f7f8f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+#radialBackdropArt{position:absolute;inset:-90px;background-size:cover;background-position:center;filter:blur(85px) saturate(.8);opacity:.24;pointer-events:none;transition:opacity .28s ease}
+.radial-backdrop-scrim{position:absolute;inset:0;background:linear-gradient(145deg,#10121426,#101214b3 65%,#101214ed);pointer-events:none}
+.radial-backdrop-header{position:absolute;top:28px;left:40px;right:32px;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.radial-backdrop-brand{display:flex;align-items:center;min-width:0;font-size:11px;font-weight:600;letter-spacing:2px;color:#c0c6c3;white-space:nowrap}
+.radial-backdrop-brand .brand-divider{flex:none;margin:0 10px;color:#66706b}
+#windowViewLabel{display:inline-block;min-width:0;max-width:40vw;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}
+#radialBackdrop button{font:inherit;cursor:pointer}
+#radialBackdrop button:disabled{opacity:.3;cursor:default}
+#radialBackdrop button:focus-visible,#radialBackdrop input:focus-visible{outline:2px solid #a7f1c3;outline-offset:5px}
+#radialBackdropBrowse{display:flex;flex:none;align-items:center;gap:9px;padding:10px 15px;border:1px solid #ffffff25;border-radius:30px;color:#f1f4f2;background:#ffffff08;font-size:12px!important;font-weight:600!important}
+#radialBackdropBrowse:hover{background:#ffffff15;border-color:#ffffff50}
+#radialBackdropBrowse svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+#radialBackdropBrowse .return-symbol{display:none}
+body[data-dial-overlay=true] #radialBackdropBrowse .browse-symbol{display:none}
+body[data-dial-overlay=true] #radialBackdropBrowse .return-symbol{display:block}
+.radial-backdrop-info{position:absolute;inset:105px clamp(28px,6vw,84px) 32px;display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;gap:30px 7%;align-items:center;max-width:1300px;margin:0 auto;opacity:1;visibility:visible;transition:opacity .26s ease .08s,visibility 0s,inset-inline-start .3s cubic-bezier(.2,.8,.2,1),inset-inline-end .3s cubic-bezier(.2,.8,.2,1)}
+.radial-backdrop-cover{width:min(100%,390px,calc(100vh - 340px));aspect-ratio:1;justify-self:center;overflow:hidden;border-radius:12px;background:radial-gradient(ellipse at 20% 10%,#a8c1b74d,transparent 65%),linear-gradient(145deg,#284c48,#181d2d 72%);box-shadow:0 24px 80px #0005;display:grid;place-items:center}
+.radial-backdrop-cover img{width:100%;height:100%;object-fit:cover;display:block;grid-area:1/1}
+.radial-backdrop-cover .radial-art-fallback{font:300 clamp(64px,10vw,130px) -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#d0e6dc70;grid-area:1/1}
+.radial-backdrop-track{min-width:0;align-self:center}
+.radial-backdrop-state{font-size:10px;letter-spacing:2px;font-weight:600;color:#aebbb4;margin:0 0 18px}
+.radial-backdrop-title{font-size:clamp(30px,4.7vw,64px);font-weight:750;line-height:1.05;letter-spacing:-.045em;margin:0 0 16px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.radial-backdrop-artist{font-size:clamp(17px,2.4vw,27px);line-height:1.35;font-weight:450;color:#e1e6e2;margin:0 0 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.radial-backdrop-album{font-size:14px;line-height:1.4;color:#9eaaa3;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#radialBackdropDevice{display:inline-flex;align-items:center;gap:8px;max-width:100%;padding:0;margin-top:24px;border:0;background:none;color:#a6baad;font-size:11px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#radialBackdropDevice::before{content:'';width:5px;height:5px;flex:none;border-radius:50%;background:#79d69b}
+#radialBackdropDevice:hover{color:#effaf2}
+.radial-backdrop-controls{grid-column:1/-1;width:min(100%,680px);justify-self:center}
+.radial-backdrop-transport{display:flex;align-items:center;justify-content:center;gap:clamp(12px,2.5vw,28px);margin-bottom:18px}
+.radial-backdrop-transport button{display:grid;place-items:center;flex:none;width:40px;height:44px;padding:9px;border:0;border-radius:50%;background:transparent;color:#cbd4cd;transition:color .15s,background .15s,transform .15s}
+.radial-backdrop-transport button:hover{color:white;background:#ffffff12}
+.radial-backdrop-transport button:active{transform:scale(.95)}
+.radial-backdrop-transport svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+.radial-backdrop-transport :is([data-backdrop-command=previous],[data-backdrop-command=next]) svg{fill:currentColor;stroke-width:1.2}
+#radialBackdropPlay{width:64px;height:64px;background:#f1f6f2;color:#142019;padding:20px}
+#radialBackdropPlay:hover{background:white;transform:scale(1.04)}
+#radialBackdropPlay .play-symbol{fill:currentColor;stroke:none}
+#radialBackdropPlay .pause-symbol{display:none;stroke-width:3.5}
+#radialBackdropPlay[data-playing=true] .play-symbol{display:none}
+#radialBackdropPlay[data-playing=true] .pause-symbol{display:block}
+.radial-backdrop-transport button[aria-pressed=true]{color:#86e6aa}
+.radial-backdrop-transport [data-backdrop-command=like][aria-pressed=true] svg{fill:currentColor}
+.radial-backdrop-transport [aria-busy=true]{opacity:.5}
+.radial-backdrop-timeline input[type=range]{appearance:none;-webkit-appearance:none;display:block;width:100%;height:20px;padding:0;margin:0;background:transparent;cursor:pointer;accent-color:#e4f1e8}
+.radial-backdrop-timeline input[type=range]::-webkit-slider-runnable-track{height:4px;border:0;border-radius:4px;background:linear-gradient(to right,#e0eee4 var(--fill),#e0eee426 var(--fill))}
+.radial-backdrop-timeline input[type=range]::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:10px;height:10px;border:0;border-radius:50%;margin-top:-3px;background:#f0fff8}
+.radial-backdrop-timeline>div{display:flex;justify-content:space-between;font-size:11px;font-variant-numeric:tabular-nums;color:#b3beb6;margin-top:3px}
+.radial-backdrop-volume{display:flex;align-items:center;justify-content:center;gap:12px;width:min(230px,100%);margin:16px auto 0;font-size:10px;color:#98a89e}
+.radial-backdrop-volume input{appearance:none;-webkit-appearance:none;min-width:0;flex:1;height:18px;margin:0;background:transparent;cursor:pointer}
+.radial-backdrop-volume input::-webkit-slider-runnable-track{height:3px;border-radius:3px;background:linear-gradient(to right,#a8cdb6 var(--fill),#a8cdb626 var(--fill))}
+.radial-backdrop-volume input::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:8px;height:8px;margin-top:-2.5px;border:0;border-radius:50%;background:#cbe4d3}
+.radial-backdrop-volume output{min-width:29px;text-align:right;font-variant-numeric:tabular-nums}
+#radialBackdropDismiss{position:absolute;inset:0;z-index:2;width:100%;height:100%;border:0;padding:0;background:transparent;cursor:default!important}
+body[data-backdrop-active=true] #radial{pointer-events:none;opacity:0;visibility:hidden;transform:translateX(-12px);transition:opacity .18s ease,transform .22s ease,visibility 0s .22s}
+body[data-backdrop-active=true][data-edge=right] #radial{transform:translateX(12px)}
+body[data-backdrop-active=true][data-dial-overlay=true] #radial{opacity:1;visibility:visible;transform:translateX(0);transition:opacity .26s ease .10s,transform .32s cubic-bezier(.2,.8,.2,1) .10s,visibility 0s}
+body[data-backdrop-active=true] #radialLabels{top:50%;height:100%;transform:translateY(-50%);pointer-events:none}
+body[data-backdrop-active=true] #radialColor{pointer-events:auto}
+body[data-backdrop-active=true]:not([data-backdrop-split=true])[data-dial-overlay=true] .radial-backdrop-info{opacity:0;visibility:hidden;pointer-events:none;transition:opacity .20s ease,visibility 0s .20s}
+body[data-backdrop-active=true]:not([data-backdrop-split=true])[data-dial-overlay=true] #radialBackdropArt{opacity:0}
+
+/* Overlay: the menu has the window to itself while browsing, so it reaches in from its docked edge
+   far enough to sit the selected row near the middle of the screen, rather than hugging that edge.
+   Split View keeps its own half instead. */
+body[data-backdrop-active=true]:not([data-backdrop-split=true]) #radial{width:min(calc(100% - 80px),calc(50% + 150px))}
+
+/* Split View: while the menu is up it takes its docked half of the window instead of covering the
+   player, and the player keeps the other, both live. The menu still comes and goes as it always does,
+   so the idle timeout collapses it and the player expands over its half. Narrow windows stay on the
+   overlay (SPLIT_MIN_WIDTH). The menu keeps this geometry while hidden, so it slides out of its own half. */
+body[data-backdrop-active=true][data-backdrop-split=true]{--split-menu:clamp(230px,36%,420px)}
+body[data-backdrop-active=true][data-backdrop-split=true] #radial{position:fixed;top:0;bottom:0;left:0;width:var(--split-menu);height:auto;margin:0}
+body[data-backdrop-active=true][data-backdrop-split=true][data-edge=right] #radial{left:auto;right:0}
+body[data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true] .radial-backdrop-info{inset-inline:calc(var(--split-menu) + clamp(16px,2.4vw,40px)) clamp(22px,2.6vw,40px);max-width:none}
+body[data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true][data-edge=right] .radial-backdrop-info{inset-inline:clamp(22px,2.6vw,40px) calc(var(--split-menu) + clamp(16px,2.4vw,40px))}
+/* A hairline marks the seam, and fades with the menu that makes it. */
+body[data-backdrop-active=true][data-backdrop-split=true] #radialBackdrop::after{content:'';position:absolute;top:9%;bottom:9%;left:var(--split-menu);width:1px;background:linear-gradient(to bottom,#ffffff00,#ffffff1f 22%,#ffffff1f 78%,#ffffff00);z-index:1;pointer-events:none;opacity:0;transition:opacity .22s ease}
+body[data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true][data-split-divider=true] #radialBackdrop::after{opacity:1;transition:opacity .26s ease .10s}
+body[data-backdrop-active=true][data-backdrop-split=true][data-edge=right] #radialBackdrop::after{left:auto;right:var(--split-menu)}
+/* The playing row's artwork floats outside its label. In Split View that room only exists on the
+   menu's own side of the seam, so a right-docked menu keeps it inboard. */
+body[data-backdrop-active=true][data-backdrop-split=true][data-edge=right] .radial-mini .mini-cover{left:auto;right:-72px}
+body[data-backdrop-active=true] #actionNotice{left:40px;bottom:12px;font-size:11px}
+body[data-backdrop-active=true][data-edge=right] #actionNotice{left:auto;right:40px}
+@media(max-width:640px){
+  .radial-backdrop-header{top:20px;left:24px;right:20px}
+  .radial-backdrop-brand{display:flex;align-items:center;min-width:0;font-size:9px;letter-spacing:1.2px}
+  .radial-backdrop-brand .brand-divider{flex:none;margin:0 5px}
+}
+/* Artwork beside the text needs a wide column. data-player-column measures the player's own column:
+   the window in Overlay, the half beside the menu in Split View. The height rules below carry the
+   same attribute so the cascade between them stays in file order, as it was when both were media queries. */
+body[data-player-column=narrow] .radial-backdrop-info{inset:86px 28px 22px;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(80px,1fr) auto auto;gap:20px;text-align:center}
+body[data-player-column=narrow] .radial-backdrop-cover{width:min(100%,280px,27vh)}
+body[data-player-column=narrow] .radial-backdrop-track{grid-column:1;max-width:100%}
+body[data-player-column=narrow] .radial-backdrop-state{margin-bottom:9px;font-size:9px}
+body[data-player-column=narrow] .radial-backdrop-title{font-size:clamp(25px,5.5vw,35px);-webkit-line-clamp:2;line-height:1.1;margin-bottom:7px}
+body[data-player-column=narrow] .radial-backdrop-artist{font-size:17px;margin-bottom:5px}
+body[data-player-column=narrow] .radial-backdrop-album{font-size:12px}
+body[data-player-column=narrow] #radialBackdropDevice{margin-top:10px}
+body[data-player-column=narrow] .radial-backdrop-transport{margin-bottom:12px;gap:12px}
+body[data-player-column=narrow] #radialBackdropPlay{width:56px;height:56px;padding:16px}
+@media(max-height:600px){
+  body[data-player-column] .radial-backdrop-info{gap:16px 6%;inset-block:88px 20px}
+  body[data-player-column] .radial-backdrop-title{font-size:clamp(26px,4vw,42px);-webkit-line-clamp:2}
+  body[data-player-column] .radial-backdrop-state{margin-bottom:10px}
+  body[data-player-column] .radial-backdrop-album{display:none}
+  body[data-player-column] #radialBackdropDevice{margin-top:12px}
+  body[data-player-column] .radial-backdrop-transport{margin-bottom:8px}
+  body[data-player-column] .radial-backdrop-volume{margin-top:8px}
+  body[data-player-column=narrow] .radial-backdrop-info{gap:12px;grid-template-rows:minmax(70px,1fr) auto auto}
+  body[data-player-column=narrow] .radial-backdrop-cover{width:min(100%,120px,20vh)}
+  body[data-player-column=narrow] .radial-backdrop-state{display:none}
+  body[data-player-column=narrow] .radial-backdrop-title{font-size:26px}
+  body[data-player-column=narrow] .radial-backdrop-artist{font-size:15px}
+  body[data-player-column=narrow] .radial-backdrop-transport{gap:8px}
+  body[data-player-column=narrow] .radial-backdrop-volume{margin-top:6px;font-size:9px}
+}
+@media(prefers-reduced-motion:reduce){
+  body[data-backdrop-active=true] #radial,
+  body[data-backdrop-active=true][data-dial-overlay=true] #radial,
+  .radial-backdrop-info,
+  body[data-backdrop-active=true]:not([data-backdrop-split=true])[data-dial-overlay=true] .radial-backdrop-info,
+  body[data-backdrop-active=true][data-backdrop-split=true] #radialBackdrop::after,
+  body[data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true] #radialBackdrop::after,
+  #radialBackdropArt,.radial-backdrop-transport button{transition:none;transform:none}
+}

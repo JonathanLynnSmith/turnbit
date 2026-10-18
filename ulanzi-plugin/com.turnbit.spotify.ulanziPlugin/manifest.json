@@ -1,9 +1,9 @@
 {
-  "Name": "DialPod Spotify",
-  "Author": "DialPod",
+  "Name": "turnbit",
+  "Author": "turnbit",
   "Description": "iPod-style desktop Spotify controller for Ulanzi D100H.",
   "Version": "0.2.0",
-  "UUID": "com.ulanzi.ulanzistudio.dialpod",
+  "UUID": "com.turnbit.spotify",
   "Type": "JavaScript",
   "CodePath": "app.html",
   "Icon": "icon.png",
@@ -23,8 +23,8 @@
   },
   "Actions": [
     {
-      "Name": "DialPod Pin Widget",
-      "UUID": "com.ulanzi.ulanzistudio.dialpod.pin",
+      "Name": "Pin Widget",
+      "UUID": "com.turnbit.spotify.pin",
       "Icon": "icon.png",
       "Controllers": [
         "Keypad"
@@ -41,8 +41,8 @@
       ]
     },
     {
-      "Name": "DialPod Like Current Song",
-      "UUID": "com.ulanzi.ulanzistudio.dialpod.like",
+      "Name": "Like Current Song",
+      "UUID": "com.turnbit.spotify.like",
       "Icon": "icon.png",
       "Controllers": [
         "Keypad"
@@ -59,8 +59,8 @@
       ]
     },
     {
-      "Name": "DialPod Shuffle",
-      "UUID": "com.ulanzi.ulanzistudio.dialpod.shuffle",
+      "Name": "Shuffle",
+      "UUID": "com.turnbit.spotify.shuffle",
       "Icon": "icon.png",
       "Controllers": [
         "Keypad"
@@ -77,8 +77,8 @@
       ]
     },
     {
-      "Name": "DialPod Repeat",
-      "UUID": "com.ulanzi.ulanzistudio.dialpod.repeat",
+      "Name": "Repeat",
+      "UUID": "com.turnbit.spotify.repeat",
       "Icon": "icon.png",
       "Controllers": [
         "Keypad"
@@ -95,8 +95,8 @@
       ]
     },
     {
-      "Name": "DialPod Navigation Wheel",
-      "UUID": "com.ulanzi.ulanzistudio.dialpod.encoder",
+      "Name": "Navigation Wheel",
+      "UUID": "com.turnbit.spotify.encoder",
       "Icon": "icon.png",
       "Controllers": [
         "Encoder"
@@ -113,8 +113,8 @@
       ]
     },
     {
-      "Name": "DialPod Play / Pause",
-      "UUID": "com.ulanzi.ulanzistudio.dialpod.toggle",
+      "Name": "Play / Pause",
+      "UUID": "com.turnbit.spotify.toggle",
       "Icon": "icon.png",
       "Controllers": [
         "Keypad"
@@ -131,8 +131,8 @@
       ]
     },
     {
-      "Name": "DialPod Previous Track",
-      "UUID": "com.ulanzi.ulanzistudio.dialpod.previous",
+      "Name": "Previous Track",
+      "UUID": "com.turnbit.spotify.previous",
       "Icon": "icon.png",
       "Controllers": [
         "Keypad"
@@ -149,8 +149,8 @@
       ]
     },
     {
-      "Name": "DialPod Next Track",
-      "UUID": "com.ulanzi.ulanzistudio.dialpod.next",
+      "Name": "Next Track",
+      "UUID": "com.turnbit.spotify.next",
       "Icon": "icon.png",
       "Controllers": [
         "Keypad"
@@ -167,8 +167,8 @@
       ]
     },
     {
-      "Name": "DialPod Volume Up",
-      "UUID": "com.ulanzi.ulanzistudio.dialpod.volume-up",
+      "Name": "Volume Up",
+      "UUID": "com.turnbit.spotify.volume-up",
       "Icon": "icon.png",
       "Controllers": [
         "Keypad"
@@ -185,8 +185,8 @@
       ]
     },
     {
-      "Name": "DialPod Volume Down",
-      "UUID": "com.ulanzi.ulanzistudio.dialpod.volume-down",
+      "Name": "Volume Down",
+      "UUID": "com.turnbit.spotify.volume-down",
       "Icon": "icon.png",
       "Controllers": [
         "Keypad"
@@ -203,8 +203,8 @@
       ]
     },
     {
-      "Name": "DialPod Seek Back 10s",
-      "UUID": "com.ulanzi.ulanzistudio.dialpod.seek-back",
+      "Name": "Seek Back 10s",
+      "UUID": "com.turnbit.spotify.seek-back",
       "Icon": "icon.png",
       "Controllers": [
         "Keypad"
@@ -221,8 +221,8 @@
       ]
     },
     {
-      "Name": "DialPod Seek Forward 10s",
-      "UUID": "com.ulanzi.ulanzistudio.dialpod.seek-forward",
+      "Name": "Seek Forward 10s",
+      "UUID": "com.turnbit.spotify.seek-forward",
       "Icon": "icon.png",
       "Controllers": [
         "Keypad"
@@ -239,8 +239,8 @@
       ]
     },
     {
-      "Name": "DialPod Menu / Back",
-      "UUID": "com.ulanzi.ulanzistudio.dialpod.menu",
+      "Name": "Menu / Back",
+      "UUID": "com.turnbit.spotify.menu",
       "Icon": "icon.png",
       "Controllers": [
         "Keypad"
