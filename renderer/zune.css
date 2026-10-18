@@ -1,3 +1,5 @@
+/* PAUSED: this interface is not being developed for now — see CLAUDE.md. Keep it working; do not
+   add features or polish here unless asked. */
 /* Zune 80 (2007), rather than the later Zune HD: see docs/zune-reference.md. */
 .zune-controls,#zuneMusicTabs,.zune-caption,#zuneVolumeOverlay{display:none}
 body[data-interface=zune]{--zune-bg:#e2e8e9;--zune-ink:#1d303e;--zune-muted:#566d7c;--zune-accent:#346c8d;--zune-line:#afc2ce;--zune-bar:#bbd9ea}

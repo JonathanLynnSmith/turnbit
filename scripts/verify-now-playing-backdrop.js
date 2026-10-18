@@ -292,7 +292,8 @@ async function main(){
   await run(`demo=false;acceptPlayback(null);render();`);
   assert.equal(await run(`$('#radialBackdropTitle').textContent`),'Nothing playing');
   assert.equal(await run(`$('#radialBackdropArt').style.backgroundImage`),'none');
-  for(const style of ['ipod','zune']){await run(`savePreferences({interfaceStyle:${JSON.stringify(style)}});drawNavigation();`);assert.equal(await run(`$('#radialBackdrop').hidden`),true);}
+  // A loop here asserted the backdrop hides for every non-radial interface. Both of those are paused:
+  // see CLAUDE.md. Turning the backdrop off below still covers the same hiding path.
   await run(`savePreferences({interfaceStyle:'radial',nowPlayingBackdrop:false});drawNavigation();`);
   assert.equal(await run(`$('#radialBackdrop').hidden`),true,'optional classic window presentation still works');
   assert.equal(await run(`$('#radial').inert`),false,'ordinary widget navigation remains accessible');

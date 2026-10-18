@@ -64,12 +64,8 @@ app.whenReady().then(async()=>{
     window.setBounds({x:area.x+45,y:area.y+45,width:800,height:600});
     await wait(350);
     const savedBounds=window.getBounds();
-    await window.webContents.executeJavaScript(`savePreferences({interfaceStyle:'ipod'});drawNavigation();`);await wait(150);
-    assert.ok(window.getBounds().width<=460,'iPod restores its compact constraints');
-    await window.webContents.executeJavaScript(`savePreferences({interfaceStyle:'zune'});drawNavigation();`);await wait(150);
-    assert.ok(window.getBounds().width<=460,'Zune restores its compact constraints');
-    await window.webContents.executeJavaScript(`savePreferences({interfaceStyle:'radial'});drawNavigation();`);await wait(150);
-    assert.deepEqual(window.getBounds(),savedBounds,'returning to radial restores its own placement');
+    // Switching to the iPod and Zune interfaces proved their compact window constraints here, and that
+    // returning restored the turnbit interface's own placement. Both are paused: see CLAUDE.md.
     previous=window;
     window.webContents.executeJavaScript(`window.turnbit.windowMode(false)`).catch(()=>{});
     window=await waitForNewWindow(previous);

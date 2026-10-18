@@ -120,6 +120,10 @@ An ambient glow, tinted by the playing artwork, sits behind the middle of the di
 
 Play/Pause, Previous/Next, Like, Shuffle, Repeat, seek, and volume operate directly on the large player. Hardware playback controls also work while browsing. **Transparency** applies here too, never fading below 20% so the title bar stays grabbable. The iPod and Zune interfaces keep their existing behavior.
 
+### The iPod and Zune interfaces are paused
+
+Both still ship and stay selectable under Settings → Appearance → Interface, and shared behavior keeps working for them. They are simply not being developed for now, so the turnbit interface gets the attention. Their own suite is kept intact at `npm run smoke:paused`, and no routine command runs it. See [CLAUDE.md](CLAUDE.md) for what that means while working in this repo.
+
 ### Keyboard
 
 These work when turnbit has focus.
@@ -162,7 +166,7 @@ Settings are grouped into five categories. On/off settings sit inside a category
 | Playback | Open Spotify Automatically | Starts the Spotify desktop app if no device is available | Off |
 | Playback | Keep Song Position | Selecting the song that is already playing opens Now Playing instead of restarting it | On |
 | Playback | Spotify Connection | Connect or disconnect your Spotify account |  |
-| Appearance | Interface | turnbit, or the iPod and Zune extras | turnbit |
+| Appearance | Interface | turnbit, or the paused iPod and Zune extras | turnbit |
 | Appearance | Curved Menu | Lays the turnbit menu out along a curve; off shows a straight list | On |
 | Appearance | Text Alignment | Aligns menu text: Auto (toward the docked edge), Left, or Right | Auto |
 | Appearance | Screen Edge / Menu Side | Chooses the left or right edge for the widget or window menu | Left |
@@ -239,7 +243,7 @@ TURNBIT_DEBUG_API=1 npm start
 | `npm start` | Run turnbit |
 | `npm run check` | Syntax checks and unit tests |
 | `npm run test:desktop` | Check Window Mode, saved placement, the large player, real bridge input, menu dismissal, responsive layout, and keyboard/mouse controls in isolated sessions |
-| `npm run smoke` | Drive the real app in demo mode with simulated dial input |
+| `npm run smoke:paused` | Drive the real app in demo mode with simulated dial input, across the paused iPod and Zune interfaces |
 | `npm run package` | Build the standalone app |
 | `npm run plugin:build` | Build the Ulanzi plugin |
 | `npm run plugin:install` | Install the plugin into Ulanzi Studio |

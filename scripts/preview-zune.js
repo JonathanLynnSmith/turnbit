@@ -1,3 +1,4 @@
+// PAUSED: the Zune interface is not being developed for now — see CLAUDE.md.
 // Isolated, offline visual check of both Zune screen modes.
 const {app,BrowserWindow}=require('electron');
 const fs=require('node:fs'),path=require('node:path');

@@ -15,7 +15,7 @@
     "plugin:build": "node scripts/build-plugin.js",
     "plugin:install": "node scripts/install-plugin.js",
     "studio:restart": "node scripts/restart-studio.js",
-    "smoke": "electron scripts/smoke.js",
+    "smoke:paused": "electron scripts/smoke.js",
     "package": "electron-builder --dir",
     "demo:gif": "electron scripts/make-demo-gif.js",
     "test:desktop": "electron scripts/verify-window-mode.js && electron scripts/verify-now-playing-backdrop.js"

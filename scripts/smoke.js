@@ -1,3 +1,5 @@
+// PAUSED: covers the iPod and Zune interfaces, which are not being developed for now (see
+// CLAUDE.md). Kept intact and runnable through `npm run smoke:paused`; no routine command runs it.
 // Real Electron renderer + preload IPC + isolated hardware bridge in demo mode.
 const {app,BrowserWindow}=require('electron');
 app.disableHardwareAcceleration();
