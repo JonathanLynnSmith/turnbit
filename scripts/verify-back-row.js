@@ -1,7 +1,7 @@
 const {app,BrowserWindow}=require('electron');
 const path=require('node:path'),assert=require('node:assert/strict');
 app.disableHardwareAcceleration();app.setPath('userData',path.join(app.getPath('temp'),'turnbit-back-row-test'));
-process.env.DIALPOD_BRIDGE_PORT='4780';require('../src/main');
+process.env.TURNBIT_BRIDGE_PORT='4780';require('../src/main');
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 // Lists below Home start with a Back row; entering a list still highlights its first real item.
 app.whenReady().then(async()=>{try{

@@ -3,7 +3,7 @@ const subscribe = channel => callback => {
   const handler = (_, data) => callback(data); ipcRenderer.on(channel, handler);
   return () => ipcRenderer.removeListener(channel, handler);
 };
-contextBridge.exposeInMainWorld('dialpod', {
+contextBridge.exposeInMainWorld('turnbit', {
   configure: id => ipcRenderer.invoke('spotify:configure', id), login: () => ipcRenderer.invoke('spotify:login'), logout: () => ipcRenderer.invoke('spotify:logout'),
   status: () => ipcRenderer.invoke('spotify:status'), state: () => ipcRenderer.invoke('spotify:state'), command: (command, value) => ipcRenderer.invoke('spotify:command', command, value), devices: () => ipcRenderer.invoke('spotify:devices'),
   library: (kind, id, offset) => ipcRenderer.invoke('spotify:library', kind, id, offset),

@@ -3,8 +3,8 @@ const {app,BrowserWindow}=require('electron');
 app.disableHardwareAcceleration();
 const fs=require('node:fs');
 const path=require('node:path');
-app.setPath('userData',path.join(app.getPath('temp'),'dialpod-smoke'));
-process.env.DIALPOD_BRIDGE_PORT='4766';
+app.setPath('userData',path.join(app.getPath('temp'),'turnbit-smoke'));
+process.env.TURNBIT_BRIDGE_PORT='4766';
 require('../src/main');
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 app.whenReady().then(async()=>{
@@ -19,11 +19,11 @@ app.whenReady().then(async()=>{
     const rotate=delta=>event({type:'dial',delta});
     const check=async(condition,name)=>{if(!await js(condition))throw new Error(name+' '+JSON.stringify(await js(`({page:nav.current.title,kind:nav.current.kind,idle:!!nav.idlePage,idleElapsed:Date.now()-idle.lastActivity,loading:!!nav.current.loading,dialog:document.querySelector('#settings').open})`)));};
     const out=path.join(__dirname,'../artifacts');fs.mkdirSync(out,{recursive:true});
-    const shot=async name=>{if(process.env.DIALPOD_SMOKE_SCREENSHOTS==='0')return;try{fs.writeFileSync(path.join(out,name),(await window.webContents.capturePage()).toPNG());}catch(error){console.warn(`Screenshot unavailable (${name}): ${error.message}`);}};
-    await check(`!!window.dialpod && nav.current.title==='turnbit'`,'Root menu/preload');
-    await js(`localStorage.removeItem('dialpod-preferences');Object.assign(preferences,{keepCurrentSongPosition:true,appearance:'silver',screenTheme:'light',interfaceStyle:'ipod',visibility:{mode:'off',opacity:70,idleOpacity:20,timeout:10},clicker:false});document.body.dataset.theme='silver';document.body.dataset.interface='ipod';`);
+    const shot=async name=>{if(process.env.TURNBIT_SMOKE_SCREENSHOTS==='0')return;try{fs.writeFileSync(path.join(out,name),(await window.webContents.capturePage()).toPNG());}catch(error){console.warn(`Screenshot unavailable (${name}): ${error.message}`);}};
+    await check(`!!window.turnbit && nav.current.title==='turnbit'`,'Root menu/preload');
+    await js(`localStorage.removeItem('turnbit-preferences');Object.assign(preferences,{keepCurrentSongPosition:true,appearance:'silver',screenTheme:'light',interfaceStyle:'ipod',visibility:{mode:'off',opacity:70,idleOpacity:20,timeout:10},clicker:false});document.body.dataset.theme='silver';document.body.dataset.interface='ipod';`);
     await check(`!document.querySelector('#menuPreview').hidden`,'Classic root menu shows current artwork preview');
-    await shot('dialpod-classic-home.png');
+    await shot('turnbit-classic-home.png');
     const wheel=await js(`(()=>{const r=document.querySelector('#wheel').getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2};})()`);
     const initial={x:Math.round(wheel.x+68),y:Math.round(wheel.y-68)},turned={x:Math.round(wheel.x+96),y:Math.round(wheel.y)};
     window.webContents.sendInputEvent({type:'mouseDown',button:'left',clickCount:1,...initial});
@@ -38,7 +38,7 @@ app.whenReady().then(async()=>{
     await select();await check(`document.querySelector('#screenTitle').textContent==='Playlists'`,'Dial enters Playlists');
     await select();await check(`document.querySelector('#screenTitle').textContent==='After Hours'`,'Dial enters playlist');
     await rotate(2);await check(`document.querySelector('.menurow.selected').textContent.includes('A Little Further')`,'Dial highlights song');
-    await shot('dialpod-playlist.png');
+    await shot('turnbit-playlist.png');
     // Exercise the real ten-second timer, including heartbeat and playback polls.
     await delay(11000);
     await check(`nav.current.kind==='now' && !!nav.idlePage`,'Idle switches to Now Playing after ten seconds');
@@ -50,7 +50,7 @@ app.whenReady().then(async()=>{
     await select();
     await check(`nav.current.title==='After Hours' && nav.current.selected===2 && !nav.idlePage`,'Center release returns to song list without playing the highlighted song');
     await select();await check(`document.querySelector('#title').textContent==='A Little Further' && document.querySelector('#playing').textContent==='Playing' && !document.querySelector('#nowView').hidden`,'Dial plays selected song');
-    await shot('dialpod-now-playing.png');
+    await shot('turnbit-now-playing.png');
     await check(`document.querySelector('#duration').textContent.startsWith('−')`,'Classic player shows remaining time');
     await js(`window.originalDemoName=demos[index].name;demos[index].name='A wonderfully long song title that must scroll across the classic LCD display';render();`);await delay(100);
     await check(`document.querySelector('#title').classList.contains('scrolling')`,'Long current song titles scroll instead of clipping');
@@ -69,7 +69,7 @@ app.whenReady().then(async()=>{
     await js(`window.indicatorRow=document.querySelector('#menuList').children[2];`);
     await event({type:'command',command:'next'});
     await check(`document.querySelector('.current-track .rowname').textContent==='A Little Further' && document.querySelectorAll('.current-track').length===1 && document.querySelector('#menuList').children[2]===window.indicatorRow && nav.current.selected===2`,'Marker follows track changes without rebuilding list or moving highlight');
-    await shot('dialpod-current-song.png');
+    await shot('turnbit-current-song.png');
     await js(`progress=60000;updated=Date.now();`);
     await select();
     await check(`nav.current.kind==='now' && progress===60000 && playing && index===1`,'Selecting current song opens player without restarting');
@@ -105,13 +105,13 @@ app.whenReady().then(async()=>{
     window.webContents.reload();await delay(1000);
     await check(`preferences.keepCurrentSongPosition===false`,'Preference survives renderer reload');
     await js(`showSettings();nav.current.selected=4;drawNavigation();`);await select();
-    await check(`preferences.keepCurrentSongPosition===true && JSON.parse(localStorage.getItem('dialpod-preferences')).keepCurrentSongPosition===true`,'Preference can be enabled again and saved');
-    await shot('dialpod-song-setting.png');
+    await check(`preferences.keepCurrentSongPosition===true && JSON.parse(localStorage.getItem('turnbit-preferences')).keepCurrentSongPosition===true`,'Preference can be enabled again and saved');
+    await shot('turnbit-song-setting.png');
     await rotate(1);await select();
     await check(`nav.current.title==='Case Theme' && nav.current.rows.length===16`,'Appearance opens a dial-controlled finish list');
     await rotate(1);await select();
     await check(`document.body.dataset.theme==='black' && preferences.appearance==='black' && nav.current.title==='Settings' && nav.current.rows[nav.current.selected].action==='case-theme' && nav.current.rows[nav.current.selected].detail==='Black'`,'Appearance changes to classic black finish');
-    await shot('dialpod-black.png');
+    await shot('turnbit-black.png');
     window.webContents.reload();await delay(1000);
     await check(`document.body.dataset.theme==='black' && preferences.appearance==='black' && preferences.clicker===false`,'Appearance persists and clicker remains optional');
     await js(`showSettings();nav.current.selected=5;drawNavigation();`);await select();
@@ -120,9 +120,9 @@ app.whenReady().then(async()=>{
     await rotate(2);await select();
     await check(`preferences.clicker===true && document.querySelector('.menurow.selected .suffix').textContent==='On'`,'Optional clicker can be enabled from Settings');
     await js(`savePreferences({clicker:false});`);
-    await check(`JSON.parse(localStorage.getItem('dialpod-preferences')).clicker===false`,'Clicker can be disabled and saved');
-    await js(`window.dialpod.pin(true).then(()=>window.dialpod.pin(false))`);
-    await shot('dialpod-preview.png');
+    await check(`JSON.parse(localStorage.getItem('turnbit-preferences')).clicker===false`,'Clicker can be disabled and saved');
+    await js(`window.turnbit.pin(true).then(()=>window.turnbit.pin(false))`);
+    await shot('turnbit-preview.png');
     await js(`nav.reset(root());nav.push({title:'Parent',rows:[]});nav.push({title:'Child',rows:[]});nav.showIdle();drawNavigation();`);
     await event({type:'command',command:'back'});
     await check(`nav.current.title==='Child' && !nav.idlePage`,'Center hold returns from idle player without skipping a level');
@@ -144,7 +144,7 @@ app.whenReady().then(async()=>{
     await check(`nav.current.title==='turnbit' && !nav.idlePage`,'Double center click from idle Now Playing goes Home');
     await js(`savePreferences({appearance:'silver'});nav.reset(root());showSettings();showCaseThemes();`);
     await rotate(2);
-    await check(`document.body.dataset.theme==='blue' && preferences.appearance==='silver' && JSON.parse(localStorage.getItem('dialpod-preferences')).appearance==='silver' && nav.current.rows[0].detail==='✓' && nav.current.rows[2].detail===''`,'Rotating previews without saving or moving saved checkmark');
+    await check(`document.body.dataset.theme==='blue' && preferences.appearance==='silver' && JSON.parse(localStorage.getItem('turnbit-preferences')).appearance==='silver' && nav.current.rows[0].detail==='✓' && nav.current.rows[2].detail===''`,'Rotating previews without saving or moving saved checkmark');
     await menu();
     await check(`document.body.dataset.theme==='silver'`,'Leaving preview restores saved finish');
     await js(`showCaseThemes();`);await rotate(2);await select();await js(`showCaseThemes();`);await rotate(2);
@@ -158,11 +158,11 @@ app.whenReady().then(async()=>{
       await js(`nav.reset(root());showSettings();showCaseThemes();nav.current.selected=themes.findIndex(theme=>theme.id===${JSON.stringify(theme.id)});drawNavigation();`);
       await select();
       await check(`preferences.appearance===${JSON.stringify(theme.id)} && document.body.dataset.theme===${JSON.stringify(theme.id)} && nav.current.title==='Settings' && nav.stack.length===2 && nav.current.rows.find(row=>row.action==='case-theme').detail===${JSON.stringify(theme.name)}`,'Finish applies with swatch and checkmark: '+theme.name);
-      if(['spotify'].includes(theme.id))await shot(`dialpod-theme-${theme.id}.png`);
+      if(['spotify'].includes(theme.id))await shot(`turnbit-theme-${theme.id}.png`);
     }
     await check(`document.querySelector('.spotify-case-logo').complete && document.querySelector('.spotify-case-logo').naturalWidth>0 && getComputedStyle(document.querySelector('.spotify-case-logo')).display!=='none' && getComputedStyle(document.querySelector('.case-name')).display==='none'`,'Spotify case logo loads and replaces case name');
     await check(`getComputedStyle(document.querySelector('#select'),'::after').content==='none'`,'Original Spotify keeps its plain center');
-    await js(`savePreferences({appearance:'spotify'});showNow();`);await shot('dialpod-spotify-now-playing.png');
+    await js(`savePreferences({appearance:'spotify'});showNow();`);await shot('turnbit-spotify-now-playing.png');
     window.webContents.reload();await delay(1000);
     await check(`preferences.appearance==='spotify' && document.body.dataset.theme==='spotify' && document.body.dataset.wheel==='dark'`,'New finish persists after reload');
     await js(`savePreferences({appearance:'silver'});`);
@@ -176,10 +176,10 @@ app.whenReady().then(async()=>{
     await check(`document.body.dataset.screen==='dark'`,'Appearance preview preserves screen setting');await select();
     await js(`nav.current.selected=nav.current.rows.findIndex(row=>row.action==='screen-theme');drawNavigation();`);await select();
     await check(`preferences.screenTheme==='light' && preferences.appearance==='spotify' && document.body.dataset.screen==='light' && getComputedStyle(document.querySelector('.screen')).backgroundImage.includes('gradient')`,'Spotify case supports light screen');
-    await delay(350);await shot('dialpod-spotify-light-screen.png');
+    await delay(350);await shot('turnbit-spotify-light-screen.png');
     window.webContents.reload();await delay(1000);
     await check(`preferences.screenTheme==='light' && preferences.appearance==='spotify' && document.body.dataset.screen==='light'`,'Independent screen preference survives reload');
-    await js(`savePreferences({appearance:'silver',screenTheme:'dark'});showNow();`);await delay(350);await shot('dialpod-silver-dark-screen.png');
+    await js(`savePreferences({appearance:'silver',screenTheme:'dark'});showNow();`);await delay(350);await shot('turnbit-silver-dark-screen.png');
     await js(`savePreferences({appearance:'silver',screenTheme:'light'});`);
     await js(`playing=false;progress=30000;updated=Date.now();window.holdTrack=index;window.seekWrites=[];window.originalSeekSend=seekControl.send;seekControl.send=async value=>{window.seekWrites.push(value);await window.originalSeekSend(value);};void 0;`);
     await event({type:'command',command:'next-down'});await delay(1250);
@@ -196,7 +196,7 @@ app.whenReady().then(async()=>{
       window.setSize(...size);await delay(350);
       await check(`(()=>{const screen=document.querySelector('.screen').getBoundingClientRect(),wheel=document.querySelector('#wheel').getBoundingClientRect(),shell=document.querySelector('.ipod').getBoundingClientRect(),footer=document.querySelector('footer').getBoundingClientRect();return wheel.top-screen.bottom>=44 && wheel.bottom<=footer.top && footer.bottom<shell.bottom && shell.bottom-footer.bottom<=24 && shell.bottom<=innerHeight;})()`,'Screen/wheel gap and footer fit at '+size.join('x'));
     }
-    await js(`savePreferences({appearance:'silver',screenTheme:'dark'});showNow();`);await delay(350);await shot('dialpod-classic-spacing.png');
+    await js(`savePreferences({appearance:'silver',screenTheme:'dark'});showNow();`);await delay(350);await shot('turnbit-classic-spacing.png');
     await js(`savePreferences({appearance:'silver',screenTheme:'light'});`);
     await js(`nav.reset(root());showSettings();nav.current.selected=nav.current.rows.findIndex(row=>row.action==='interface');drawNavigation();`);await select();
     await check(`nav.current.title==='Interface' && nav.current.rows.map(row=>row.label).join(',')==='turnbit,iPod,Zune'`,'Interface setting offers turnbit, iPod and Zune');
@@ -205,15 +205,15 @@ app.whenReady().then(async()=>{
     await menu();await delay(350);
     await check(`nav.current.title==='turnbit' && document.querySelector('#screenTitle').textContent==='zune' && getComputedStyle(document.querySelector('.zune-caption')).display==='none' && getComputedStyle(document.querySelector('.screenbar')).display==='none' && getComputedStyle(document.querySelector('#menuPreview')).display==='none'`,'Zune 80 home uses direct text menu without HD headings or subtitles');
     await check(`getComputedStyle(document.querySelector('#wheel')).display==='none' && getComputedStyle(document.querySelector('#zuneControls')).display==='grid' && document.querySelector('.screen').getBoundingClientRect().height>=400`,'Zune has portrait body and dedicated pad controls');
-    await shot('dialpod-zune-home-light.png');
+    await shot('turnbit-zune-home-light.png');
     await select();await check(`nav.current.libraryKind==='playlists' && document.querySelector('.screen').dataset.music==='true'`,'Zune Music opens category browser');
     await js(`document.querySelector('[data-zune-tab="songs"]').click();`);await delay(100);
     await check(`nav.current.libraryKind==='songs' && nav.stack.length===2`,'Zune category tabs swap without nesting');
     await js(`document.querySelector('[data-zune-tab="playlists"]').click();`);await delay(100);
     await select();await rotate(1);await select();await delay(350);
     await check(`nav.current.kind==='now' && playing && document.querySelector('#nowView').hidden===false`,'Zune hardware navigation plays songs');
-    await shot('dialpod-zune-now-light.png');
-    await js(`savePreferences({screenTheme:'dark'});`);await delay(350);await shot('dialpod-zune-now-dark.png');
+    await shot('turnbit-zune-now-light.png');
+    await js(`savePreferences({screenTheme:'dark'});`);await delay(350);await shot('turnbit-zune-now-dark.png');
     await rotate(1);await check(`nav.current.kind==='now'`,'Zune retains volume-wheel behavior on Now Playing');
     await select();await check(`nav.current.title==='Playback' && nav.current.rows[0].action==='song-list'`,'Zune Center opens playback options');
     await menu();await check(`nav.current.kind==='now'`,'Zune Back closes playback options');
@@ -222,7 +222,7 @@ app.whenReady().then(async()=>{
     await check(`nav.current.libraryKind==='playlist' && playing!==window.beforeZunePlay`,'Zune Play toggles directly from menus');
     await event({type:'command',command:'menu-down'});await delay(600);await event({type:'command',command:'menu-up'});
     await check(`nav.stack.length===1 && nav.current.title==='turnbit'`,'Zune Back hold returns Home');
-    await delay(350);await shot('dialpod-zune-home-dark.png');
+    await delay(350);await shot('turnbit-zune-home-dark.png');
     window.webContents.reload();await delay(1000);
     await check(`preferences.interfaceStyle==='zune' && document.body.dataset.interface==='zune' && preferences.screenTheme==='dark' && preferences.appearance==='silver'`,'Zune and independent preferences survive reload');
     await js(`showSettings();nav.current.selected=nav.current.rows.findIndex(row=>row.action==='interface');drawNavigation();`);await select();await rotate(-1);await select();
@@ -237,7 +237,7 @@ app.whenReady().then(async()=>{
     await check(`preferences.visibility.timeout===10 && nav.current.title==='Transparency'`,'Menu cancels a timeout edit');
     await select();await rotate(5);await select();
     await check(`preferences.visibility.timeout===15`,'Dial can customize idle timeout');
-    await delay(350);await shot('dialpod-transparency-settings.png');
+    await delay(350);await shot('turnbit-transparency-settings.png');
     window.webContents.reload();await delay(1000);
     await check(`preferences.visibility.mode==='idle' && preferences.visibility.idleOpacity===0 && preferences.visibility.timeout===15`,'Transparency preferences survive reload');
     await js(`savePreferences({visibility:{mode:'off',opacity:70,idleOpacity:20,timeout:10}});`);

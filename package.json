@@ -1,7 +1,7 @@
 {
   "name": "desktop-ulanzi-ipod-poc",
   "version": "0.2.0",
-  "author": "DialPod",
+  "author": "turnbit contributors",
   "license": "MIT",
   "private": true,
   "description": "iPod-like Spotify controller for Electron + Ulanzi D100H",

@@ -5,7 +5,7 @@ const {app,BrowserWindow,nativeImage}=require('electron');
 const path=require('node:path'),fs=require('node:fs');
 const {GIFEncoder,quantize,applyPalette}=require('gifenc');
 const PORT='4810',OUT=path.join(__dirname,'..','assets','demo'),STILLS=process.argv.includes('--stills');
-app.setPath('userData',path.join(app.getPath('temp'),'turnbit-demo-gif'));process.env.DIALPOD_BRIDGE_PORT=PORT;require('../src/main');
+app.setPath('userData',path.join(app.getPath('temp'),'turnbit-demo-gif'));process.env.TURNBIT_BRIDGE_PORT=PORT;require('../src/main');
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const send=event=>fetch(`http://127.0.0.1:${PORT}/device/event`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(event)});
 const turn=async(delta,gap=260)=>{await send({type:'dial',delta});await wait(gap);};

@@ -1,7 +1,7 @@
 const {app,BrowserWindow}=require('electron');
 const path=require('node:path'),assert=require('node:assert/strict');
 app.disableHardwareAcceleration();app.setPath('userData',path.join(app.getPath('temp'),'turnbit-load-more-test'));
-process.env.DIALPOD_BRIDGE_PORT='4798';require('../src/main');
+process.env.TURNBIT_BRIDGE_PORT='4798';require('../src/main');
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 // Load more is a hover shortcut: turning down onto it and resting loads the next page, landing on the first new song.
 app.whenReady().then(async()=>{try{

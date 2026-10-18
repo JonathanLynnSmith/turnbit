@@ -177,15 +177,17 @@ else {
     if (process.platform === 'win32') media = new MediaSession(state => spotify?.localChanged(state));
     spotify = new SpotifyClient(state => send('spotify-state', state), { media, session: readSession(file), persist: data => saveSession(file, data), cooldowns: readCooldowns(limits), onCooldowns: data => saveCooldowns(limits, data), onAuth: auth => send('spotify-auth', auth) });
     media?.start();
-    bridge = createBridge(event => {const action=wakeGate?.handle(event)||'forward';scheduleVisibility();if(action==='forward')send('device-event',event);else if(action==='wake')send('device-event',{type:'wake'});}, Number(process.env.DIALPOD_BRIDGE_PORT || 4765));
+    // TURNBIT_BRIDGE_PORT (or the older DIALPOD_BRIDGE_PORT) also marks test/smoke mode.
+    const bridgePort = process.env.TURNBIT_BRIDGE_PORT || process.env.DIALPOD_BRIDGE_PORT;
+    bridge = createBridge(event => {const action=wakeGate?.handle(event)||'forward';scheduleVisibility();if(action==='forward')send('device-event',event);else if(action==='wake')send('device-event',{type:'wake'});}, Number(bridgePort || 4765));
     bridge.on('error', error => { bridgeError = `D100H bridge unavailable: ${error.message}`; send('bridge-error', bridgeError); });
     if (process.platform === 'darwin') app.dock?.hide();
     createWindow();
     // Keyboard & Mouse Mode wakes turnbit (without stealing focus from the overlay) and forwards mouse input to it.
     mouseMode = new MouseMode({ electron: require('electron'), onEvent: event => { wakeVisibility(true); send('mouse-mode', event); }, onChange: active => { if (active) { wakeVisibility(true); if (!mainWindow.isVisible()) mainWindow.showInactive(); } send('mouse-mode', { type: 'active', active }); } });
-    if (process.env.DIALPOD_BRIDGE_PORT) global.turnbitMouseMode = mouseMode;
+    if (bridgePort) global.turnbitMouseMode = mouseMode;
     tray = createTray({ isVisible: () => !!mainWindow?.isVisible(), show: showWindow, hide: hideWindow, command: trayCommand, restart: () => { quitting = true; app.relaunch(); app.quit(); }, quit: () => { quitting = true; app.quit(); } });
-    if(!process.env.DIALPOD_BRIDGE_PORT)globalShortcut.register('Control+Alt+Shift+D',()=>showWindow());
+    if(!bridgePort)globalShortcut.register('Control+Alt+Shift+D',()=>showWindow());
     app.on('activate', () => { if (!BrowserWindow.getAllWindows().length) createWindow(); else showWindow(); });
   });
   // A tray app keeps running with no window; Quit is in the tray menu.

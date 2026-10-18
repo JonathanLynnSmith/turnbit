@@ -76,9 +76,9 @@ class SpotifyClient {
         if (this.server !== server) { res.writeHead(409); return res.end('This login was cancelled.'); }
         this.setTokens(data); this.notify();
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        res.end('<h2>DialPod is connected.</h2><p>Close this tab and return to the widget.</p>');
+        res.end('<h2>turnbit is connected.</h2><p>Close this tab and return to the widget.</p>');
         this.getPlaybackState().catch(error => this.onState({ error: error.message }));
-      } catch (error) { res.writeHead(400); res.end('Connection failed. Return to DialPod for details.'); this.notify(error); }
+      } catch (error) { res.writeHead(400); res.end('Connection failed. Return to turnbit for details.'); this.notify(error); }
       finally { if (this.server === server) this.cancelLogin(); }
     });
     this.server = server;

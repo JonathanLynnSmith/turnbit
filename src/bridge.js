@@ -21,7 +21,7 @@ function createBridge(onEvent, port = 4765) {
     if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
     if (req.method === 'GET' && req.url === '/device/state') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({ ok: true, ...server.status(), name: 'DialPod' }));
+      return res.end(JSON.stringify({ ok: true, ...server.status(), name: 'turnbit' }));
     }
     if (req.method !== 'POST' || req.url !== '/device/event') { res.writeHead(404); return res.end(); }
     if (!req.headers['content-type']?.startsWith('application/json')) { res.writeHead(415); return res.end(); }

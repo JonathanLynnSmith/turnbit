@@ -1,7 +1,7 @@
 const {app,BrowserWindow}=require('electron');
 const path=require('node:path'),assert=require('node:assert/strict');
 app.disableHardwareAcceleration();app.setPath('userData',path.join(app.getPath('temp'),'turnbit-home-test'));
-process.env.DIALPOD_BRIDGE_PORT='4800';require('../src/main');
+process.env.TURNBIT_BRIDGE_PORT='4800';require('../src/main');
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 // Home lists Liked Songs and Playlists directly (no Music menu); the Zune interface keeps its own Home.
 app.whenReady().then(async()=>{try{
