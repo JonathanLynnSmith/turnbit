@@ -18,7 +18,7 @@ app.whenReady().then(async()=>{try{
   assert.equal(await js(`nav.current.rows.find(r=>r.label==='Playback').detail`),'Volume and devices','categories have subtitles');
   assert.equal((await page()).highlighted,'Playback','Settings opens on the first category');
   const expected={
-    playback:'Volume, Playback Device, Preferred Device, Open Spotify Automatically, Keep Song Position, Spotify Connection',
+    playback:'Volume, Playback Device, Preferred Device, Open Spotify Automatically, When Nothing Is Playing, Keep Song Position, Spotify Connection',
     appearance:'Interface, Curved Menu, Text Alignment, Screen Edge, Smoky Background, Text Color, Accent Color',
     navigation:'Reverse Dial Direction, Dial Double-Press, Back in Lists, Last Song List on Home, Hover Shortcuts, Mouse Mode Key, Click Sounds',
     'now-playing':'Play Opens Now Playing, Open Song in Now Playing, Idle to Now Playing, Follow Playing Song',

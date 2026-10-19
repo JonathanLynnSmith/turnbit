@@ -9,6 +9,7 @@ const limitGroup = path => /^\/me\/(library|tracks)(\/|\?|$)/.test(path) ? 'libr
 const groupLabel = group => group === 'library' ? 'Liked Songs and likes' : group.startsWith('/me/player') ? 'playback control' : group.includes('playlists') ? 'playlists' : 'this feature';
 const untilText = at => new Date(at).toLocaleString([], at - Date.now() > 12 * 3600000 ? { weekday: 'short', hour: 'numeric', minute: '2-digit' } : { hour: 'numeric', minute: '2-digit' });
 const cooldownError = (group, at) => Object.assign(new Error(`Spotify rate limit: ${groupLabel(group)} paused until ${untilText(at)}.`), { status: 429 });
+const COLD_START_MODES = ['last', 'liked', 'playlist', 'off'];
 const sameTrack = (item, local) => !!item?.name && !!local?.title && item.name.trim().toLowerCase() === local.title.trim().toLowerCase();
 class SpotifyClient {
   constructor(onState, options = {}) {
@@ -28,7 +29,10 @@ class SpotifyClient {
     this.media=options.media||null;this.webCacheMs=options.webCacheMs??25000;this.lastLocal=null;this.mismatchRetries=0;
     this.serverRetryMs=options.serverRetryMs??1500;this.wait=options.wait||(ms=>new Promise(resolve=>{const timer=setTimeout(resolve,ms);timer.unref?.();}));
     this.waitForLike=options.waitForLike||(ms=>new Promise(resolve=>{const timer=setTimeout(resolve,ms);timer.unref();}));
-    this.recovery={preferredDevice:null,autoLaunchSpotify:false};this.configureRecovery(options.recovery||{});
+    this.recovery={preferredDevice:null,autoLaunchSpotify:false,coldStart:{mode:'last',playlist:null}};
+    // The Liked Songs seed shares Spotify's throttled library limit with likes, so hold it between cold starts.
+    this.coldStartCache=null;this.coldStartCacheMs=options.coldStartCacheMs??600000;
+    this.configureRecovery(options.recovery||{});
     this.launchSpotify=options.launchSpotify||(()=>this.openExternal('spotify:'));
     this.waitForDevice=options.waitForDevice||(ms=>new Promise(resolve=>setTimeout(resolve,ms)));
   }
@@ -171,6 +175,14 @@ class SpotifyClient {
       this.recovery.preferredDevice=device?{id:device.id,name:device.name,type:String(device.type||'').slice(0,64)}:null;
       if(changed)this.deviceId=device?.id||'';
     }
+    if(Object.hasOwn(value,'coldStart')){
+      const next=value.coldStart||{},mode=COLD_START_MODES.includes(next.mode)?next.mode:'last';
+      const uri=next.playlist?.uri;
+      const playlist=/^spotify:playlist:[a-zA-Z0-9]{22}$/.test(uri||'')?{uri,name:String(next.playlist.name||'').slice(0,256)}:null;
+      if(mode==='playlist'&&!playlist)throw new Error('Choose a playlist for Play to start when nothing is playing.');
+      if(playlist?.uri!==this.recovery.coldStart?.playlist?.uri)this.coldStartCache=null;
+      this.recovery.coldStart={mode,playlist};
+    }
     if(typeof value.autoLaunchSpotify==='boolean')this.recovery.autoLaunchSpotify=value.autoLaunchSpotify;
     return {...this.recovery};
   }
@@ -193,11 +205,52 @@ class SpotifyClient {
     if(this.recovery.preferredDevice){this.recovery.preferredDevice={id:device.id,name:device.name,type:device.type};this.onState({recoveredDevice:this.recovery.preferredDevice});}
     await this.waitForDevice(300);
   }
+  // A play call with no body can only resume, so an empty Spotify player has nothing to start and
+  // keeps failing however healthy the device is. These seeds give it something to play instead.
+  // Only the Liked Songs seed costs a read, it is cached, and nothing here runs on a healthy start.
+  lastSessionBody(){
+    // Reuse the state turnbit already holds; a cold start is never worth a fetch of its own here.
+    if(!this.playbackState||Date.now()-this.playbackRead>=this.webCacheMs)return null;
+    const context=this.playbackState.context?.uri,item=this.playbackState.item?.uri;
+    if(!/^spotify:(playlist|album|artist|show):/.test(context||''))return null;
+    return /^spotify:(track|episode):[a-zA-Z0-9]{22}$/.test(item||'')?{context_uri:context,offset:{uri:item}}:{context_uri:context};
+  }
+  async likedSongsBody(){
+    if(this.coldStartCache&&Date.now()-this.coldStartCache.at<this.coldStartCacheMs)return this.coldStartCache.body;
+    // Liked Songs has no playable context URI, so Spotify's own answer is to play the track URIs.
+    const uris=((await this.library('songs'))?.items||[]).map(entry=>entry?.track?.uri).filter(uri=>/^spotify:track:[a-zA-Z0-9]{22}$/.test(uri||''));
+    if(!uris.length)return null;
+    const body={uris};this.coldStartCache={body,at:Date.now()};return body;
+  }
+  async coldStartPlay(){
+    const {mode,playlist}=this.recovery.coldStart||{};
+    if(mode==='off')return null;
+    if(mode==='playlist')return playlist?{body:{context_uri:playlist.uri},message:`Nothing was playing · started ${playlist.name||'your playlist'}`}:null;
+    if(mode==='last'){const body=this.lastSessionBody();if(body)return {body,message:'Resumed your last Spotify session'};}
+    const liked=await this.likedSongsBody();
+    return liked?{body:liked,message:'Nothing was playing · started your Liked Songs'}:null;
+  }
   async startPlayback(body){
-    const send=()=>this.api(`/me/player/play${this.deviceId?`?device_id=${encodeURIComponent(this.deviceId)}`:''}`,{method:'PUT',...(body?{headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{})});
-    try{return await send();}catch(error){if(error.status!==404)throw error;}
+    const send=payload=>this.api(`/me/player/play${this.deviceId?`?device_id=${encodeURIComponent(this.deviceId)}`:''}`,{method:'PUT',...(payload?{headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}:{})});
+    let cold=null;
+    // Spotify already reporting a device with nothing loaded means the resume is doomed; seed instead
+    // of spending the call, and skip device recovery that has nothing to recover.
+    if(!body&&this.playbackState&&this.playbackState.device&&!this.playbackState.item&&Date.now()-this.playbackRead<this.webCacheMs){
+      cold=await this.coldStartPlay().catch(()=>null);if(cold)body=cold.body;
+    }
+    const started=result=>{if(cold){this.onState({recoveryMessage:cold.message});this.scheduleRefresh(1500);}return result;};
+    try{return started(await send(body));}catch(error){if(error.status!==404)throw error;}
     await this.recoverDevice();
-    try{const result=await send();this.onState({recoveryMessage:'Spotify reconnected · playback request sent'});return result;}catch(error){if(error.status===404)throw new Error('Spotify is still starting. Try Play again in a moment.');throw error;}
+    try{const result=await send(body);this.onState({recoveryMessage:cold?cold.message:'Spotify reconnected · playback request sent'});if(cold)this.scheduleRefresh(1500);return result;}
+    catch(error){
+      if(error.status!==404)throw error;
+      // The device answers now, so the only thing still missing is something to play.
+      if(body)throw new Error('Spotify is still starting. Try Play again in a moment.');
+      cold=await this.coldStartPlay();
+      if(!cold)throw new Error('Nothing was playing. Start a song in Spotify, or choose what Play should start in Settings → Playback.');
+      try{return started(await send(cold.body));}
+      catch(retry){if(retry.status===404)throw new Error('Spotify is still starting. Try Play again in a moment.');throw retry;}
+    }
   }
   publishLike(uri,entry,error){
     if(this.likeStates.get(uri)!==entry)return;
@@ -296,6 +349,6 @@ class SpotifyClient {
       if (this.playbackState?.device) this.playbackState = { ...this.playbackState, device: { ...this.playbackState.device, volume_percent: volume } };
     }
   }
-  logout() { this.cancelLogin(); this.token = null; this.refreshToken = null; this.expiresAt = 0; this.deviceId = ''; this.playbackState=null;this.playbackRead=0;this.likeStates.clear();this.likedCache=null;clearTimeout(this.refreshTimer);this.lastLocal=null;this.mismatchRetries=0;this.pendingPlay=null;this.volumeWrite=null;this.stateRevision++;this.save(); this.notify(); return { ok: true }; }
+  logout() { this.cancelLogin(); this.token = null; this.refreshToken = null; this.expiresAt = 0; this.deviceId = ''; this.playbackState=null;this.playbackRead=0;this.likeStates.clear();this.likedCache=null;this.coldStartCache=null;clearTimeout(this.refreshTimer);this.lastLocal=null;this.mismatchRetries=0;this.pendingPlay=null;this.volumeWrite=null;this.stateRevision++;this.save(); this.notify(); return { ok: true }; }
 }
 module.exports = { SpotifyClient, REDIRECT_URI };

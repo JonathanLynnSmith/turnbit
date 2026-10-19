@@ -163,7 +163,8 @@ Settings are grouped into five categories. On/off settings sit inside a category
 | Playback | Volume | Opens a dedicated volume page |  |
 | Playback | Playback Device | Moves playback to another Spotify device |  |
 | Playback | Preferred Device | The device turnbit reconnects to when playback has gone idle | Automatic |
-| Playback | Open Spotify Automatically | Starts the Spotify desktop app if no device is available | Off |
+| Playback | Open Spotify Automatically | Starts the Spotify desktop app if no device is available | On |
+| Playback | When Nothing Is Playing | What Play starts when Spotify has nothing loaded: Last Session, Liked Songs, a playlist you pick, or Off | Last Session |
 | Playback | Keep Song Position | Selecting the song that is already playing opens Now Playing instead of restarting it | On |
 | Playback | Spotify Connection | Connect or disconnect your Spotify account |  |
 | Appearance | Interface | turnbit, or the paused iPod and Zune extras | turnbit |
@@ -211,6 +212,7 @@ When turnbit has faded out with Idle Fade, the first dial turn or press only wak
 - turnbit controls Spotify through the [Spotify Web API](https://developer.spotify.com/documentation/web-api). Audio always plays in Spotify itself.
 - On Windows, when the Spotify desktop app is playing on the same PC, play, pause, skip, and seek go straight to Spotify's own media session. They work instantly, use no API calls, and never affect other apps.
 - If you start a song after Spotify has gone idle, turnbit reconnects to your Preferred Device (opening Spotify first, if you allow it) and tries the song again.
+- Spotify can only resume a player that already has a song loaded, so Play alone does nothing after a fresh start. turnbit gives it something to play instead, from **When Nothing Is Playing**: the context your last session was in, or your Liked Songs, or a playlist you pick. That costs at most one extra Spotify call, and the Liked Songs list is reused for ten minutes.
 - turnbit checks Spotify less often when music is paused or the window is hidden, which helps it stay within Spotify's rate limits.
 - If Spotify rate-limits a feature, only that feature pauses, and turnbit shows when it will be available again.
 
@@ -219,6 +221,7 @@ When turnbit has faded out with Idle Fade, the first dial turn or press only wak
 | Problem | Try this |
 | --- | --- |
 | "No Spotify device is available" | Start a song in Spotify, choose a Preferred Device, or turn on Open Spotify Automatically. A phone or speaker must be on and online; turnbit cannot wake it. |
+| "Nothing was playing" | Play had nothing to start and **When Nothing Is Playing** is Off, or your Liked Songs are empty. Pick a source in Settings → Playback. |
 | "Retry loading" on Liked Songs | Spotify may be rate-limiting your library. The message shows when it will clear. |
 | A playlist's songs will not load | Spotify only lets apps list songs in playlists you own or collaborate on. **Play this playlist** still works. |
 | The D100H does nothing | Make sure Ulanzi Studio is running and the device is paired, then run `npm run studio:restart`. |
