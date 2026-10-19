@@ -105,3 +105,75 @@ test('Liked Songs is not a playable context, so a cold start plays its tracks in
  await s.client.command('play');
  assert.deepEqual(bodies(s.requests).pop(),{uris:[track(5)]});
 });
+
+// Picking a device: Automatic has to land on something, or every dial press is a dead end.
+const phone={id:'phone',name:'Pixel',type:'Smartphone',is_restricted:false,is_active:true};
+const speaker={id:'speaker',name:'Kitchen',type:'Speaker',is_restricted:false};
+function withSession(handler,{session,recovery}={}){
+ const requests=[],saved=[],notices=[];
+ const client=new SpotifyClient(state=>notices.push(state),{session,recovery,persist:data=>saved.push(data),waitForDevice:async()=>{},launchSpotify:async()=>{},fetch:async(url,options)=>{const request={path:new URL(url).pathname,url:new URL(url),options};requests.push(request);return handler(request,requests);}});
+ client.setTokens({access_token:'test',expires_in:3600});
+ return {client,requests,saved,notices};
+}
+test('Automatic starts on the device last used, even when Spotify calls another one active',()=>{
+ const s=withSession(()=>ok(),{session:{lastDevice:{id:'speaker',name:'Kitchen',type:'Speaker'}}});
+ assert.equal(s.client.recoveryDevice([phone,speaker,device]).id,'speaker');
+});
+test('with nothing remembered Automatic takes the active device, then the only computer',()=>{
+ const s=withSession(()=>ok());
+ assert.equal(s.client.recoveryDevice([phone,speaker,device]).id,'phone');
+ assert.equal(s.client.recoveryDevice([speaker,device]).id,'fresh');
+ assert.equal(s.client.recoveryDevice([speaker,{...speaker,id:'other'}]),null);
+});
+test('a remembered device Spotify renumbered is matched by name and type',()=>{
+ const s=withSession(()=>ok(),{session:{lastDevice:{id:'stale',name:'My PC',type:'Computer'}}});
+ assert.equal(s.client.recoveryDevice([device,phone]).id,'fresh');
+});
+test('a Preferred Device still overrules the remembered one, and still refuses a substitute',()=>{
+ const s=withSession(()=>ok(),{session:{lastDevice:{id:'speaker',name:'Kitchen',type:'Speaker'}},recovery:{preferredDevice:{id:'fresh',name:'My PC',type:'Computer'}}});
+ assert.equal(s.client.recoveryDevice([device,speaker]).id,'fresh');
+ assert.equal(s.client.recoveryDevice([speaker,phone]),null);
+});
+test('the device Spotify reports is remembered, saved, and used after a restart',async()=>{
+ const s=withSession(r=>r.path==='/v1/me/player'&&!r.options.method?json({device:{id:'fresh',name:'My PC',type:'Computer'},is_playing:true,item:null}):ok());
+ await s.client.getPlaybackState({force:true});
+ assert.deepEqual(s.client.lastDevice,{id:'fresh',name:'My PC',type:'Computer'});
+ assert.deepEqual(s.saved.pop().lastDevice,{id:'fresh',name:'My PC',type:'Computer'});
+ const next=withSession(()=>ok(),{session:{lastDevice:s.client.lastDevice}});
+ assert.equal(next.client.recoveryDevice([device,phone]).id,'fresh');
+});
+test('picking a device by hand remembers it without a second read',async()=>{
+ const s=withSession(()=>ok());
+ await s.client.command('device',{id:'speaker',name:'Kitchen',type:'Speaker'});
+ assert.deepEqual(s.client.lastDevice,{id:'speaker',name:'Kitchen',type:'Speaker'});
+ assert.deepEqual(s.requests.map(r=>r.path),['/v1/me/player']);
+});
+test('a transport press on a device that went away recovers it and retries once',async()=>{
+ let nexts=0;const s=withSession(r=>r.path.endsWith('/devices')?json({devices:[device]}):r.path.endsWith('/next')?(++nexts===1?missing():ok()):ok());
+ s.client.deviceId='stale';
+ await s.client.command('next');
+ const sent=s.requests.filter(r=>r.path.endsWith('/next'));
+ assert.equal(sent[0].url.searchParams.get('device_id'),'stale');
+ assert.equal(sent[1].url.searchParams.get('device_id'),'fresh');
+});
+test('pause with nothing playing anywhere settles quietly and drops the dead device',async()=>{
+ const s=withSession(()=>missing());
+ s.client.deviceId='stale';
+ await s.client.command('pause');
+ assert.equal(s.client.deviceId,'');
+ assert.equal(s.requests.length,1);
+});
+test('a volume press after Spotify went idle retries on the recovered device with the same value',async()=>{
+ let volumes=0;const s=withSession(r=>r.path.endsWith('/devices')?json({devices:[device]}):r.path.endsWith('/volume')?(++volumes===1?missing():ok()):ok());
+ s.client.deviceId='stale';
+ await s.client.command('volume',42);
+ const sent=s.requests.filter(r=>r.path.endsWith('/volume'));
+ assert.equal(sent[1].url.searchParams.get('device_id'),'fresh');
+ assert.equal(sent[1].url.searchParams.get('volume_percent'),'42');
+ assert.equal(s.client.volumeWrite.value,42);
+});
+test('a skip with an empty queue says so instead of blaming the device it just connected',async()=>{
+ const s=withSession(r=>r.path.endsWith('/devices')?json({devices:[device]}):r.path.endsWith('/next')?missing():ok());
+ await assert.rejects(s.client.command('next'),/nothing is queued/);
+ assert.equal(s.client.deviceId,'fresh');
+});

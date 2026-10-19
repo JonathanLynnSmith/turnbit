@@ -26,7 +26,7 @@ turnbit docks a transparent, curved menu along the edge of your screen. Turn the
 
 ## Requirements
 
-- Windows 10 or 11 (macOS builds are not tested yet)
+- Windows 10 or 11, or macOS 11 or newer (see [Windows and macOS](#windows-and-macos))
 - [Node.js](https://nodejs.org/) 20 or newer
 - Spotify Premium and the Spotify app (desktop, phone, or any Spotify Connect device)
 - A free [Spotify developer app](https://developer.spotify.com/dashboard) (setup below)
@@ -47,7 +47,23 @@ turnbit runs from the system tray or menu bar. Closing or minimizing the widget 
 
 Then [connect Spotify](#connect-spotify) and, if you have one, [set up the D100H](#set-up-the-ulanzi-d100h).
 
-To build a standalone app, run `npm run package`. On Windows, the app is created as `turnbit.exe` in `dist\win-unpacked`; keep that whole folder together. Builds are unsigned, so Windows may show a warning the first time you run one.
+To build a standalone app, run `npm run package`. On Windows it lands as `turnbit.exe` in `dist\win-unpacked`; keep that whole folder together. On macOS it lands as `turnbit.app` in `dist/mac` (or `dist/mac-arm64`). Builds are unsigned, so Windows and macOS both warn the first time you open one; on macOS, right-click the app and choose Open.
+
+## Windows and macOS
+
+turnbit is one codebase and behaves the same on both. Everything that differs is here:
+
+| | Windows | macOS |
+| --- | --- | --- |
+| Local Spotify control | Play, pause, skip, and seek go straight to Spotify's own media session: instant, and no API calls | Goes through the Spotify Web API, so transport is a round trip and counts against the rate limit |
+| Lives in | The system tray. Left-click toggles the widget, right-click opens the menu | The menu bar. Clicking opens the menu; the Dock icon appears only in Window Mode |
+| The widget and other desktops | Always on top is enough | turnbit also puts the widget on every Space and above fullscreen apps |
+| Ulanzi plugin folder | `%APPDATA%\Ulanzi\UlanziDeck\Plugins` | `~/Library/Application Support/Ulanzi/UlanziDeck/Plugins` |
+| Shortcut names | `Alt` is the Alt key | `Alt` is the Option key; the shortcuts are otherwise identical |
+
+`npm run plugin:install` and `npm run studio:restart` handle both, with no arguments. Keeping the
+screen awake while the dial is in use, the tray menu, Start at Login, Window Mode, transparency,
+and Keyboard & Mouse Mode are the same code on both systems.
 
 ## Connect Spotify
 
@@ -210,7 +226,9 @@ When turnbit has faded out with Idle Fade, the first dial turn or press only wak
 ## How it works
 
 - turnbit controls Spotify through the [Spotify Web API](https://developer.spotify.com/documentation/web-api). Audio always plays in Spotify itself.
-- On Windows, when the Spotify desktop app is playing on the same PC, play, pause, skip, and seek go straight to Spotify's own media session. They work instantly, use no API calls, and never affect other apps.
+- On Windows, when the Spotify desktop app is playing on the same PC, play, pause, skip, and seek go straight to Spotify's own media session. They work instantly, use no API calls, and never affect other apps. macOS has no equivalent, so everything there goes through the Web API.
+- The dial reaches turnbit over a local bridge rather than as keyboard or mouse input, so the system would happily dim or sleep the screen while you navigate. turnbit holds the display awake while the dial is in use and lets go a minute after it goes quiet.
+- Automatic picks the device you last played on, then whatever Spotify still calls active, then the only computer it can see. A chosen Preferred Device overrules all of that: if it is unavailable, turnbit says so rather than starting music somewhere else.
 - If you start a song after Spotify has gone idle, turnbit reconnects to your Preferred Device (opening Spotify first, if you allow it) and tries the song again.
 - Spotify can only resume a player that already has a song loaded, so Play alone does nothing after a fresh start. turnbit gives it something to play instead, from **When Nothing Is Playing**: the context your last session was in, or your Liked Songs, or a playlist you pick. That costs at most one extra Spotify call, and the Liked Songs list is reused for ten minutes.
 - turnbit checks Spotify less often when music is paused or the window is hidden, which helps it stay within Spotify's rate limits.
@@ -221,6 +239,7 @@ When turnbit has faded out with Idle Fade, the first dial turn or press only wak
 | Problem | Try this |
 | --- | --- |
 | "No Spotify device is available" | Start a song in Spotify, choose a Preferred Device, or turn on Open Spotify Automatically. A phone or speaker must be on and online; turnbit cannot wake it. |
+| Music starts on the wrong device | turnbit returns to the device you last played on. Set Settings → Playback → Preferred Device to pin it to one. |
 | "Nothing was playing" | Play had nothing to start and **When Nothing Is Playing** is Off, or your Liked Songs are empty. Pick a source in Settings → Playback. |
 | "Retry loading" on Liked Songs | Spotify may be rate-limiting your library. The message shows when it will clear. |
 | A playlist's songs will not load | Spotify only lets apps list songs in playlists you own or collaborate on. **Play this playlist** still works. |

@@ -36,6 +36,8 @@ app.whenReady().then(async()=>{
     assert.equal(await window.webContents.executeJavaScript(`typeof window.turnbit.windowMode`),'function','windowMode is exposed on the bridge');
     assert.equal(isFramed(window),false,'starts frameless (Widget Mode)');
     if(process.platform==='darwin')assert.equal(app.dock.isVisible(),false,'dock hidden in Widget Mode');
+    // A desk widget has to survive a Space switch and show over fullscreen apps.
+    if(process.platform==='darwin')assert.equal(window.isVisibleOnAllWorkspaces(),true,'widget shows on every Space');
 
     await window.webContents.executeJavaScript(`localStorage.removeItem('turnbit-preferences');localStorage.setItem('dialpod-preferences',JSON.stringify({interfaceStyle:'radial',appearance:'black',gamingMode:true,mouseModeKey:'off'}));`);
     window.webContents.reload();await wait(600);
@@ -49,6 +51,7 @@ app.whenReady().then(async()=>{
     assert.equal(BrowserWindow.getAllWindows().length,1,'exactly one window after recreation');
     assert.equal(isFramed(window),true,'now framed (Window Mode)');
     if(process.platform==='darwin')assert.equal(app.dock.isVisible(),true,'dock shown in Window Mode');
+    if(process.platform==='darwin')assert.equal(window.isVisibleOnAllWorkspaces(),false,'Window Mode stays an ordinary window');
     assert.equal(await window.webContents.executeJavaScript(`window.turnbit.windowMode()`),true,'new window reports windowMode() true');
 
     assert.equal(await window.webContents.executeJavaScript(`getComputedStyle($('#windowMove')).display`),'none','widget move handle is hidden in Window Mode');
@@ -72,7 +75,7 @@ app.whenReady().then(async()=>{
     await wait(800);
     assert.equal(BrowserWindow.getAllWindows().length,1,'exactly one window after switching back');
     assert.equal(isFramed(window),false,'back to frameless (Widget Mode)');
-    if(process.platform==='darwin'){await wait(1200);assert.equal(app.dock.isVisible(),false,'dock hidden again after returning to Widget Mode');}
+    if(process.platform==='darwin'){await wait(1200);assert.equal(app.dock.isVisible(),false,'dock hidden again after returning to Widget Mode');assert.equal(window.isVisibleOnAllWorkspaces(),true,'widget is back on every Space');}
     assert.equal(await window.webContents.executeJavaScript(`window.turnbit.windowMode()`),false,'new window reports windowMode() false');
 
     previous=window;

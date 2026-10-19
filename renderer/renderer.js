@@ -808,10 +808,22 @@ async function selectItem(fromDial=false) {
     case 'refresh-devices':{const preferred=!!nav.current.preferred;nav.back();await showDevices(preferred);break;}
     case 'preferred-devices':await showDevices(true);break;
     case 'preferred-device':if(savePreferences({preferredDevice:row.device?{id:row.device.id,name:row.device.name,type:row.device.type}:null})){nav.back();const setting=nav.current.rows.find(item=>item.action==='preferred-devices');if(setting)setting.detail=preferences.preferredDevice?.name||'Automatic';drawNavigation();}break;
-    case 'device':if(await command('device',row.device.id))menuBack();break;
+    case 'device':if(await command('device',{id:row.device.id,name:row.device.name,type:row.device.type}))menuBack();break;
   }
 }
-const centerClick=new window.CenterClick(()=>selectItem(true),()=>preferences.doublePress==='home'?dialHome():menuBack());
+// The dial double-press is a navigation gesture: Back, or Home. It only belongs on rows that
+// navigate or start playback. Settings rows change a value and stay put, so a second press there is
+// another press, not a gesture - otherwise hyper-clicking a toggle threw you out to the home screen.
+const GESTURE_ROWS=new Set(['song','playlist','play-playlist','nav-back','now']);
+function gestureArmed(){
+  if($('#settings').open)return false;
+  if(nav.current.kind!=='list')return true;
+  const row=nav.select();
+  if(!row)return true;
+  if(row.action==='more')return false;
+  return row.branch===true||row.control===true||GESTURE_ROWS.has(row.action);
+}
+const centerClick=new window.CenterClick(()=>selectItem(true),()=>preferences.doublePress==='home'?dialHome():menuBack(),{armed:gestureArmed});
 const transportHold=new window.TransportHold(direction=>command(direction>0?'next':'previous'),delta=>{if(!preferences.dialOnlyWake)noteActivity();seek(currentProgress()+delta);});
 // Keyboard & Mouse Mode (main process overlay): scroll moves, left click selects, right click goes back, middle click plays or pauses.
 function syncMouseMode(){api?.mouseMode?.(preferences.mouseModeKey)?.then(result=>{if(result&&!result.ok)message(result.error);}).catch(error=>message(error.message));}

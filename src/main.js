@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, safeStorage, globalShortcut, screen } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, safeStorage, globalShortcut, screen, powerSaveBlocker } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 // Must match build.appId in package.json; Windows and macOS use it to recognize turnbit across installs and updates.
@@ -8,11 +8,12 @@ const { SpotifyClient } = require('./spotify');
 const { createBridge } = require('./bridge');
 const { VisibilityControl } = require('./visibility');
 const { HardwareWakeGate } = require('./hardware-wake');
+const { DisplayWake } = require('./display-wake');
 const { MediaSession } = require('./media-session');
 const { createTray } = require('./tray');
 const { MouseMode } = require('./mouse-mode');
 const { fitWindow, readWindowState, writeWindowState } = require('./window-state');
-let mainWindow, spotify, bridge, bridgeError, media, tray, quitting = false;
+let mainWindow, spotify, bridge, bridgeError, media, tray, displayWake, quitting = false;
 let visibility,visibilityTimer,wakeGate,mouseMode;
 // Window Mode: a normal titled, taskbar/dock-visible window instead of the frameless tray widget.
 // Read before the first createWindow() so the initial frame/transparent/skipTaskbar choice is correct from boot.
@@ -105,6 +106,9 @@ function createWindow(bounds) {
   mouseIgnored=false;mouseFocusable=true;
   mainWindow = new BrowserWindow({ show: false, icon: path.join(__dirname, '../assets/branding/turnbit.ico'), ...(bounds||{width:380,height:710}), minWidth: 360, minHeight: 320, ...chrome, resizable: true, webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: false } });
   syncDockVisibility();
+  // macOS ties a window to the Space it was born on. A desk widget belongs on every Space and
+  // over fullscreen apps; a Window Mode window is an ordinary window and stays where it is put.
+  if(process.platform==='darwin'&&!windowMode)mainWindow.setVisibleOnAllWorkspaces(true,{visibleOnFullScreen:true});
   // Running from the repo, the process is electron.exe; tell Windows which icon and command to use when pinned
   if(process.platform==='win32'&&!app.isPackaged)mainWindow.setAppDetails({appId:APP_ID,appIconPath:path.join(__dirname,'../assets/branding/turnbit.ico'),appIconIndex:0,relaunchCommand:`"${process.execPath}" "${app.getAppPath()}"`,relaunchDisplayName:'turnbit'});
   let invisible=false;
@@ -141,12 +145,13 @@ function recreateWindow(nextWindowMode){
   windowModeSwitching=false;
 }
 function readSession(file) {
-  try { const data = JSON.parse(fs.readFileSync(file, 'utf8')); return { clientId: data.clientId, refreshToken: data.encryptedToken && safeStorage.isEncryptionAvailable() ? safeStorage.decryptString(Buffer.from(data.encryptedToken, 'base64')) : null }; } catch { return {}; }
+  try { const data = JSON.parse(fs.readFileSync(file, 'utf8')); return { clientId: data.clientId, refreshToken: data.encryptedToken && safeStorage.isEncryptionAvailable() ? safeStorage.decryptString(Buffer.from(data.encryptedToken, 'base64')) : null, lastDevice: data.lastDevice }; } catch { return {}; }
 }
 function readCooldowns(file) { try { const data = JSON.parse(fs.readFileSync(file, 'utf8')); return data && typeof data === 'object' ? data : {}; } catch { return {}; } }
 function saveCooldowns(file, data) { try { fs.writeFileSync(`${file}.tmp`, JSON.stringify(data)); fs.renameSync(`${file}.tmp`, file); } catch { /* Best effort: a lost file only costs one throttled request. */ } }
 function saveSession(file, data) {
-  const saved = { clientId: data.clientId, encryptedToken: data.refreshToken && safeStorage.isEncryptionAvailable() ? safeStorage.encryptString(data.refreshToken).toString('base64') : null };
+  // The device last used is not a secret, and remembering it is what lets Automatic pick one after a restart.
+  const saved = { clientId: data.clientId, encryptedToken: data.refreshToken && safeStorage.isEncryptionAvailable() ? safeStorage.encryptString(data.refreshToken).toString('base64') : null, lastDevice: data.lastDevice || null };
   fs.writeFileSync(`${file}.tmp`, JSON.stringify(saved)); fs.renameSync(`${file}.tmp`, file);
 }
 ipcMain.handle('spotify:configure', (_, id) => spotify.configure(id));
@@ -168,7 +173,13 @@ ipcMain.handle('app:hardware', () => ({ ...bridge?.status(), error: bridgeError 
 ipcMain.handle('app:visibility',(_,value,protectedView,dialOnlyWake,ignoreMouse)=>{mousePassthrough=ignoreMouse===true;syncMousePassthrough();if(wakeGate)wakeGate.dialOnlyWake=dialOnlyWake===true;const result=visibility?.configure(value,protectedView===true);scheduleVisibility();return result;});
 ipcMain.on('app:activity',()=>wakeVisibility());
 ipcMain.handle('app:mouse-mode',(_,key)=>mouseMode?.setKey(key));
-ipcMain.handle('app:pin', (_, pinned) => { mainWindow.setAlwaysOnTop(!!pinned); return mainWindow.isAlwaysOnTop(); });
+// macOS keeps an always-on-top window below the fullscreen layer, so a pinned widget disappears
+// the moment anything goes fullscreen. A window level above that layer is the only way up there.
+function pinWindow(pinned){
+  if(process.platform==='darwin')mainWindow.setAlwaysOnTop(pinned,'screen-saver');
+  else mainWindow.setAlwaysOnTop(pinned);
+}
+ipcMain.handle('app:pin', (_, pinned) => { pinWindow(!!pinned); return mainWindow.isAlwaysOnTop(); });
 ipcMain.handle('app:window-mode', (event, value) => {
   if (value === undefined) return windowMode;
   if (typeof value !== 'boolean') throw new Error('Invalid window mode value.');
@@ -251,7 +262,7 @@ ipcMain.handle('app:close', () => hideWindow());
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
   app.on('second-instance', () => showWindow());
-  app.on('before-quit', () => { quitting = true;finishWindowGesture();rememberWindow(); });
+  app.on('before-quit', () => { quitting = true;finishWindowGesture();rememberWindow();displayWake?.release(); });
   app.whenReady().then(() => {
     const file = path.join(app.getPath('userData'), 'spotify-session.json'), limits = path.join(app.getPath('userData'), 'rate-limits.json');
     if (process.platform === 'win32') media = new MediaSession(state => spotify?.localChanged(state));
@@ -259,7 +270,9 @@ else {
     media?.start();
     // TURNBIT_BRIDGE_PORT (or the older DIALPOD_BRIDGE_PORT) also marks test/smoke mode.
     const bridgePort = process.env.TURNBIT_BRIDGE_PORT || process.env.DIALPOD_BRIDGE_PORT;
-    bridge = createBridge(event => {const action=wakeGate?.handle(event)||'forward';scheduleVisibility();if(action==='forward')send('device-event',event);else if(action==='wake')send('device-event',{type:'wake'});}, Number(bridgePort || 4765));
+    displayWake = new DisplayWake(powerSaveBlocker);
+    // The dial is not keyboard or mouse input, so without this the screen sleeps mid-navigation.
+    bridge = createBridge(event => {displayWake.note(event);const action=wakeGate?.handle(event)||'forward';scheduleVisibility();if(action==='forward')send('device-event',event);else if(action==='wake')send('device-event',{type:'wake'});}, Number(bridgePort || 4765));
     bridge.on('error', error => { bridgeError = `D100H bridge unavailable: ${error.message}`; send('bridge-error', bridgeError); });
     windowState = readWindowState(windowModeFile());
     windowMode = windowState.enabled;
