@@ -4,11 +4,17 @@
 // after, so the machine still sleeps on its own schedule once the dial goes quiet.
 // The plugin heartbeats every five seconds; only real input may refresh the block.
 class DisplayWake {
-  constructor(blocker, { idle = 60000, setTimer = setTimeout, clearTimer = clearTimeout } = {}) {
+  constructor(
+    blocker,
+    { idle = 60000, setTimer = setTimeout, clearTimer = clearTimeout } = {},
+  ) {
     Object.assign(this, { blocker, idle, setTimer, clearTimer });
-    this.id = null; this.timer = null;
+    this.id = null;
+    this.timer = null;
   }
-  static wakes(event) { return event?.type === 'dial' || event?.type === 'command'; }
+  static wakes(event) {
+    return event?.type === 'dial' || event?.type === 'command';
+  }
   note(event) {
     if (event !== undefined && !DisplayWake.wakes(event)) return false;
     if (this.id === null) this.id = this.blocker.start('prevent-display-sleep');
@@ -18,11 +24,15 @@ class DisplayWake {
     return true;
   }
   release() {
-    this.clearTimer(this.timer); this.timer = null;
+    this.clearTimer(this.timer);
+    this.timer = null;
     if (this.id === null) return;
-    const id = this.id; this.id = null;
+    const id = this.id;
+    this.id = null;
     if (this.blocker.isStarted(id)) this.blocker.stop(id);
   }
-  get active() { return this.id !== null; }
+  get active() {
+    return this.id !== null;
+  }
 }
 module.exports = { DisplayWake };

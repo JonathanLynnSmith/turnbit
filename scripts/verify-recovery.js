@@ -4,12 +4,12 @@ await js(`showSetting(row=>row.action==='cold-start');selectItem();`);assert.equ
 await js(`nav.current.selected=nav.current.rows.findIndex(row=>row.mode==='liked');selectItem();`);assert.equal(await js(`nav.current.settingsGroup==='playback'&&preferences.coldStart==='liked'&&nav.current.rows.find(row=>row.action==='cold-start').detail==='Liked Songs'`),true);
 await js(`push({title:'Start Playlist',rows:[{label:'Road Trip',action:'cold-start-playlist',playlist:{uri:'spotify:playlist:'+'b'.repeat(22),name:'Road Trip'}}]});selectItem();`);assert.equal(await js(`nav.current.settingsGroup==='playback'&&preferences.coldStart==='playlist'&&preferences.coldStartPlaylist.name==='Road Trip'&&nav.current.rows.find(row=>row.action==='cold-start').detail==='Road Trip'`),true);window.webContents.reload();await new Promise(resolve=>window.webContents.once('did-finish-load',resolve));await wait(400);assert.equal(await js(`preferences.autoLaunchSpotify&&preferences.preferredDevice.id==='test-device'&&preferences.coldStart==='playlist'&&preferences.coldStartPlaylist.name==='Road Trip'`),true);
 const recovery=await js(`api.recovery({})`);assert.equal(recovery.preferredDevice.id,'test-device');assert.equal(recovery.coldStart.mode,'playlist');assert.equal(recovery.coldStart.playlist.name,'Road Trip');
-// Settings saved before the cold start source still hold the old Open Spotify Automatically default.
+// Once imported, backend settings are authoritative over stale browser data.
 await js(`localStorage.setItem('turnbit-preferences',JSON.stringify({...preferences,autoLaunchSpotify:false,coldStart:undefined,coldStartPlaylist:undefined}))`);
 window.webContents.reload();await new Promise(resolve=>window.webContents.once('did-finish-load',resolve));await wait(400);
-assert.equal(await js(`preferences.autoLaunchSpotify&&preferences.coldStart==='last'&&!preferences.coldStartPlaylist`),true);
+assert.equal(await js(`preferences.autoLaunchSpotify&&preferences.coldStart==='playlist'&&preferences.coldStartPlaylist.name==='Road Trip'`),true);
 assert.equal((await js(`api.recovery({})`)).autoLaunchSpotify,true);
 // A later Off is a real choice, saved with the marker, so it must survive the next launch.
 await js(`savePreferences({autoLaunchSpotify:false})`);window.webContents.reload();await new Promise(resolve=>window.webContents.once('did-finish-load',resolve));await wait(400);
 assert.equal(await js(`preferences.autoLaunchSpotify`),false);
-console.log('Preferred device selection, auto-launch toggle, cold start source, the one-time auto-launch migration, saved settings and backend startup synchronization passed.');app.quit();}catch(error){console.error(error);app.exit(1);}});
+console.log('Preferred device selection, auto-launch toggle, cold start source, backend ownership over stale browser settings, saved settings and backend startup synchronization passed.');app.quit();}catch(error){console.error(error);app.exit(1);}});
