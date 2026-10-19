@@ -9,6 +9,9 @@ const limitGroup = path => /^\/me\/(library|tracks)(\/|\?|$)/.test(path) ? 'libr
 const groupLabel = group => group === 'library' ? 'Liked Songs and likes' : group.startsWith('/me/player') ? 'playback control' : group.includes('playlists') ? 'playlists' : 'this feature';
 const untilText = at => new Date(at).toLocaleString([], at - Date.now() > 12 * 3600000 ? { weekday: 'short', hour: 'numeric', minute: '2-digit' } : { hour: 'numeric', minute: '2-digit' });
 const cooldownError = (group, at) => Object.assign(new Error(`Spotify rate limit: ${groupLabel(group)} paused until ${untilText(at)}.`), { status: 429 });
+const COLD_START_MODES = ['last', 'liked', 'playlist', 'off'];
+const cleanDevice = device => device && typeof device.id === 'string' && device.id && device.id.length <= 256 && typeof (device.name ?? '') === 'string' && String(device.name ?? '').length <= 256
+  ? { id: device.id, name: String(device.name ?? ''), type: String(device.type || '').slice(0, 64) } : null;
 const sameTrack = (item, local) => !!item?.name && !!local?.title && item.name.trim().toLowerCase() === local.title.trim().toLowerCase();
 class SpotifyClient {
   constructor(onState, options = {}) {
@@ -16,6 +19,8 @@ class SpotifyClient {
     this.openExternal = options.openExternal || (url => require('electron').shell.openExternal(url));
     this.onAuth = options.onAuth || (() => {}); this.persist = options.persist || (() => {});
     this.clientId = options.session?.clientId || ''; this.refreshToken = options.session?.refreshToken || null;
+    // The device Spotify last reported playing on. Automatic prefers it, so a dial press has somewhere to go.
+    this.lastDevice = cleanDevice(options.session?.lastDevice);
     this.token = null; this.expiresAt = 0; this.deviceId = ''; this.cooldowns = new Map();
     // Cooldowns survive restarts so a relaunch does not hit an endpoint Spotify is still throttling (capped at 7 days in case the file is bad).
     this.onCooldowns = options.onCooldowns || (() => {});
@@ -28,7 +33,10 @@ class SpotifyClient {
     this.media=options.media||null;this.webCacheMs=options.webCacheMs??25000;this.lastLocal=null;this.mismatchRetries=0;
     this.serverRetryMs=options.serverRetryMs??1500;this.wait=options.wait||(ms=>new Promise(resolve=>{const timer=setTimeout(resolve,ms);timer.unref?.();}));
     this.waitForLike=options.waitForLike||(ms=>new Promise(resolve=>{const timer=setTimeout(resolve,ms);timer.unref();}));
-    this.recovery={preferredDevice:null,autoLaunchSpotify:false};this.configureRecovery(options.recovery||{});
+    this.recovery={preferredDevice:null,autoLaunchSpotify:false,coldStart:{mode:'last',playlist:null}};
+    // The Liked Songs seed shares Spotify's throttled library limit with likes, so hold it between cold starts.
+    this.coldStartCache=null;this.coldStartCacheMs=options.coldStartCacheMs??600000;
+    this.configureRecovery(options.recovery||{});
     this.launchSpotify=options.launchSpotify||(()=>this.openExternal('spotify:'));
     this.waitForDevice=options.waitForDevice||(ms=>new Promise(resolve=>setTimeout(resolve,ms)));
   }
@@ -40,7 +48,12 @@ class SpotifyClient {
     if (id !== this.clientId) { this.logout(); this.cooldowns.clear(); this.saveCooldowns(); }
     this.clientId = id; this.save(); return this.status();
   }
-  save() { this.persist({ clientId: this.clientId, refreshToken: this.refreshToken }); }
+  save() { this.persist({ clientId: this.clientId, refreshToken: this.refreshToken, lastDevice: this.lastDevice }); }
+  rememberDevice(device){
+    const next=cleanDevice(device);
+    if(!next||JSON.stringify(next)===JSON.stringify(this.lastDevice))return;
+    this.lastDevice=next;this.save();
+  }
   notify(error) { this.onAuth({ ...this.status(), error: error?.message }); }
   cancelLogin() { clearTimeout(this.authTimer); this.server?.close(); this.server = null; }
   async request(url, options = {}) {
@@ -157,7 +170,7 @@ class SpotifyClient {
     // Spotify's reads lag volume writes; keep the value TurnBit just set so the dial does not snap back.
     if(state?.device&&this.volumeWrite&&Date.now()-this.volumeWrite.at<5000)state.device={...state.device,volume_percent:this.volumeWrite.value};
     if(revision!==this.stateRevision)return this.playbackState;
-    this.playbackState=state;this.playbackRead=Date.now();
+    this.playbackState=state;this.playbackRead=Date.now();this.rememberDevice(state?.device);
     if(this.pendingPlay&&state?.item?.uri===this.pendingPlay.item.uri)this.pendingPlay=null;
     if(this.localMismatch(state)){if(this.mismatchRetries++<3)this.scheduleRefresh(1500);}else this.mismatchRetries=0;
     this.emit(state);return state;
@@ -171,13 +184,35 @@ class SpotifyClient {
       this.recovery.preferredDevice=device?{id:device.id,name:device.name,type:String(device.type||'').slice(0,64)}:null;
       if(changed)this.deviceId=device?.id||'';
     }
+    if(Object.hasOwn(value,'coldStart')){
+      const next=value.coldStart||{},mode=COLD_START_MODES.includes(next.mode)?next.mode:'last';
+      const uri=next.playlist?.uri;
+      const playlist=/^spotify:playlist:[a-zA-Z0-9]{22}$/.test(uri||'')?{uri,name:String(next.playlist.name||'').slice(0,256)}:null;
+      if(mode==='playlist'&&!playlist)throw new Error('Choose a playlist for Play to start when nothing is playing.');
+      if(playlist?.uri!==this.recovery.coldStart?.playlist?.uri)this.coldStartCache=null;
+      this.recovery.coldStart={mode,playlist};
+    }
     if(typeof value.autoLaunchSpotify==='boolean')this.recovery.autoLaunchSpotify=value.autoLaunchSpotify;
     return {...this.recovery};
   }
+  // Spotify hands out a new id for the same device on every launch, so fall back to a name and type
+  // that only one device answers to.
+  matchDevice(available,wanted){
+    if(!wanted)return null;
+    const exact=available.find(device=>device.id===wanted.id);if(exact)return exact;
+    const matches=available.filter(device=>device.name===wanted.name&&device.type?.toLowerCase()===wanted.type?.toLowerCase());
+    return matches.length===1?matches[0]:null;
+  }
   recoveryDevice(devices=[]){
-    const available=(Array.isArray(devices)?devices:[]).filter(device=>device.id&&!device.is_restricted),preferred=this.recovery.preferredDevice;
-    if(preferred){const exact=available.find(device=>device.id===preferred.id);if(exact)return exact;const matches=available.filter(device=>device.name===preferred.name&&device.type?.toLowerCase()===preferred.type?.toLowerCase());return matches.length===1?matches[0]:null;}
-    return available.find(device=>device.is_active)||(available.filter(device=>device.type?.toLowerCase()==='computer').length===1?available.find(device=>device.type?.toLowerCase()==='computer'):available.length===1?available[0]:null);
+    const available=(Array.isArray(devices)?devices:[]).filter(device=>device.id&&!device.is_restricted);
+    // A chosen Preferred Device is the only one allowed; silence is better than music somewhere else.
+    if(this.recovery.preferredDevice)return this.matchDevice(available,this.recovery.preferredDevice);
+    const computers=available.filter(device=>device.type?.toLowerCase()==='computer');
+    // Automatic: the device last used, then whatever Spotify still calls active, then the only
+    // computer, then the only device at all.
+    return this.matchDevice(available,this.lastDevice)
+      ||available.find(device=>device.is_active)
+      ||(computers.length===1?computers[0]:available.length===1?available[0]:null);
   }
   async recoverDevice(){
     this.onState({recoveryMessage:'Connecting to Spotify…'});
@@ -189,15 +224,56 @@ class SpotifyClient {
     }
     if(!device)throw new Error(this.recovery.preferredDevice?'Preferred Spotify device is unavailable. Open Spotify on that device or choose another preferred device.':'No Spotify device is available. Open Spotify or select a preferred device in Settings.');
     await this.api('/me/player',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({device_ids:[device.id],play:false})});
-    this.deviceId=device.id;
+    this.deviceId=device.id;this.rememberDevice(device);
     if(this.recovery.preferredDevice){this.recovery.preferredDevice={id:device.id,name:device.name,type:device.type};this.onState({recoveredDevice:this.recovery.preferredDevice});}
     await this.waitForDevice(300);
   }
+  // A play call with no body can only resume, so an empty Spotify player has nothing to start and
+  // keeps failing however healthy the device is. These seeds give it something to play instead.
+  // Only the Liked Songs seed costs a read, it is cached, and nothing here runs on a healthy start.
+  lastSessionBody(){
+    // Reuse the state turnbit already holds; a cold start is never worth a fetch of its own here.
+    if(!this.playbackState||Date.now()-this.playbackRead>=this.webCacheMs)return null;
+    const context=this.playbackState.context?.uri,item=this.playbackState.item?.uri;
+    if(!/^spotify:(playlist|album|artist|show):/.test(context||''))return null;
+    return /^spotify:(track|episode):[a-zA-Z0-9]{22}$/.test(item||'')?{context_uri:context,offset:{uri:item}}:{context_uri:context};
+  }
+  async likedSongsBody(){
+    if(this.coldStartCache&&Date.now()-this.coldStartCache.at<this.coldStartCacheMs)return this.coldStartCache.body;
+    // Liked Songs has no playable context URI, so Spotify's own answer is to play the track URIs.
+    const uris=((await this.library('songs'))?.items||[]).map(entry=>entry?.track?.uri).filter(uri=>/^spotify:track:[a-zA-Z0-9]{22}$/.test(uri||''));
+    if(!uris.length)return null;
+    const body={uris};this.coldStartCache={body,at:Date.now()};return body;
+  }
+  async coldStartPlay(){
+    const {mode,playlist}=this.recovery.coldStart||{};
+    if(mode==='off')return null;
+    if(mode==='playlist')return playlist?{body:{context_uri:playlist.uri},message:`Nothing was playing · started ${playlist.name||'your playlist'}`}:null;
+    if(mode==='last'){const body=this.lastSessionBody();if(body)return {body,message:'Resumed your last Spotify session'};}
+    const liked=await this.likedSongsBody();
+    return liked?{body:liked,message:'Nothing was playing · started your Liked Songs'}:null;
+  }
   async startPlayback(body){
-    const send=()=>this.api(`/me/player/play${this.deviceId?`?device_id=${encodeURIComponent(this.deviceId)}`:''}`,{method:'PUT',...(body?{headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{})});
-    try{return await send();}catch(error){if(error.status!==404)throw error;}
+    const send=payload=>this.api(`/me/player/play${this.deviceId?`?device_id=${encodeURIComponent(this.deviceId)}`:''}`,{method:'PUT',...(payload?{headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}:{})});
+    let cold=null;
+    // Spotify already reporting a device with nothing loaded means the resume is doomed; seed instead
+    // of spending the call, and skip device recovery that has nothing to recover.
+    if(!body&&this.playbackState&&this.playbackState.device&&!this.playbackState.item&&Date.now()-this.playbackRead<this.webCacheMs){
+      cold=await this.coldStartPlay().catch(()=>null);if(cold)body=cold.body;
+    }
+    const started=result=>{if(cold){this.onState({recoveryMessage:cold.message});this.scheduleRefresh(1500);}return result;};
+    try{return started(await send(body));}catch(error){if(error.status!==404)throw error;}
     await this.recoverDevice();
-    try{const result=await send();this.onState({recoveryMessage:'Spotify reconnected · playback request sent'});return result;}catch(error){if(error.status===404)throw new Error('Spotify is still starting. Try Play again in a moment.');throw error;}
+    try{const result=await send(body);this.onState({recoveryMessage:cold?cold.message:'Spotify reconnected · playback request sent'});if(cold)this.scheduleRefresh(1500);return result;}
+    catch(error){
+      if(error.status!==404)throw error;
+      // The device answers now, so the only thing still missing is something to play.
+      if(body)throw new Error('Spotify is still starting. Try Play again in a moment.');
+      cold=await this.coldStartPlay();
+      if(!cold)throw new Error('Nothing was playing. Start a song in Spotify, or choose what Play should start in Settings → Playback.');
+      try{return started(await send(cold.body));}
+      catch(retry){if(retry.status===404)throw new Error('Spotify is still starting. Try Play again in a moment.');throw retry;}
+    }
   }
   publishLike(uri,entry,error){
     if(this.likeStates.get(uri)!==entry)return;
@@ -270,8 +346,11 @@ class SpotifyClient {
       if(pending)this.scheduleRefresh(1500);return;
     }
     if (command === 'device') {
-      if (typeof value !== 'string' || !value) throw new Error('Select a playback device.');
-      await this.api('/me/player', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ device_ids: [value], play: false }) }); this.deviceId = value; return;
+      // The renderer sends the whole device it listed, so picking one costs no extra read.
+      const picked=typeof value==='string'?{id:value,name:'',type:''}:cleanDevice(value);
+      const id=picked?.id;
+      if (typeof id !== 'string' || !id || id.length > 256) throw new Error('Select a playback device.');
+      await this.api('/me/player', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ device_ids: [id], play: false }) }); this.deviceId = id; this.rememberDevice(picked); return;
     }
     // Transport goes to Spotify's own Windows media session when it is the active player; the Web API is the fallback.
     const localReady={play:true,pause:true,toggle:true,next:this.media?.state?.canNext,previous:this.media?.state?.canPrevious,seek:this.media?.state?.canSeek&&Number.isFinite(value)};
@@ -284,18 +363,34 @@ class SpotifyClient {
     if(command==='play'){await this.startPlayback();return;}
     const methods = { play: 'PUT', pause: 'PUT', next: 'POST', previous: 'POST', seek: 'PUT', volume: 'PUT' };
     if (!methods[command]) throw new Error(`Unknown playback command: ${command}`);
-    const params = new URLSearchParams(); if (this.deviceId) params.set('device_id', this.deviceId);
-    if (command === 'seek' || command === 'volume') {
-      if (!Number.isFinite(value)) throw new Error('Playback value must be a finite number.');
-      params.set(command === 'seek' ? 'position_ms' : 'volume_percent', Math.round(Math.max(0, Math.min(command === 'volume' ? 100 : 86400000, value))));
+    if ((command === 'seek' || command === 'volume') && !Number.isFinite(value)) throw new Error('Playback value must be a finite number.');
+    const query = () => {
+      const params = new URLSearchParams(); if (this.deviceId) params.set('device_id', this.deviceId);
+      if (command === 'seek' || command === 'volume') params.set(command === 'seek' ? 'position_ms' : 'volume_percent', Math.round(Math.max(0, Math.min(command === 'volume' ? 100 : 86400000, value))));
+      return params;
+    };
+    let params = query();
+    const run = () => this.api(`/me/player/${command}${params.size ? `?${params}` : ''}`, { method: methods[command] });
+    // Spotify going idle used to leave every button broken: the device it named is gone, and its id
+    // poisons each later command. Recover once, exactly as Play does, instead of failing.
+    try { await run(); }
+    catch (error) {
+      if (error.status !== 404) throw error;
+      this.deviceId = '';
+      // Nothing is playing anywhere, which is what pause asked for.
+      if (command === 'pause') return;
+      await this.recoverDevice();
+      params = query();
+      // The device is back but empty: saying "no device" here is what made this feel broken.
+      try { await run(); }
+      catch (retry) { if (retry.status === 404) throw new Error('Spotify reconnected, but nothing is queued. Press Play to start something.'); throw retry; }
     }
-    await this.api(`/me/player/${command}${params.size ? `?${params}` : ''}`, { method: methods[command] });
     // Update the cached state too; while the desktop session is trusted it is reused instead of re-read.
     if (command === 'volume') {
       const volume = Number(params.get('volume_percent')); this.volumeWrite = { value: volume, at: Date.now() };
       if (this.playbackState?.device) this.playbackState = { ...this.playbackState, device: { ...this.playbackState.device, volume_percent: volume } };
     }
   }
-  logout() { this.cancelLogin(); this.token = null; this.refreshToken = null; this.expiresAt = 0; this.deviceId = ''; this.playbackState=null;this.playbackRead=0;this.likeStates.clear();this.likedCache=null;clearTimeout(this.refreshTimer);this.lastLocal=null;this.mismatchRetries=0;this.pendingPlay=null;this.volumeWrite=null;this.stateRevision++;this.save(); this.notify(); return { ok: true }; }
+  logout() { this.cancelLogin(); this.token = null; this.refreshToken = null; this.expiresAt = 0; this.deviceId = ''; this.lastDevice=null; this.playbackState=null;this.playbackRead=0;this.likeStates.clear();this.likedCache=null;this.coldStartCache=null;clearTimeout(this.refreshTimer);this.lastLocal=null;this.mismatchRetries=0;this.pendingPlay=null;this.volumeWrite=null;this.stateRevision++;this.save(); this.notify(); return { ok: true }; }
 }
 module.exports = { SpotifyClient, REDIRECT_URI };

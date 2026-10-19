@@ -19,3 +19,16 @@ test('a delayed timer cannot turn two separated clicks into Back; other input fl
   click.flush();assert.deepEqual(actions,['select','select']);
   click.flush();assert.equal(actions.length,2);
 });
+
+test('a row that changes a value in place acts at once and never becomes a gesture',t=>{
+  t.mock.timers.enable({apis:['setTimeout','Date'],now:1000});
+  const actions=[];let armed=false;
+  const click=new CenterClick(()=>actions.push('select'),()=>actions.push('back'),{armed:()=>armed});
+  click.click();assert.deepEqual(actions,['select'],'no wait before a toggle flips');
+  click.click();click.click();
+  assert.deepEqual(actions,['select','select','select'],'hyper-clicking keeps toggling');
+  t.mock.timers.tick(1000);assert.equal(actions.length,3,'nothing is left pending');
+  armed=true;
+  click.click();t.mock.timers.tick(100);click.click();
+  assert.deepEqual(actions.slice(3),['back'],'navigation rows keep the gesture');
+});
