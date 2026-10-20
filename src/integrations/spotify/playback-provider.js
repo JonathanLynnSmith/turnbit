@@ -1,6 +1,7 @@
 const { normalizeTrack, spotifyTrack } = require('./track');
 const capabilities = Object.freeze({
   play: true,
+  playItem: true,
   pause: true,
   next: true,
   previous: true,
@@ -40,6 +41,7 @@ function normalizePlayback(raw, observedAt = Date.now()) {
     transport: raw.localSession ? 'local' : 'remote',
     capabilities: {
       ...capabilities,
+      // Spotify disallows resuming while a track plays; starting a new item is still allowed.
       play: !disallows.resuming,
       pause: !disallows.pausing,
       next: !disallows.skipping_next,

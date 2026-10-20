@@ -113,7 +113,7 @@ function createPlaybackService(
             ? 'pause'
             : 'play'
           : command === 'play-item'
-            ? 'play'
+            ? 'playItem'
             : command;
       if (
         provider.capabilities[capability] !== true ||

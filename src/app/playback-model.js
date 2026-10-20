@@ -16,6 +16,7 @@
  *
  * @typedef {Object} PlaybackCapabilities
  * @property {boolean} play
+ * @property {boolean} playItem Start a chosen track or collection.
  * @property {boolean} pause
  * @property {boolean} next
  * @property {boolean} previous

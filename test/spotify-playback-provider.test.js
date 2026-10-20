@@ -25,6 +25,8 @@ const raw = () => ({
   },
   is_playing: true,
   progress_ms: 10000,
+  // Spotify always disallows resuming while a track is already playing.
+  actions: { disallows: { resuming: true } },
   liked: false,
   shuffle_state: true,
   repeat_state: "context",
@@ -39,6 +41,8 @@ const raw = () => ({
 
 test("Spotify payloads normalize into a provider-independent model with capability restrictions", () => {
   const data = raw();
+  assert.equal(normalizePlayback(data).capabilities.play, false);
+  assert.equal(normalizePlayback(data).capabilities.playItem, true);
   data.actions = { disallows: { seeking: true, skipping_next: true } };
   data.device.supports_volume = false;
   const state = normalizePlayback(data, 123);
@@ -204,7 +208,9 @@ test("service playback delegates device recovery and carries recovery notices wi
         return new Response(null, { status: 204 });
       }
       if (route.endsWith("/contains")) return new Response("[false]");
-      return new Response(JSON.stringify({ ...raw(), is_playing: false }));
+      return new Response(
+        JSON.stringify({ ...raw(), is_playing: false, actions: {} }),
+      );
     },
   });
   client.setTokens({
