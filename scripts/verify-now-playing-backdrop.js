@@ -214,7 +214,7 @@ async function main(){
 
   // Split View: while the menu is up it sits beside the player instead of covering it. The menu still
   // comes and goes the same way, so the idle timeout collapses it and the player expands to fill.
-  win.setSize(900,720);await wait(250);
+  win.setContentSize(960,720);await wait(250);
   await run(`savePreferences({radialSide:'left',backdropLayout:'split',idlePinned:false});nav.reset(root());dismissDialOverlay();drawNavigation();`);await wait(400);
   const playerLeft=()=>run(`$('.radial-backdrop-info').getBoundingClientRect().left`);
   const menuEdge=()=>run(`$('#radial').getBoundingClientRect().right`);
@@ -232,7 +232,7 @@ async function main(){
   assert.equal(await run(`$('#radial').inert||$('.radial-backdrop-info').inert`),false,'both halves take input');
   assert.equal(await run(`getComputedStyle($('.radial-backdrop-info')).opacity==='1'&&getComputedStyle($('#radial')).opacity==='1'`),true,'neither half fades the other out');
   assert.equal(await run(`$('#radialBackdropDismiss').hidden`),true,'no dismiss target covers the player');
-  assert.equal(await run(`document.body.dataset.playerColumn`),'narrow','the rest of a 900px window stacks the player');
+  assert.equal(await run(`document.body.dataset.playerColumn`),'narrow','two-thirds of the narrowest split window stacks the player');
   for(const selector of ['#radialBackdropPlay','#radialBackdropSeek','#radialBackdropVolume'])assert.equal(await hittable(selector),true,selector+' stays clickable beside the menu');
   // With the menu already up, the next press selects.
   await run(`nav.current.selected=nav.current.rows.findIndex(row=>row.action==='playlists');drawNavigation();`);
@@ -279,9 +279,9 @@ async function main(){
   assert.equal(await insideMenu(),true,'a right-docked menu keeps its artwork inside its half too');
   await shot('window-split-right.png');
   await run(`savePreferences({radialSide:'left'});drawNavigation();`);await wait(250);
-  // Two columns need room: a narrow window returns to the overlay rather than squeezing the player.
-  win.setSize(560,700);await wait(400);
-  assert.equal(await run(`document.body.dataset.backdropSplit`),'false','a narrow window falls back to the overlay');
+  // Two columns need room: a window that would leave either half slim returns to the overlay.
+  win.setContentSize(940,700);await wait(400);
+  assert.equal(await run(`document.body.dataset.backdropSplit`),'false','just under the split width falls back to the overlay');
   assert.equal(await run(`getComputedStyle($('.radial-backdrop-info')).opacity`),'0','and the overlay hides the player while browsing');
   win.setSize(1500,760);await wait(400);
   assert.equal(await run(`document.body.dataset.backdropSplit`),'true','widening restores Split View');

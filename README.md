@@ -128,7 +128,7 @@ With **Window Mode** and **Now Playing Backdrop** on, the window opens on the cu
 
 **Split View** changes what happens while the menu is up: instead of covering the player, the menu takes whichever side **Screen Edge** docks it to and the player slides over to the other, separated by a hairline you can turn off with **Dial Menu Divider**. Both stay live, so you can browse with the dial and still reach the player's controls with the mouse. The menu opens and closes exactly as it does in the overlay — an opening press, **Browse**, Up/Down or scrolling brings it in, and the idle timeout takes it away again, expanding the player over its half. **Pin Dial Menu** holds the split open; **Open Song in Now Playing** collapses it when you pick a song.
 
-Two columns need room, so a window under 640 px wide falls back to the overlay until you widen it again. The player puts its artwork beside the track text whenever its own column is wide enough, and stacks them when it is not — so it may restack as the menu comes and goes.
+Two columns need room, so a window under 960 px wide falls back to the overlay until you widen it again. The player puts its artwork beside the track text whenever its own column is wide enough, and stacks them when it is not — so it may restack as the menu comes and goes.
 
 In both layouts, after **Dial Menu Timeout** (8 seconds by default, adjustable from 1 to 600) without navigation, the menu fades out and Now Playing returns; browsing keeps its page and selection. Selecting a song, choosing **Now Playing**, or clicking the empty browsing area also returns to the player. **Pin Dial Menu** keeps browsing open; value and color pickers stay open while you edit. Reduced-motion settings switch between views without animation.
 
@@ -202,7 +202,7 @@ Settings are grouped into five categories. On/off settings sit inside a category
 | Now Playing | Follow Playing Song | Recenters the playing song with a quick, smooth animation on wake after the idle fade timeout (10 seconds when idle fading is off) | On |
 | Window | Window Mode | Uses a titled window with a taskbar/Dock icon; saves each interface's size and position. The mouse always stays in control here, so the title bar buttons and resize edges keep working | Off |
 | Window | Now Playing Backdrop | Large Now Playing screen that fades into a separate dial browsing view; available in Window Mode with the turnbit interface | On |
-| Window | Dial Menu Layout | Overlay covers the player while you browse; Split View sets the menu beside it instead, and the player expands again when the menu goes idle (overlay below 640 px wide) | Overlay |
+| Window | Dial Menu Layout | Overlay covers the player while you browse; Split View sets the menu beside it instead, and the player expands again when the menu goes idle (overlay below 960 px wide) | Overlay |
 | Window | Dial Menu Timeout | Seconds without navigation before the dial menu hides and the window player returns; **Pin Dial Menu** holds it open instead | 8 sec |
 | Window | Dial Menu Divider | Shows the hairline between the menu and the player in Split View | On |
 | Window | Transparency | Off, Always, or Idle Fade, with opacity and idle timeout; applies to the widget and the window player alike. Window Mode keeps opacity at 20% or above so the window stays visible enough to grab | Off |

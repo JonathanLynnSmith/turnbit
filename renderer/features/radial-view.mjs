@@ -21,6 +21,7 @@ export function createRadialView({
   valueText,
   playbackModes,
   SPLIT_MIN_WIDTH,
+  PLAYER_STACK_WIDTH,
   SPLIT_HAZE_SPILL,
 }) {
   function radialColor(hue, accent = false) {
@@ -259,7 +260,7 @@ export function createRadialView({
       ? Math.max(0, innerWidth - ($('#radial')?.clientWidth || 0))
       : innerWidth;
     document.body.dataset.playerColumn =
-      column <= SPLIT_MIN_WIDTH ? 'narrow' : 'wide';
+      column <= PLAYER_STACK_WIDTH ? 'narrow' : 'wide';
   }
   function syncDialOverlay() {
     const active = backdropActive(),

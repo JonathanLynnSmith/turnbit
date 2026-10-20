@@ -68,9 +68,12 @@ const mouseModeKeys = {
   'ctrl-alt-space': 'Ctrl+Alt+Space',
   f13: 'F13',
 };
-// Window Mode layout limits: the narrowest window Split View will take, and how far the menu's smoke
-// feathers past the divider. Declared up here because the first paint reads them.
-const SPLIT_MIN_WIDTH = 640,
+// Window Mode layout limits: the narrowest window Split View will take, the player column at or below
+// which artwork stacks above the text, and how far the menu's smoke feathers past the divider. Split
+// View starts where its one-third menu and two-thirds player both still have room, so a slimmer window
+// falls back to the overlay. Declared up here because the first paint reads them.
+const SPLIT_MIN_WIDTH = 960,
+  PLAYER_STACK_WIDTH = 640,
   SPLIT_HAZE_SPILL = 96,
   WIDE_MENU_BOW = 340;
 const preferences = window.TurnbitSettings.loadPreferences(localStorage, {
@@ -456,6 +459,7 @@ const radialView = window.TurnbitFeatures.createRadialView({
   valueText,
   playbackModes,
   SPLIT_MIN_WIDTH,
+  PLAYER_STACK_WIDTH,
   SPLIT_HAZE_SPILL,
 });
 const {
