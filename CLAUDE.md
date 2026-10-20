@@ -14,6 +14,7 @@ See [docs/architecture.md](docs/architecture.md) for contracts and dependency ru
 | `npm run test:desktop` | Window Mode and Now Playing Backdrop verification in real Electron windows |
 | `npm run test:playback` | Normalized services and hardware commands in real Electron with a fake provider |
 | `npm run format:check` | Source formatting verification |
+| `npm run smoke` | Offline turnbit demo flow through the real app and simulated dial bridge |
 | `npm start` | The app |
 
 The `scripts/verify-*.js` files are single-purpose Electron harnesses; run one

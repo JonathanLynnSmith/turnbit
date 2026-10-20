@@ -260,7 +260,8 @@ TURNBIT_DEBUG_API=1 npm start
 | Command | What it does |
 | --- | --- |
 | `npm start` | Run turnbit |
-| `npm run check` | Syntax checks and unit tests |
+| `npm run check` | ESLint and unit tests |
+| `npm run smoke` | Quick offline turnbit flow: menus, demo playback, dial input, settings, persistence, and reload |
 | `npm run test:desktop` | Check Window Mode, saved placement, the large player, real bridge input, menu dismissal, responsive layout, and keyboard/mouse controls in isolated sessions |
 | `npm run package` | Build the standalone app |
 | `npm run plugin:build` | Build the Ulanzi plugin |

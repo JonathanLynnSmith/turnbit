@@ -138,6 +138,12 @@ unrelated preference data are retained. The retired screen markup and input bind
 
 ## Checks and release verification
 
+- `npm run smoke`: quick offline end-to-end pass of the shipped turnbit interface,
+  with a fresh temporary profile and simulated dial bridge on port 4826. Checks
+  startup, songs, playlists, playback, settings, Back, double-press and reload.
+  Waits for state changes instead of fixed menu delays; failures include the
+  current page and renderer errors. No real Spotify account or device is used.
+
 - `npm run check`: ESLint (including dependency rules) and unit/contract tests.
 - `npm run format:check`: consistent source formatting. `npm run format` applies it.
 - `npm run test:playback`: real Electron composition with a fake Spotify network

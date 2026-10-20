@@ -21,7 +21,8 @@
     "test:desktop": "electron scripts/verify-window-mode.js && electron scripts/verify-now-playing-backdrop.js",
     "format": "prettier --write \"src/**/*.js\" \"renderer/**/*.{js,mjs}\"",
     "format:check": "prettier --check \"src/**/*.js\" \"renderer/**/*.{js,mjs}\"",
-    "test:navigation": "electron scripts/verify-navigation-performance.js"
+    "test:navigation": "electron scripts/verify-navigation-performance.js",
+    "smoke": "electron scripts/smoke.js"
   },
   "devDependencies": {
     "electron": "^44.7.2",
