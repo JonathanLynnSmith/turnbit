@@ -7,7 +7,8 @@ const path=require('node:path'),fs=require('node:fs'),os=require('node:os');
 // the first windowMode(true) call below a no-op (already true) and this script would hang waiting
 // for a recreation that never happens.
 const userData=fs.mkdtempSync(path.join(os.tmpdir(),'turnbit-window-mode-test-'));
-process.on('exit',()=>fs.rmSync(userData,{recursive:true,force:true}));
+// Electron can still hold the profile open at exit on Windows; a leftover temp folder is not a failure.
+process.on('exit',()=>{try{fs.rmSync(userData,{recursive:true,force:true,maxRetries:3});}catch(error){console.warn(`Temporary profile cleanup skipped: ${error.message}`);}});
 app.setPath('userData',userData);
 process.env.TURNBIT_BRIDGE_PORT='0';
 const watchdog=setTimeout(()=>{console.error('Window verification timed out');app.exit(1);},20000);watchdog.unref();

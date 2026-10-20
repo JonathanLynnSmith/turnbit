@@ -300,8 +300,9 @@ body[data-backdrop-active=true]:not([data-backdrop-split=true]) #radial{width:mi
 /* Split View: while the menu is up it takes its docked half of the window instead of covering the
    player, and the player keeps the other, both live. The menu still comes and goes as it always does,
    so the idle timeout collapses it and the player expands over its half. Narrow windows stay on the
-   overlay (SPLIT_MIN_WIDTH). The menu keeps this geometry while hidden, so it slides out of its own half. */
-body[data-backdrop-active=true][data-backdrop-split=true]{--split-menu:clamp(230px,36%,420px)}
+   overlay (SPLIT_MIN_WIDTH). The menu keeps this geometry while hidden, so it slides out of its own half.
+   It takes a third of the window at any size, so a large or full-screen window doesn't leave it a slim strip. */
+body[data-backdrop-active=true][data-backdrop-split=true]{--split-menu:max(230px,33.333%)}
 body[data-backdrop-active=true][data-backdrop-split=true] #radial{position:fixed;top:0;bottom:0;left:0;width:var(--split-menu);height:auto;margin:0}
 body[data-backdrop-active=true][data-backdrop-split=true][data-edge=right] #radial{left:auto;right:0}
 body[data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true] .radial-backdrop-info{inset-inline:calc(var(--split-menu) + clamp(16px,2.4vw,40px)) clamp(22px,2.6vw,40px);max-width:none}

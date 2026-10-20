@@ -5,7 +5,8 @@ const fs = require('node:fs'), path = require('node:path'), os = require('node:o
 app.disableHardwareAcceleration();
 const userData = fs.mkdtempSync(path.join(os.tmpdir(),'turnbit-player-test-'));
 app.setPath('userData',userData);
-process.on('exit',()=>fs.rmSync(userData,{recursive:true,force:true}));
+// Electron can still hold the profile open at exit on Windows; a leftover temp folder is not a failure.
+process.on('exit',()=>{try{fs.rmSync(userData,{recursive:true,force:true,maxRetries:3});}catch(error){console.warn(`Temporary profile cleanup skipped: ${error.message}`);}});
 const watchdog = setTimeout(()=>{console.error('Window player verification timed out');app.exit(1);},90000);watchdog.unref();
 const wait = ms => new Promise(resolve=>setTimeout(resolve,ms));
 async function until(condition,message='Condition timed out') {
@@ -213,7 +214,7 @@ async function main(){
 
   // Split View: while the menu is up it sits beside the player instead of covering it. The menu still
   // comes and goes the same way, so the idle timeout collapses it and the player expands to fill.
-  win.setSize(1000,720);await wait(250);
+  win.setSize(900,720);await wait(250);
   await run(`savePreferences({radialSide:'left',backdropLayout:'split',idlePinned:false});nav.reset(root());dismissDialOverlay();drawNavigation();`);await wait(400);
   const playerLeft=()=>run(`$('.radial-backdrop-info').getBoundingClientRect().left`);
   const menuEdge=()=>run(`$('#radial').getBoundingClientRect().right`);
@@ -231,7 +232,7 @@ async function main(){
   assert.equal(await run(`$('#radial').inert||$('.radial-backdrop-info').inert`),false,'both halves take input');
   assert.equal(await run(`getComputedStyle($('.radial-backdrop-info')).opacity==='1'&&getComputedStyle($('#radial')).opacity==='1'`),true,'neither half fades the other out');
   assert.equal(await run(`$('#radialBackdropDismiss').hidden`),true,'no dismiss target covers the player');
-  assert.equal(await run(`document.body.dataset.playerColumn`),'narrow','half of a 1000px window stacks the player');
+  assert.equal(await run(`document.body.dataset.playerColumn`),'narrow','the rest of a 900px window stacks the player');
   for(const selector of ['#radialBackdropPlay','#radialBackdropSeek','#radialBackdropVolume'])assert.equal(await hittable(selector),true,selector+' stays clickable beside the menu');
   // With the menu already up, the next press selects.
   await run(`nav.current.selected=nav.current.rows.findIndex(row=>row.action==='playlists');drawNavigation();`);
@@ -285,6 +286,7 @@ async function main(){
   win.setSize(1500,760);await wait(400);
   assert.equal(await run(`document.body.dataset.backdropSplit`),'true','widening restores Split View');
   assert.equal(await run(`document.body.dataset.playerColumn`),'wide','a wide enough half puts artwork beside the text');
+  assert.equal(await run(`Math.abs($('#radial').getBoundingClientRect().width-innerWidth/3)<=1`),true,'the menu takes a third of a large window rather than a fixed-width strip');
   await run(`savePreferences({backdropLayout:'overlay'});drawNavigation();`);await wait(400);
   assert.equal(await run(`document.body.dataset.backdropSplit`),'false','switching back leaves one view at a time');
   assert.equal(await run(`$('#radialBackdropDismiss').hidden`),false,'the overlay gets its dismiss target back');
