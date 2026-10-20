@@ -10,7 +10,7 @@ app.whenReady().then(async()=>{
     const command=command=>post({type:'command',command});
     window.blur();await js(`lastMouseActivity=Date.now()+60000;`);
     await js(`savePreferences({reverseDial:false,idleNowPlaying:true,songOpensNowPlaying:true,playOpensNowPlaying:true});`);
-    const sleep=async(setup=true)=>{if(setup)await js(`savePreferences({interfaceStyle:'ipod',visibility:{mode:'idle',opacity:70,idleOpacity:0,timeout:1}});nav.reset(root());showSetting(row=>row.action==='case-theme');`);await wait(2200);assert.equal(window.getOpacity(),0);};
+    const sleep=async(setup=true)=>{if(setup)await js(`savePreferences({interfaceStyle:'radial',visibility:{mode:'idle',opacity:70,idleOpacity:0,timeout:1}});nav.reset(root());showSetting(row=>row.action==='radial-background');`);await wait(2200);assert.equal(window.getOpacity(),0);};
     await sleep();await post({type:'dial',delta:1});assert.ok(window.getOpacity()>.99);assert.equal(await js(`nav.current.selected`),2);
     await post({type:'dial',delta:1});assert.equal(await js(`nav.current.selected`),3);
     await sleep();await command('center-down');await command('center-up');await command('center-click');await wait(400);assert.equal(await js(`nav.current.title`),'Appearance');

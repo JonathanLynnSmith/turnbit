@@ -14,12 +14,17 @@ app.whenReady().then(async()=>{try{
   const open=async style=>{await js(`savePreferences({interfaceStyle:'${style}',gamingMode:false,idleNowPlaying:false,idlePinned:false,visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:10}});demo=true;nav.reset(root());nav.current.selected=nav.current.rows.findIndex(r=>r.action==='settings');drawNavigation();`);await click();};
 
   await open('radial');
+  assert.equal(await js(`document.querySelector('.ipod,#zuneControls,#wheel') === null`),true,'retired interface markup is absent');
+  for(const style of ['ipod','zune']){
+    await js(`savePreferences({interfaceStyle:'${style}'});`);
+    assert.equal(await js(`preferences.interfaceStyle`),'radial',`${style} selection migrates to turnbit`);
+  }
   assert.equal(await labels(),'Playback, Appearance, Navigation, Now Playing, Window','five categories, most used first');
   assert.equal(await js(`nav.current.rows.find(r=>r.label==='Playback').detail`),'Volume and devices','categories have subtitles');
   assert.equal((await page()).highlighted,'Playback','Settings opens on the first category');
   const expected={
     playback:'Volume, Playback Device, Preferred Device, Open Spotify Automatically, When Nothing Is Playing, Keep Song Position, Spotify Connection',
-    appearance:'Interface, Curved Menu, Text Alignment, Screen Edge, Smoky Background, Text Color, Accent Color',
+    appearance:'Curved Menu, Text Alignment, Screen Edge, Smoky Background, Text Color, Accent Color',
     navigation:'Reverse Dial Direction, Dial Double-Press, Back in Lists, Last Song List on Home, Hover Shortcuts, Mouse Mode Key, Click Sounds',
     'now-playing':'Play Opens Now Playing, Open Song in Now Playing, Idle to Now Playing, Follow Playing Song',
     window:'Window Mode, Transparency, Size & Position, Keep on Top, Pin Widget, Dial Only Wake, Mouse Click Through, Gaming Mode'};
@@ -28,13 +33,7 @@ app.whenReady().then(async()=>{try{
     assert.equal(await labels(),want,`${id} contents`);assert.equal((await page()).depth,3,`${id}: settings are two levels below Home`);
     assert.equal(await js(`nav.current.rows.filter(r=>r.action!=='nav-back'&&!r.branch&&!r.detail).length`),0,`${id}: every on/off setting shows its value`);
   }
-  // Appearance shows only what applies to the interface.
-  await open('ipod');await js(`nav.current.selected=nav.current.rows.findIndex(r=>r.group==='appearance');drawNavigation();`);await click();
-  assert.equal(await labels(),'Interface, Case Color, Screen Theme','iPod Appearance shows case color and screen theme');
-  // Switching interface rebuilds Appearance and keeps Interface highlighted.
-  await js(`nav.current.selected=nav.current.rows.findIndex(r=>r.action==='interface');drawNavigation();`);await click();
-  await js(`nav.current.selected=nav.current.rows.findIndex(r=>r.style==='radial');drawNavigation();`);await click();
-  let p=await page();assert.equal(p.title,'Appearance');assert.equal(p.highlighted,'Interface');assert.equal(await labels(),expected.appearance,'switching to turnbit swaps in its rows');
+  let p;
   // Toggling inside a category updates and saves; Back returns to the category you came from.
   await js(`nav.reset(root());showSetting(r=>r.key==='gamingMode');`);await click();
   assert.equal(await js(`nav.current.rows[nav.current.selected].detail`),'On');assert.deepEqual(await js(`[preferences.gamingMode,JSON.parse(localStorage.getItem('turnbit-preferences')).gamingMode]`),[true,true],'saved');
@@ -58,5 +57,5 @@ app.whenReady().then(async()=>{try{
   assert.equal(await js(`JSON.parse(localStorage.getItem('turnbit-preferences')).radialAlign`),'auto','saved');await js(`savePreferences({radialSide:'left'});`);
   const all=await js(`settingsGroups.flatMap(g=>settingsRows(g.id).map(r=>r.label)).join('|')`);
   for(const old of ['Apperance','Clicker','Primary Color','Screen edge'])assert.ok(!all.split('|').includes(old),`old label "${old}" is gone`);
-  console.log('Settings: five categories with subtitles, two levels deep, Appearance matches the interface (and rebuilds on switch), toggles save, back lands on the category, clearer labels, Curved Menu straightens the list, Text Alignment cycles Auto/Left/Right.');app.quit();
+  console.log('Settings: five categories with subtitles, two levels deep, Appearance contains only turnbit settings, toggles save, back lands on the category, clearer labels, Curved Menu straightens the list, Text Alignment cycles Auto/Left/Right.');app.quit();
 }catch(error){console.error(error);app.exit(1);}});

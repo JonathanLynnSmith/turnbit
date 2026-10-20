@@ -9,8 +9,6 @@ export function createSettingsController({
   message,
   noteActivity,
   getState,
-  themes,
-  themeName,
   mouseModeKeys,
   radialColorName,
   backdropActive,
@@ -172,29 +170,7 @@ export function createSettingsController({
           { label: 'Spotify Connection', action: 'connect', branch: true },
         ];
       case 'appearance':
-        return [
-          {
-            label: 'Interface',
-            action: 'interface',
-            detail: interfaceName(preferences.interfaceStyle),
-            branch: true,
-          },
-          ...(preferences.interfaceStyle === 'radial'
-            ? radialSettingsRows()
-            : [
-                {
-                  label: 'Case Color',
-                  action: 'case-theme',
-                  detail: themeName(preferences.appearance),
-                  branch: true,
-                },
-                {
-                  label: 'Screen Theme',
-                  action: 'screen-theme',
-                  detail: preferences.screenTheme === 'dark' ? 'Dark' : 'Light',
-                },
-              ]),
-        ];
+        return radialSettingsRows();
       case 'navigation':
         return [
           toggle('Reverse Dial Direction', 'reverseDial'),
@@ -363,56 +339,6 @@ export function createSettingsController({
               : 'Fixed opacity · 0% wakes on D100H input'
             : 'Select Mode to enable transparency',
     });
-  }
-  function showZunePlaybackOptions() {
-    push({
-      title: 'Playback',
-      rows: [
-        { label: 'Song list', action: 'song-list', branch: true },
-        { label: 'Volume', action: 'volume', branch: true },
-        { label: 'Playback device', action: 'devices', branch: true },
-        { label: 'Now playing', action: 'back-now', branch: true },
-      ],
-    });
-  }
-  function interfaceName(style) {
-    return (
-      { radial: 'turnbit', ipod: 'iPod', zune: 'Zune' }[style] || 'turnbit'
-    );
-  }
-  function showInterfaces() {
-    const styles = ['radial', 'ipod', 'zune'];
-    push({
-      title: 'Interface',
-      rows: styles.map((style) => ({
-        label: interfaceName(style),
-        action: 'set-interface',
-        style,
-        detail: preferences.interfaceStyle === style ? '✓' : '',
-      })),
-      hint: 'Select an interface · Menu to return',
-    });
-    nav.current.selected = nav.current.rows.findIndex(
-      (row) => row.style === preferences.interfaceStyle,
-    );
-    drawNavigation();
-  }
-  function showCaseThemes() {
-    push({
-      title: 'Case Theme',
-      rows: themes.map((theme) => ({
-        label: theme.name,
-        action: 'theme',
-        theme: theme.id,
-        swatch: theme.color,
-        detail: theme.id === preferences.appearance ? '✓' : '',
-      })),
-      hint: 'Turn to preview · Select to save',
-    });
-    nav.current.selected = nav.current.rows.findIndex(
-      (row) => row.theme === preferences.appearance,
-    );
-    drawNavigation();
   }
   async function showDevices(preferred = false) {
     const { demo } = getState();
@@ -673,19 +599,6 @@ export function createSettingsController({
       case 'current-song':
         toggleCurrentSongBehavior();
         break;
-      case 'screen-theme':
-        if (
-          savePreferences({
-            screenTheme: preferences.screenTheme === 'light' ? 'dark' : 'light',
-          })
-        ) {
-          row.detail = preferences.screenTheme === 'dark' ? 'Dark' : 'Light';
-          drawNavigation();
-        }
-        break;
-      case 'interface':
-        showInterfaces();
-        break;
       case 'radial-color':
         push({
           title: row.label,
@@ -713,36 +626,6 @@ export function createSettingsController({
           nav.current.rows.find(
             (item) => item.action === 'radial-side',
           ).detail = preferences.radialSide === 'left' ? 'Left' : 'Right';
-          drawNavigation();
-        }
-        break;
-      case 'set-interface':
-        if (savePreferences({ interfaceStyle: row.style })) {
-          nav.back();
-          if (nav.current.settingsGroup === 'appearance') {
-            nav.current.rows = settingsRows('appearance');
-            nav.current.selected = nav.current.rows.findIndex(
-              (item) => item.action === 'interface',
-            );
-          }
-          drawNavigation();
-          render();
-        }
-        break;
-      case 'case-theme':
-        showCaseThemes();
-        break;
-      case 'theme':
-        if (savePreferences({ appearance: row.theme })) {
-          for (const page of nav.stack) {
-            for (const item of page.rows) {
-              if (item.action === 'case-theme')
-                item.detail = themeName(preferences.appearance);
-              if (item.action === 'theme')
-                item.detail = item.theme === preferences.appearance ? '✓' : '';
-            }
-          }
-          nav.back();
           drawNavigation();
         }
         break;
@@ -848,10 +731,6 @@ export function createSettingsController({
     showSettingsGroup,
     showSetting,
     showTransparency,
-    showZunePlaybackOptions,
-    interfaceName,
-    showInterfaces,
-    showCaseThemes,
     showDevices,
     coldStartName,
     showColdStart,

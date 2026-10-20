@@ -54,7 +54,6 @@ app.whenReady().then(async()=>{try{
   for(const display of displays){await click();p=await page();assert.ok(p.detail.startsWith(display.name),`cycles to ${display.name}`);const want=screen.getAllDisplays().find(d=>String(d.id)===display.id).bounds;assert.equal(b().x,want.x,'moves to that display');}
   await click();assert.equal((await page()).detail,'Automatic','and back to Automatic');
   // Only the turnbit interface shows Size & Position; bad saved values are clamped.
-  await js(`savePreferences({interfaceStyle:'ipod'});nav.reset(root());showSettings();showSettingsGroup('window');`);await wait(300);assert.ok(!(await page()).labels.includes('Size & Position'),'hidden outside turnbit');
   await js(`savePreferences({interfaceStyle:'radial'});Object.assign(preferences,{radialWidthPct:99999,radialHeight:-5,radialVertical:'sideways',radialDisplay:'nope'});drawNavigation();`);await wait(500);
   a=area();w=b();near(w.width,pct(70),'width clamps to 70%');assert.ok(Math.abs(w.height-a.height*0.3)<=2,'height clamps to 30% (display scaling can round by a pixel or two)');
   await js(`savePreferences({radialWidthPct:35,radialHeight:100,radialVertical:'center',radialDisplay:null});drawNavigation();`);

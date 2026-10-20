@@ -108,8 +108,7 @@ export function createRadialView({
   const GLOW_STRENGTH = 0.3;
   function syncRadialGlow() {
     const glow = $('#radialGlow'),
-      artwork = $('#art'),
-      source = backdropActive() && !artwork.hidden ? artwork.src : '';
+      source = backdropActive() ? getState().track.artwork : '';
     if (syncRadialGlow.source !== source) {
       syncRadialGlow.source = source;
       glow.style.backgroundImage = source
@@ -380,23 +379,20 @@ export function createRadialView({
     $('#radialBackdropDevice').textContent = demo
       ? 'Connect Spotify'
       : playback?.device?.name || 'Choose a device';
-    for (const [target, source] of [
-      ['Title', 'title'],
-      ['Artist', 'artist'],
-      ['Album', 'album'],
-    ]) {
-      const node = $('#radialBackdrop' + target);
-      node.textContent = $('#' + source).textContent;
+    const track = getState().track;
+    for (const key of ['Title', 'Artist', 'Album']) {
+      const node = $('#radialBackdrop' + key);
+      node.textContent = track[key.toLowerCase()];
       node.title = node.textContent;
     }
-    const artwork = $('#art');
-    $('#radialBackdropArtImg').hidden = artwork.hidden;
-    $('#radialBackdropArtImg').nextElementSibling.hidden = !artwork.hidden;
-    if (!artwork.hidden) {
-      if ($('#radialBackdropArtImg').src !== artwork.src)
-        $('#radialBackdropArtImg').src = artwork.src;
+    const artwork = track.artwork;
+    $('#radialBackdropArtImg').hidden = !artwork;
+    $('#radialBackdropArtImg').nextElementSibling.hidden = !!artwork;
+    if (artwork) {
+      if ($('#radialBackdropArtImg').src !== artwork)
+        $('#radialBackdropArtImg').src = artwork;
       $('#radialBackdropArt').style.backgroundImage =
-        `url(${JSON.stringify(artwork.src)})`;
+        `url(${JSON.stringify(artwork)})`;
     } else $('#radialBackdropArt').style.backgroundImage = 'none';
     $('#radialBackdropElapsed').textContent = time(currentProgress());
     $('#radialBackdropDuration').textContent = time(duration());
@@ -481,8 +477,8 @@ export function createRadialView({
         : page.kind === 'now'
           ? `${playing ? 'PLAYING' : 'PAUSED'}  ·  ${time(currentProgress())} / ${time(duration())}  ·  VOL ${volume}`
           : 'TURN TO ADJUST · PRESS TO SAVE';
-    if ($('#message').textContent)
-      $('#radialStatus').textContent = $('#message').textContent;
+    if ($('#actionNotice')?.textContent || '')
+      $('#radialStatus').textContent = $('#actionNotice')?.textContent || '';
     if (page.kind === 'color') {
       radial.stop();
       $('#radialColorLabel').textContent = page.title;
@@ -511,20 +507,21 @@ export function createRadialView({
         trackTransition.update(
           [
             demo ? 'demo:' + index : playback?.item?.uri,
-            $('#title').textContent,
-            $('#artist').textContent,
-            $('#album').textContent,
-            $('#art').hidden ? '' : $('#art').src,
+            getState().track.title,
+            getState().track.artist,
+            getState().track.album,
+            getState().track.artwork,
           ].join('|'),
         );
-      $('#radialTitle').textContent = $('#title').textContent;
-      $('#radialArtist').textContent = $('#artist').textContent;
-      $('#radialAlbum').textContent = $('#album').textContent;
-      const artwork = $('#art');
-      $('#radialArt').hidden = artwork.hidden;
-      $('#radialArtFallback').hidden = !artwork.hidden;
-      if (!artwork.hidden && $('#radialArt').src !== artwork.src)
-        $('#radialArt').src = artwork.src;
+      const track = getState().track;
+      $('#radialTitle').textContent = track.title;
+      $('#radialArtist').textContent = track.artist;
+      $('#radialAlbum').textContent = track.album;
+      const artwork = track.artwork;
+      $('#radialArt').hidden = !artwork;
+      $('#radialArtFallback').hidden = !!artwork;
+      if (artwork && $('#radialArt').src !== artwork)
+        $('#radialArt').src = artwork;
       $('#radialElapsed').textContent = time(currentProgress());
       $('#radialDuration').textContent = time(duration());
       const seekInput = $('#radialSeek');
@@ -539,7 +536,9 @@ export function createRadialView({
           (Number(slider.value) / Number(slider.max)) * 100 + '%',
         );
       $('#radialStatus').textContent =
-        $('#message').textContent || (playing ? 'PLAYING' : 'PAUSED');
+        $('#actionNotice')?.textContent ||
+        '' ||
+        (playing ? 'PLAYING' : 'PAUSED');
     } else
       radial.update(
         page,

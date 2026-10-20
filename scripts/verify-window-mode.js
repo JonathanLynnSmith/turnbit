@@ -67,8 +67,6 @@ app.whenReady().then(async()=>{
     window.setBounds({x:area.x+45,y:area.y+45,width:800,height:600});
     await wait(350);
     const savedBounds=window.getBounds();
-    // Switching to the iPod and Zune interfaces proved their compact window constraints here, and that
-    // returning restored the turnbit interface's own placement. Both are paused: see CLAUDE.md.
     previous=window;
     window.webContents.executeJavaScript(`window.turnbit.windowMode(false)`).catch(()=>{});
     window=await waitForNewWindow(previous);

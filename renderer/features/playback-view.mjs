@@ -9,7 +9,6 @@ export function createPlaybackView({
   duration,
   currentProgress,
   time,
-  setMarquee,
   drawRadial,
   radialMiniPlayer,
   backdropActive,
@@ -28,31 +27,6 @@ export function createPlaybackView({
       (uri) => uri && uris.includes(uri),
     );
   }
-  function updateTrackIndicators() {
-    const { playing } = getState();
-
-    if (preferences.interfaceStyle === 'radial' || nav.current.kind !== 'list')
-      return;
-    nav.current.rows.forEach((row, i) => {
-      const button = $('#menuList').children[i];
-      if (!button) return;
-      const matches = isCurrentSong(row);
-      button.classList.toggle('current-track', matches);
-      const marker = button.querySelector('.track-indicator');
-      if (marker) {
-        marker.textContent = matches ? (playing ? '▶' : 'Ⅱ') : '';
-        marker.title = matches
-          ? playing
-            ? 'Currently playing'
-            : 'Current song · paused'
-          : '';
-      }
-      button.setAttribute(
-        'aria-label',
-        `${row.label}${matches ? (playing ? ', currently playing' : ', current song, paused') : ''}`,
-      );
-    });
-  }
   function renderPlaybackIndicators() {
     const { likeRequests, demo, playback } = getState();
 
@@ -65,10 +39,7 @@ export function createPlaybackView({
       repeat:
         '<path d="m17 2 4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4m14-1v2a3 3 0 0 1-3 3H3"/><text class="repeat-one" x="12" y="15" text-anchor="middle">1</text>',
     };
-    for (const host of [
-      document.querySelector('#radialNow .radial-track'),
-      document.querySelector('#nowView .now-meta'),
-    ]) {
+    for (const host of [document.querySelector('#radialNow .radial-track')]) {
       let bar = host.querySelector('.playback-indicators');
       if (!bar) {
         bar = document.createElement('div');
@@ -137,12 +108,6 @@ export function createPlaybackView({
       const node = $(selector);
       if (node.textContent !== value) node.textContent = value;
     };
-    if (preferences.interfaceStyle !== 'radial' && nav.current.kind === 'now') {
-      $('#seek').value = position;
-      $('#seek').style.setProperty('--fill', (position / length) * 100 + '%');
-      text('#elapsed', time(position));
-      text('#duration', '−' + time(Math.max(0, length - position)));
-    }
     if (preferences.interfaceStyle === 'radial') {
       if (nav.current.kind === 'now') {
         const input = $('#radialSeek');
@@ -221,67 +186,10 @@ export function createPlaybackView({
     }
     renderStamp = stamp;
     renderPlaybackIndicators();
-    const track = demo ? demos[index] : playback?.item;
-    const name = track?.name || 'Nothing playing',
-      artist = demo
-        ? track.artist
-        : track?.artists?.map((a) => a.name).join(', ') ||
-          'Open Spotify to start listening';
-    $('#source').textContent = demo ? 'DEMO' : 'SPOTIFY';
-    $('#playing').textContent = playing ? 'Playing' : 'Paused';
-    $('#playing').dataset.symbol = playing ? '▶' : 'Ⅱ';
-    $('#playing').title = playing ? 'Playing' : 'Paused';
-    setMarquee($('#title'), name);
-    setMarquee($('#artist'), artist);
-    setMarquee($('#album'), demo ? track.album : track?.album?.name || '');
-    const artwork = !demo && track?.album?.images?.[0]?.url;
-    $('#art').hidden = !artwork;
-    $('#artFallback').hidden = !!artwork;
-    if (artwork && $('#art').src !== artwork) $('#art').src = artwork;
-    $('#previewArt').hidden = !artwork;
-    $('#previewFallback').hidden = !!artwork;
-    if (artwork && $('#previewArt').src !== artwork)
-      $('#previewArt').src = artwork;
-    $('#previewTitle').textContent = name;
-    $('#previewTitle').title = name;
-    $('#previewArtist').textContent = artist;
-    $('#previewArtist').title = artist;
-    $('#trackNumber').textContent = demo
-      ? `${Math.max(0, demoQueue.indexOf(index)) + 1} of ${demoQueue.length}`
-      : '';
-    const playlistPage = nav.stack.findLast(
-      (page) =>
-        page.libraryKind === 'playlist' &&
-        page.playlist?.uri &&
-        page.playlist.uri === playback?.context?.uri,
-    );
-    const playlistRow = playlistPage?.rows.find(isCurrentSong);
-    if (!demo && playlistRow && playlistPage.total)
-      $('#trackNumber').textContent =
-        `${playlistRow.position + 1} of ${playlistPage.total}`;
-    $('#seek').max = Math.max(1, duration());
-    $('#seek').value = currentProgress();
-    $('#elapsed').textContent = time(currentProgress());
-    $('#duration').textContent = `−${time(duration() - currentProgress())}`;
-    $('#volume').value = volume;
-    $('#volumeValue').textContent = `${volume}%`;
-    $('#adjustVolume').value = volume;
-    $('#adjustValue').textContent = `${volume}%`;
-    for (const slider of [$('#seek'), $('#volume'), $('#adjustVolume')])
-      slider.style.setProperty(
-        '--fill',
-        `${(Number(slider.value) / Math.max(1, Number(slider.max))) * 100}%`,
-      );
-    $('#deviceBtn').textContent = demo
-      ? 'Demo playback · no audio'
-      : `Playing on ${playback?.device?.name || 'select a device'}`;
-    $('#connect').textContent = demo ? 'Connect Spotify' : 'Spotify settings';
-    updateTrackIndicators();
     drawRadial();
   }
   return {
     isCurrentSong,
-    updateTrackIndicators,
     renderPlaybackIndicators,
     syncGamingMode,
     renderProgress,

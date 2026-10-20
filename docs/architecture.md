@@ -131,11 +131,10 @@ retain their named entry points during migration. Playback and library adapters
 translate normalized contracts into the fields those screens already use. New
 interfaces should consume the normalized preload APIs directly.
 
-The paused iPod and Zune interfaces and their saved data remain intact. Their
-standalone suites remain opt-in as described in `CLAUDE.md`. Further interface
-work can move individual navigation/control bindings out of the coordinator
-without changing the backend contracts; this is no longer a prerequisite for
-adding another frontend.
+The iPod and Zune interfaces are archived on `archive/ipod-zune-interfaces`
+(commit `c73554c`), including their dedicated assets and suites. Main ships only
+turnbit. Old interface selections normalize to radial; historical placement and
+unrelated preference data are retained. The retired screen markup and input bindings are removed from the active renderer.
 
 ## Checks and release verification
 

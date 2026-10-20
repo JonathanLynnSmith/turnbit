@@ -10,10 +10,10 @@ app.whenReady().then(async()=>{
     const command=async payload=>{const r=await fetch('http://127.0.0.1:4771/device/event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});assert.equal(r.status,204);await wait(100);};
     const turn=delta=>command({type:'dial',delta}),select=()=>command({type:'command',command:'select'}),back=()=>command({type:'command',command:'menu'});
     const check=async code=>assert.equal(await js(code),true,code);
-    await js(`savePreferences({visibility:{mode:'off',opacity:70,idleOpacity:20,timeout:10},interfaceStyle:'ipod',radialSide:'left',radialBackground:24,idlePinned:false,keepOnTop:false,primaryHue:360,accentHue:145});nav.reset(root());showSetting(row=>row.action==='interface');`);
+    await js(`savePreferences({visibility:{mode:'off',opacity:70,idleOpacity:20,timeout:10},interfaceStyle:'radial',radialSide:'left',radialBackground:24,idlePinned:false,keepOnTop:false,primaryHue:360,accentHue:145});nav.reset(root());drawNavigation();`);
     await js(`pinned=false;api.pin(false);`);
-    await select();await turn(-1);await select();await wait(400);
-    await check(`preferences.interfaceStyle==='radial' && getComputedStyle(document.querySelector('.ipod')).display==='none' && getComputedStyle(document.querySelector('#radial')).display==='block'`);
+    await wait(400);
+    await check(`preferences.interfaceStyle==='radial' && !document.querySelector('.ipod') && getComputedStyle(document.querySelector('#radial')).display==='block'`);
     const leftBounds=window.getBounds(),leftArea=screen.getDisplayMatching(leftBounds).bounds;assert.equal(leftBounds.x,leftArea.x);assert.equal(leftBounds.y,leftArea.y);assert.equal(leftBounds.height,leftArea.height);
     await js(`nav.reset(root());drawNavigation();`);const settingsRow=await js(`nav.current.rows.findIndex(r=>r.action==='settings')`);await turn(settingsRow-1);await wait(60);
     await check(`radial.position>1 && radial.position<${settingsRow}`);await wait(500);
@@ -41,7 +41,7 @@ app.whenReady().then(async()=>{
     await js(`document.querySelector('#radialVolume').value=64;document.querySelector('#radialVolume').dispatchEvent(new Event('input'));`);await check(`volume===64 && document.querySelector('#radialVolumeValue').textContent==='64%'`);
     await js(`document.querySelector('#radialSeek').value=30000;document.querySelector('#radialSeek').dispatchEvent(new Event('change'));`);await check(`currentProgress()>=30000 && currentProgress()<32000`);
     await js(`window.savedDemo=demo;demo=false;playback={item:{name:'Artwork check',artists:[{name:'Test artist'}],duration_ms:187000,album:{name:'Test album',images:[{url:'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><rect width="300" height="300" fill="#37665c"/></svg>')}]}}};render();`);
-    await check(`!document.querySelector('#radialArt').hidden && document.querySelector('#radialArt').src===document.querySelector('#art').src && document.querySelector('#radialTitle').textContent==='Artwork check'`);
+    await check(`!document.querySelector('#radialArt').hidden && document.querySelector('#radialArt').src===playback.item.album.images[0].url && document.querySelector('#radialTitle').textContent==='Artwork check'`);
     await js(`demo=true;playback=null;volume=50;render();`);
     await turn(1);await check(`volume===52`);await select();await check(`nav.current.libraryKind==='songs'`);
     await check(`document.querySelectorAll('.radial-label.has-mini').length===1 && radial.nodes.get(2).classList.contains('has-mini') && radial.nodes.get(2).querySelector('.mini-times').lastChild.textContent==='3:07' && !radial.nodes.get(2).querySelector('small').textContent.includes('Playing')`);
@@ -66,8 +66,6 @@ app.whenReady().then(async()=>{
     await js(`push({title:'Long library',rows:Array.from({length:1000},(_,i)=>({label:'Song '+i,action:'placeholder'}))});`);
     for(let i=0;i<12;i++)await turn(20);await wait(600);
     await check(`nav.current.selected===241 && radial.position===241 && radial.nodes.size<=2*Math.ceil(radial.reach)+5`);
-    await back();await js(`showSetting(row=>row.action==='interface');`);await select();await turn(1);await select();
-    await check(`preferences.interfaceStyle==='ipod' && !nav.current.rows.some(row=>row.action==='radial-side')`);
     await js(`savePreferences({interfaceStyle:'radial',radialSide:'left'});nav.reset(root());push({title:'Playlists',rows:['After Hours','Night Drive','On Repeat','Discover Weekly','Daily Mix 01','Liked Songs','Release Radar','Focus','Sunday Morning','Slow Days','New discoveries'].map(label=>({label,action:'placeholder'})),selected:5});`);await wait(700);
     await check(`getComputedStyle(document.body).backgroundColor==='rgba(0, 0, 0, 0)' && getComputedStyle(document.querySelector('.radial-label')).backgroundColor==='rgba(0, 0, 0, 0)'`);
     await js(`radial.reducedMotion=()=>true;rotate(1);`);await check(`radial.position===nav.current.selected`);await js(`radial.reducedMotion=()=>reducedMotion.matches;rotate(-1);`);await wait(500);
@@ -99,7 +97,7 @@ app.whenReady().then(async()=>{
     await js(`savePreferences({radialBackground:24});`);
     await js(`pinned=false;savePreferences({keepOnTop:false});api.pin(false);`);await wait(200);
     await js(`showSetting(row=>row.action==='pin');`);await select();
-    await wait(400);assert.equal(window.isAlwaysOnTop(),true,JSON.stringify(await js(`({pinned,keep:preferences.keepOnTop,page:nav.current.title,selected:nav.current.selected,row:nav.current.rows[nav.current.selected],message:document.querySelector('#message').textContent})`)));await check(`preferences.keepOnTop && nav.current.rows.find(row=>row.action==='pin').detail==='On'`);
+    await wait(400);assert.equal(window.isAlwaysOnTop(),true,JSON.stringify(await js(`({pinned,keep:preferences.keepOnTop,page:nav.current.title,selected:nav.current.selected,row:nav.current.rows[nav.current.selected],message:document.querySelector('#actionNotice')?.textContent})`)));await check(`preferences.keepOnTop && nav.current.rows.find(row=>row.action==='pin').detail==='On'`);
     window.webContents.reload();await new Promise(resolve=>window.webContents.once('did-finish-load',resolve));await wait(400);assert.equal(window.isAlwaysOnTop(),true,JSON.stringify(await js(`({pinned,keep:preferences.keepOnTop,page:nav.current.title,stored:localStorage.getItem('turnbit-preferences')})`)));await check(`preferences.keepOnTop && pinned`);
     await js(`showSetting(row=>row.action==='pin');`);await select();await wait(400);assert.equal(window.isAlwaysOnTop(),false);await check(`!preferences.keepOnTop`);
     await js(`showSetting(row=>row.key==='accentHue');`);await select();
@@ -134,6 +132,6 @@ app.whenReady().then(async()=>{
     await wait(2200);assert.equal(window.getOpacity(),0);
     await js(`savePreferences({visibility:{mode:'off',opacity:70,idleOpacity:20,timeout:10}});`);
 
-    assert.deepEqual(errors,[]);console.log('Radial interface selection, curved animation, mirrored docking, Spotify demo navigation, volume, large-library bounds, switching and persistence passed.');app.quit();
+    assert.deepEqual(errors,[]);console.log('Radial interface selection, curved animation, mirrored docking, Spotify demo navigation, volume, large-library bounds, persistence passed.');app.quit();
   }catch(error){console.error(error);app.exit(1);}
 });

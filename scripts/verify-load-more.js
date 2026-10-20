@@ -14,7 +14,7 @@ app.whenReady().then(async()=>{try{
   const songs=async(style,prefs='')=>{await js(`savePreferences({interfaceStyle:'${style}',backRow:true,hoverBack:true,idleNowPlaying:false,idlePinned:false,visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:10}${prefs}});demo=true;nav.reset(root());showMusic();showLibrary('songs');`);await wait(300);
     await js(`nav.current.rows.push(moreRow(3));nav.current.selected=nav.current.rows.length-2;drawNavigation();`);await wait(150);};
 
-  for(const style of ['radial','ipod']){
+  for(const style of ['radial']){
     await songs(style);let p=await page();assert.equal(p.last,'Load more');const before=p.count,moreIndex=p.count-1;
     await turn(1);p=await page();assert.equal(p.highlighted,'Load more');assert.equal(p.hold,'true',`${style}: turning onto Load more starts the ring`);
     await turn(1);await turn(1);assert.equal((await page()).hold,'true','extra down-turns keep the ring');

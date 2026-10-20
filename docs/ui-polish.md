@@ -16,7 +16,7 @@ saved placement only when its layout settings match, with display bounds checks.
 Reduced-motion preferences disable spatial and repeating decorative motion,
 while retaining short color and opacity feedback. Reduced-transparency
 preferences give the content a solid backing. Existing appearance preferences
-and the iPod and Zune modes remain available.
+and the turnbit interface remains the active interface.
 
 Validation: `npm run check` and `electron scripts/verify-polish.js`.
 The latter uses isolated demo data and captures both edges under `artifacts/`;

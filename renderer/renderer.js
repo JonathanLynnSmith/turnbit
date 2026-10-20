@@ -35,6 +35,16 @@ const getPlaybackView = () => ({
   demoRepeat,
   pinned,
   demoQueue,
+  track: {
+    title:
+      (demo ? demos[index]?.name : playback?.item?.name) || 'Nothing playing',
+    artist: demo
+      ? demos[index]?.artist
+      : playback?.item?.artists?.map((a) => a.name).join(', ') ||
+        'Open Spotify to start listening',
+    album: demo ? demos[index]?.album : playback?.item?.album?.name || '',
+    artwork: (!demo && playback?.item?.album?.images?.[0]?.url) || '',
+  },
 });
 let demo = true,
   index = 0,
@@ -44,12 +54,9 @@ let demo = true,
   playback = null,
   updated = Date.now(),
   pinned = false;
-let zuneVolumeTimer,
-  demoQueue = [0, 1, 2],
+let demoQueue = [0, 1, 2],
   volumeDeviceId = null;
 const { themes, applyTheme } = window.TurnbitThemes;
-const themeName = (id) =>
-  themes.find((theme) => theme.id === id)?.name || 'Silver';
 const { cleanVisibility } = window.TurnbitSettings;
 const cleanLastSongList = (value) =>
   window.TurnbitSettings.cleanLastSongList(value, demos.length);
@@ -70,28 +77,8 @@ const preferences = window.TurnbitSettings.loadPreferences(localStorage, {
   themes,
   demoCount: demos.length,
 });
-let audioContext,
-  feedbackTimer,
-  pressTimer,
-  displayedPage,
-  displayedDepth = 1;
+let audioContext;
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-function wheelFeedback(pressed = false) {
-  $('#wheel').classList.add('feedback');
-  clearTimeout(feedbackTimer);
-  feedbackTimer = setTimeout(
-    () => $('#wheel').classList.remove('feedback'),
-    140,
-  );
-  if (pressed) {
-    $('#select').classList.add('pressed');
-    clearTimeout(pressTimer);
-    pressTimer = setTimeout(
-      () => $('#select').classList.remove('pressed'),
-      160,
-    );
-  }
-}
 function clickSound() {
   if (!preferences.clicker) return;
   try {
@@ -118,47 +105,12 @@ function clickSound() {
     };
   } catch {}
 }
-function setMarquee(element, text) {
-  if (element.textContent !== text || !element.firstElementChild) {
-    const span = document.createElement('span');
-    span.textContent = text;
-    element.replaceChildren(span);
-    element.classList.remove('scrolling');
-  }
-  element.title = text;
-  measureMarquee(element);
-}
-function measureMarquee(element) {
-  if (!element.clientWidth) return;
-  const overflow = element.firstElementChild?.scrollWidth - element.clientWidth;
-  element.classList.toggle('scrolling', overflow > 2);
-  if (overflow > 2) {
-    element.style.setProperty('--marquee-shift', `${-overflow - 4}px`);
-    element.style.setProperty(
-      '--marquee-time',
-      `${Math.max(7, overflow / 20 + 3)}s`,
-    );
-  }
-}
-function measureVisibleTitles() {
-  document
-    .querySelectorAll('#nowView .marquee,.menurow.selected .rowname')
-    .forEach(measureMarquee);
-}
 // Home: Now Playing shortcut on top, then Last Song List (if on), Liked Songs and Playlists directly (no Music menu), then Settings.
-// The Zune interface keeps its own Home with a Music screen.
 function homeRows() {
   const last =
     preferences.lastSongList && preferences.homeLastSongList
       ? [lastSongListRow()]
       : [];
-  if (preferences.interfaceStyle === 'zune')
-    return [
-      { label: 'Music', action: 'music', branch: true },
-      { label: 'Now Playing', action: 'now', branch: true },
-      { label: 'Settings', action: 'settings', branch: true },
-      ...last,
-    ];
   return [
     { label: 'Now Playing', action: 'now', icon: 'now', control: true },
     ...last,
@@ -167,7 +119,7 @@ function homeRows() {
     { label: 'Settings', action: 'settings', branch: true },
   ];
 }
-const homeStart = () => (preferences.interfaceStyle === 'zune' ? 0 : 1);
+const homeStart = () => 1;
 const root = () => ({
   title: 'turnbit',
   rows: homeRows(),
@@ -339,7 +291,6 @@ function currentProgress() {
 }
 let noticeTimer;
 function message(text = '') {
-  $('#message').textContent = text;
   let notice = $('#actionNotice');
   if (!notice) {
     notice = document.createElement('div');
@@ -359,13 +310,6 @@ function message(text = '') {
 // Lists below Home start with a Back row, so the dial alone can go back without a Menu button. Inserting it keeps
 // the same item highlighted, so entering a list still lands on its first real item.
 // A small inline icon drawn in the text color (see .row-icon in styles.css), e.g. the Back row's arrow.
-function rowIcon(row) {
-  if (!row.icon) return [];
-  const icon = document.createElement('span');
-  icon.className = `row-icon row-icon-${row.icon}`;
-  icon.setAttribute('aria-hidden', 'true');
-  return [icon];
-}
 // Hover Shortcuts: resting on a shortcut row (Back in lists, Now Playing on Home) after turning onto it runs it after a
 // short hold. Its icon turns into a ring that fills while it counts (driven by --back-hold, so it survives redraws).
 const BACK_HOLD_MS = 1000;
@@ -472,178 +416,8 @@ function drawNavigation() {
   ensureHomeLayout(page);
   syncVisibility();
   drawRadial();
-  if (preferences.interfaceStyle === 'radial') return;
-  const preview = page.rows[page.selected];
-  applyTheme(
-    document.body,
-    preview?.action === 'theme' ? preview.theme : preferences.appearance,
-  );
-  $('.case-name').textContent =
-    preferences.interfaceStyle === 'zune' ? 'zune' : 'turnbit';
-  const musicTab =
-    preferences.interfaceStyle === 'zune' &&
-    ['playlists', 'songs'].includes(page.libraryKind);
-  $('.screen').dataset.music = String(musicTab);
-  document
-    .querySelectorAll('[data-zune-tab]')
-    .forEach((button) =>
-      button.setAttribute(
-        'aria-pressed',
-        String(button.dataset.zuneTab === page.libraryKind),
-      ),
-    );
-  $('.screen').dataset.page = page.kind;
-  $('.screen').dataset.root = String(nav.stack.length === 1 && !nav.idlePage);
-  $('.screen').setAttribute(
-    'aria-label',
-    preferences.interfaceStyle === 'zune' ? 'Zune-style player' : 'iPod menu',
-  );
-  $('#screenTitle').textContent =
-    preferences.interfaceStyle === 'zune' &&
-    nav.stack.length === 1 &&
-    !nav.idlePage
-      ? 'zune'
-      : page.title;
-  $('#menuView').hidden = page.kind !== 'list';
-  $('#nowView').hidden = page.kind !== 'now';
-  $('#adjustView').hidden = page.kind !== 'volume';
-  $('#visibilityView').hidden = page.kind !== 'visibility';
-  if (page.kind === 'visibility') {
-    const seconds = ['timeout', 'menuTimeout'].includes(page.key),
-      spec = valueSpec(page.key);
-    $('#visibilityValue').textContent = valueText(page.key, page.value);
-    $('#visibilityLabel').textContent =
-      page.key === 'radialBackground'
-        ? 'Background strength · 0% turns it off'
-        : page.key === 'menuTimeout'
-          ? 'Time without input before the menu hides'
-          : seconds
-            ? 'Time without interaction'
-            : page.key === 'radialWidthPct'
-              ? 'Share of the screen width'
-              : page.key === 'radialHeight'
-                ? 'Share of the screen height'
-                : '0% invisible · 100% solid';
-    $('#visibilityRange').min = spec.min;
-    $('#visibilityRange').max = spec.max;
-    $('#visibilityRange').step = spec.step;
-    $('#visibilityRange').value = page.value;
-    $('#visibilityRange').style.setProperty(
-      '--fill',
-      ((page.value - spec.min) / (spec.max - spec.min)) * 100 + '%',
-    );
-  }
-  if (displayedPage !== page) {
-    const view =
-      page.kind === 'list'
-        ? $('#menuView')
-        : page.kind === 'now'
-          ? $('#nowView')
-          : page.kind === 'visibility'
-            ? $('#visibilityView')
-            : $('#adjustView');
-    if (displayedPage && !reducedMotion.matches)
-      view.animate(
-        [
-          {
-            opacity: 0.75,
-            transform: `translateX(${nav.stack.length < displayedDepth ? -7 : 7}px)`,
-          },
-          { opacity: 1, transform: 'translateX(0)' },
-        ],
-        { duration: 110, easing: 'ease-out' },
-      );
-    displayedPage = page;
-    displayedDepth = nav.stack.length;
-  }
-  requestAnimationFrame(measureVisibleTitles);
-  if (page.kind !== 'list') return;
-  const list = $('#menuList');
-  const scroll = list.scrollTop;
-  list.replaceChildren();
-  list.setAttribute('aria-label', page.title);
-  list.setAttribute('aria-activedescendant', `row-${page.selected}`);
-  page.rows.forEach((row, i) => {
-    const button = document.createElement('button');
-    button.className = `menurow${i === page.selected ? ' selected' : ''}${row.control ? ' control-row' : ''}${row.action === 'more' ? ' control-row-end' : ''}`;
-    button.id = `row-${i}`;
-    button.type = 'button';
-    button.setAttribute('role', 'option');
-    button.setAttribute('aria-selected', String(i === page.selected));
-    button.setAttribute('aria-disabled', String(!!row.disabled));
-    button.tabIndex = -1;
-    const label = document.createElement('span');
-    label.className = 'rowlabel';
-    if (row.swatch) {
-      const swatch = document.createElement('span');
-      swatch.className = 'theme-swatch';
-      swatch.style.backgroundColor = row.swatch;
-      swatch.setAttribute('aria-hidden', 'true');
-      label.append(swatch);
-    }
-    if (row.action === 'song') {
-      const marker = document.createElement('span');
-      marker.className = 'track-indicator';
-      marker.setAttribute('aria-hidden', 'true');
-      label.append(marker);
-    }
-    const name = document.createElement('span');
-    name.className = `rowname${i === page.selected ? ' marquee' : ''}`;
-    const text = document.createElement('span');
-    text.append(...rowIcon(row), row.label);
-    name.append(text);
-    name.title = row.label;
-    label.append(name);
-    button.append(label);
-    if (nav.stack.length === 1) {
-      const caption = document.createElement('span');
-      caption.className = 'zune-caption';
-      caption.textContent =
-        {
-          music: 'playlists + liked songs',
-          now: 'your current track',
-          settings: 'make it yours',
-        }[row.action] || '';
-      label.append(caption);
-    }
-    const suffix = document.createElement('span');
-    suffix.className = 'suffix';
-    suffix.textContent = row.branch
-      ? row.showDetail
-        ? row.detail + ' ›'
-        : '›'
-      : row.detail || '';
-    button.append(suffix);
-    button.onclick = () => {
-      page.selected = i;
-      drawNavigation();
-      selectItem();
-    };
-    list.append(button);
-  });
-  list.scrollTop = scroll;
-  list.children[page.selected]?.scrollIntoView({ block: 'nearest' });
-  updateTrackIndicators();
-  $('#menuPreview').hidden = !(
-    nav.stack.length === 1 || page.title === 'Music'
-  );
-  $('#listPosition').textContent = page.rows.length
-    ? `${page.selected + 1} of ${page.rows.length}`
-    : '';
-  const hints = {
-    'current-song': preferences.keepCurrentSongPosition
-      ? 'Current song opens Now Playing.'
-      : 'Current song restarts when selected.',
-    appearance: 'Choose an Apple-inspired finish.',
-    clicker: 'Soft clicks when browsing menus.',
-  };
-  $('#menuHint').textContent =
-    hints[page.rows[page.selected]?.action] ||
-    page.hint ||
-    (demo
-      ? 'Demo · turn to browse, press to select'
-      : 'Turn to browse · press to select');
 }
+
 const radial = new window.RadialCarousel($('#radialLabels'), {
   activate: (i) => {
     nav.current.selected = i;
@@ -725,19 +499,14 @@ const playbackView = window.TurnbitFeatures.createPlaybackView({
   duration,
   currentProgress,
   time,
-  setMarquee,
   drawRadial,
   radialMiniPlayer,
   backdropActive,
   playbackModes,
   updateBackdropControls,
 });
-const {
-  updateTrackIndicators,
-  renderPlaybackIndicators,
-  syncGamingMode,
-  renderProgress,
-} = playbackView;
+const { renderPlaybackIndicators, syncGamingMode, renderProgress } =
+  playbackView;
 function isCurrentSong(...args) {
   return playbackView.isCurrentSong(...args);
 }
@@ -919,14 +688,6 @@ function changeVolume(value) {
   noteActivity();
   message();
   volumeControl.set(value);
-  if (preferences.interfaceStyle === 'zune') {
-    $('#zuneVolumeOverlay').textContent = 'volume ' + volume;
-    $('#zuneVolumeOverlay').hidden = false;
-    clearTimeout(zuneVolumeTimer);
-    zuneVolumeTimer = setTimeout(() => {
-      $('#zuneVolumeOverlay').hidden = true;
-    }, 1200);
-  }
 }
 function seek(value) {
   if (!preferences.dialOnlyWake) noteActivity();
@@ -940,7 +701,7 @@ function openSettings() {
 function dialHome() {
   noteActivity();
   revealDialOverlay();
-  wheelFeedback();
+
   clickSound();
   if ($('#settings').open) {
     $('#settings').close();
@@ -962,24 +723,10 @@ function menuBack() {
       return;
     }
   }
-  wheelFeedback();
+
   clickSound();
   if ($('#settings').open) {
     $('#settings').close();
-    return;
-  }
-  if (
-    preferences.interfaceStyle === 'zune' &&
-    nav.stack.length === 1 &&
-    !nav.idlePage
-  ) {
-    showNow();
-    return;
-  }
-  if (nav.current.kind === 'now' && preferences.interfaceStyle === 'ipod') {
-    nav.goHome();
-    drawNavigation();
-    message();
     return;
   }
   const fromNow = nav.current.kind === 'now';
@@ -995,7 +742,7 @@ function dialogControls() {
 }
 function rotate(delta) {
   revealDialOverlay();
-  wheelFeedback();
+
   noteActivity();
   if ($('#settings').open) {
     const controls = dialogControls();
@@ -1050,7 +797,6 @@ function returnToSongList() {
   }
   const uri = playback?.context?.uri;
   nav.goHome();
-  if (preferences.interfaceStyle === 'zune') showMusic();
   if (/^spotify:playlist:[a-zA-Z0-9]{22}$/.test(uri || ''))
     showLibrary('playlist', {
       id: uri.split(':')[2],
@@ -1061,10 +807,6 @@ function returnToSongList() {
   selectPlayingSong();
 }
 function showMusic() {
-  if (preferences.interfaceStyle === 'zune') {
-    showLibrary('playlists');
-    return;
-  }
   push({
     title: 'Music',
     rows: [
@@ -1148,7 +890,6 @@ const settingsController = window.TurnbitFeatures.createSettingsController({
   noteActivity,
   getState: getPlaybackView,
   themes,
-  themeName,
   mouseModeKeys,
   radialColorName,
   backdropActive,
@@ -1179,10 +920,6 @@ const {
   showSettingsGroup,
   showSetting,
   showTransparency,
-  showZunePlaybackOptions,
-  interfaceName,
-  showInterfaces,
-  showCaseThemes,
   showDevices,
   coldStartName,
   showColdStart,
@@ -1264,8 +1001,6 @@ async function performPinToggle() {
       return;
     }
     pinned = next;
-    $('#pin').textContent = pinned ? '◆' : '◇';
-    $('#pin').setAttribute('aria-pressed', String(pinned));
     const row = nav.current.rows.find((r) => r.action === 'pin');
     if (row) row.detail = pinned ? 'On' : 'Off';
     drawNavigation();
@@ -1407,7 +1142,7 @@ async function selectItem(fromDial = false) {
     drawNavigation();
     return;
   }
-  wheelFeedback(true);
+
   noteActivity();
   clickSound();
   if ($('#settings').open) {
@@ -1454,8 +1189,7 @@ async function selectItem(fromDial = false) {
     return;
   }
   if (nav.current.kind === 'now') {
-    if (preferences.interfaceStyle === 'zune') showZunePlaybackOptions();
-    else returnToSongList();
+    returnToSongList();
     return;
   }
   if (nav.current.kind !== 'list') {
@@ -1637,7 +1371,7 @@ function handleHardwareEvent(event) {
       updated = Date.now();
       render();
     }
-    wheelFeedback();
+
     return;
   }
   if (event.type === 'heartbeat') return;
@@ -1649,7 +1383,7 @@ function handleHardwareEvent(event) {
   if (event.type === 'command' && event.command === 'center-down') {
     dialRevealPress = revealDialOverlay();
     if (dialRevealPress) drawNavigation();
-    wheelFeedback(true);
+
     noteActivity();
     return;
   }
@@ -1680,16 +1414,13 @@ function handleHardwareEvent(event) {
       : transportHold.up(direction);
   }
   if (cmd === 'menu-down') {
-    if (preferences.interfaceStyle === 'zune') beginZuneBack();
-    else menuBack();
+    menuBack();
     return;
   }
   if (cmd === 'menu-up') {
-    if (preferences.interfaceStyle === 'zune') endZuneBack();
     return;
   }
   if (cmd === 'touch') {
-    wheelFeedback(true);
     noteActivity();
     return;
   }
@@ -1697,7 +1428,7 @@ function handleHardwareEvent(event) {
   if (cmd === 'menu') return menuBack();
   if (cmd === 'back') {
     noteActivity();
-    wheelFeedback();
+
     clickSound();
     if ($('#settings').open) {
       $('#settings').close();
@@ -1740,152 +1471,7 @@ document.querySelectorAll('[data-command]').forEach((b) => {
     if (event.detail === 0) command(b.dataset.command);
   });
 });
-function zuneHome() {
-  noteActivity();
-  nav.goHome();
-  drawNavigation();
-  render();
-}
-function zuneCategory(kind) {
-  if (!['playlists', 'songs'].includes(nav.current.libraryKind)) return;
-  nav.back();
-  showLibrary(kind);
-}
-document
-  .querySelectorAll('[data-zune-tab]')
-  .forEach(
-    (button) => (button.onclick = () => zuneCategory(button.dataset.zuneTab)),
-  );
-function zuneVertical(delta) {
-  rotate(nav.current.kind === 'now' ? -delta : delta);
-}
-$('#zuneUp').onclick = () => zuneVertical(-1);
-$('#zuneDown').onclick = () => zuneVertical(1);
-$('#zuneSelect').onclick = () => selectItem();
-$('#zunePad').addEventListener(
-  'wheel',
-  (event) => {
-    event.preventDefault();
-    rotate(event.deltaY > 0 ? 1 : -1);
-  },
-  { passive: false },
-);
-let backTimer,
-  backHeld = false;
-function beginZuneBack() {
-  clearTimeout(backTimer);
-  backHeld = false;
-  noteActivity();
-  backTimer = setTimeout(() => {
-    backHeld = true;
-    zuneHome();
-  }, 550);
-}
-function endZuneBack() {
-  clearTimeout(backTimer);
-  if (!backHeld) menuBack();
-}
-$('#zuneBack').onpointerdown = (event) => {
-  if (event.button !== 0) return;
-  $('#zuneBack').setPointerCapture(event.pointerId);
-  beginZuneBack();
-};
-$('#zuneBack').onpointerup = endZuneBack;
-$('#zuneBack').onpointercancel = () => clearTimeout(backTimer);
-$('#zuneBack').onclick = (event) => {
-  if (event.detail === 0) menuBack();
-};
-document.querySelectorAll('[data-zune-direction]').forEach((button) => {
-  const direction = Number(button.dataset.zuneDirection);
-  const navigate = () => {
-    if (['playlists', 'songs'].includes(nav.current.libraryKind)) {
-      zuneCategory(
-        nav.current.libraryKind === 'playlists' ? 'songs' : 'playlists',
-      );
-    } else if (direction < 0) menuBack();
-    else selectItem();
-  };
-  let playbackPress = false;
-  button.onpointerdown = (event) => {
-    if (event.button !== 0) return;
-    button.setPointerCapture(event.pointerId);
-    playbackPress = nav.current.kind === 'now';
-    if (playbackPress) transportHold.down(direction);
-    else navigate();
-  };
-  button.onpointerup = () => {
-    if (playbackPress) transportHold.up(direction);
-    playbackPress = false;
-  };
-  button.onpointercancel = () => {
-    transportHold.cancel();
-    playbackPress = false;
-  };
-  button.onclick = (event) => {
-    if (event.detail === 0) {
-      if (nav.current.kind === 'now')
-        command(direction > 0 ? 'next' : 'previous');
-      else navigate();
-    }
-  };
-});
-$('#menu').onclick = menuBack;
-$('#select').onclick = () => selectItem();
-$('#connect').onclick = openSettings;
 $('.dismiss').onclick = () => $('#settings').close();
-$('#volume').oninput = (e) => changeVolume(Number(e.target.value));
-$('#adjustVolume').oninput = (e) => changeVolume(Number(e.target.value));
-$('#seek').onchange = (e) => seek(Number(e.target.value));
-$('#wheel').addEventListener(
-  'wheel',
-  (e) => {
-    e.preventDefault();
-    rotate(e.deltaY > 0 ? 1 : -1);
-  },
-  { passive: false },
-);
-let drag;
-const angle = (event) => {
-  const rect = $('#wheel').getBoundingClientRect();
-  return (
-    (Math.atan2(
-      event.clientY - rect.top - rect.height / 2,
-      event.clientX - rect.left - rect.width / 2,
-    ) *
-      180) /
-    Math.PI
-  );
-};
-$('#wheel').addEventListener('pointerdown', (event) => {
-  if (event.button !== 0 || event.target.closest('button')) return;
-  noteActivity();
-  drag = { id: event.pointerId, angle: angle(event), distance: 0 };
-  $('#wheel').setPointerCapture(event.pointerId);
-  $('#wheel').classList.add('dragging');
-  event.preventDefault();
-});
-$('#wheel').addEventListener('pointermove', (event) => {
-  if (!drag || drag.id !== event.pointerId) return;
-  const next = angle(event);
-  let delta = next - drag.angle;
-  if (delta > 180) delta -= 360;
-  if (delta < -180) delta += 360;
-  drag.angle = next;
-  drag.distance += delta;
-  const steps = Math.trunc(drag.distance / 18);
-  if (steps) {
-    drag.distance -= steps * 18;
-    rotate(steps);
-  }
-});
-function finishDrag() {
-  drag = null;
-  $('#wheel').classList.remove('dragging');
-}
-$('#wheel').addEventListener('pointerup', finishDrag);
-$('#wheel').addEventListener('pointercancel', finishDrag);
-$('#wheel').addEventListener('lostpointercapture', finishDrag);
-new ResizeObserver(measureVisibleTitles).observe($('.screen'));
 document.addEventListener('keydown', (e) => {
   if (
     e.target.closest('dialog') ||
@@ -1908,42 +1494,14 @@ document.addEventListener('keydown', (e) => {
     e.preventDefault();
   if (e.key === ' ' && !e.repeat) command('toggle');
   if (e.key === 'Enter' && !e.repeat) selectItem();
-  if (e.key === 'ArrowUp')
-    preferences.interfaceStyle === 'zune' ? zuneVertical(-1) : rotate(-1);
-  if (e.key === 'ArrowDown')
-    preferences.interfaceStyle === 'zune' ? zuneVertical(1) : rotate(1);
-  if (
-    preferences.interfaceStyle === 'zune' &&
-    !e.shiftKey &&
-    ['ArrowLeft', 'ArrowRight'].includes(e.key) &&
-    ['playlists', 'songs'].includes(nav.current.libraryKind)
-  ) {
-    zuneCategory(
-      nav.current.libraryKind === 'playlists' ? 'songs' : 'playlists',
-    );
-    return;
-  }
-  if (
-    preferences.interfaceStyle === 'zune' &&
-    !e.shiftKey &&
-    nav.current.kind !== 'now' &&
-    ['ArrowLeft', 'ArrowRight'].includes(e.key)
-  ) {
-    e.key === 'ArrowLeft' ? menuBack() : selectItem();
-    return;
-  }
+  if (e.key === 'ArrowUp') rotate(-1);
+  if (e.key === 'ArrowDown') rotate(1);
   if (e.key === 'ArrowLeft')
     e.shiftKey ? seek(currentProgress() - 10000) : command('previous');
   if (e.key === 'ArrowRight')
     e.shiftKey ? seek(currentProgress() + 10000) : command('next');
   if (e.key === 'Escape' || e.key === 'Backspace') menuBack();
 });
-$('#visibilityRange').oninput = (event) => {
-  if (nav.current.kind === 'visibility') {
-    nav.current.value = Number(event.target.value);
-    drawNavigation();
-  }
-};
 $('#settings').addEventListener('toggle', syncVisibility);
 let lastMouseActivity = 0;
 document.addEventListener(
@@ -1964,9 +1522,6 @@ document.addEventListener('pointerdown', () => noteActivity(), {
   capture: true,
 });
 document.addEventListener('keydown', () => noteActivity(), { capture: true });
-$('#pin').onclick = togglePin;
-$('#minimize').onclick = () => api?.minimize();
-$('#close').onclick = () => api?.close();
 $('#dashboard').onclick = (e) => {
   if (api) {
     e.preventDefault();
@@ -2012,7 +1567,6 @@ $('#logout').onclick = async () => {
     $('#settingsMessage').textContent = e.message;
   }
 };
-$('#deviceBtn').onclick = showDevices;
 if (api) {
   applicationSettings = window.createApplicationSettingsClient(api.settings, {
     onValue: adoptApplicationSettings,
@@ -2028,8 +1582,6 @@ if (api) {
     .pin(preferences.keepOnTop)
     .then((value) => {
       pinned = value;
-      $('#pin').textContent = pinned ? '◆' : '◇';
-      $('#pin').setAttribute('aria-pressed', String(pinned));
       const row = nav.current.rows.find((item) => item.action === 'pin');
       if (row) row.detail = pinned ? 'On' : 'Off';
       drawNavigation();
@@ -2089,9 +1641,6 @@ if (api) {
   setInterval(async () => {
     try {
       const h = await api.hardware();
-      $('#hardware').textContent = h.pluginOnline
-        ? 'D100H plugin online'
-        : 'D100H plugin offline';
       if (h.error) message(h.error);
     } catch (e) {
       message(e.message);

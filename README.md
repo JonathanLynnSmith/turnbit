@@ -134,11 +134,11 @@ In both layouts, after **Dial Menu Timeout** (8 seconds by default, adjustable f
 
 An ambient glow, tinted by the playing artwork, sits behind the middle of the dial menu and washes outward across the window — behind the artwork and the player's controls — fading to nothing before any edge. It is the cover itself, blurred until little more than its average colour is left, so a cover's own bright and dark areas cannot pull the glow off centre, and it is masked rather than clipped, so there is no cutoff anywhere. It follows the song, fades away when nothing is playing, and paints under every control, so the text over it stays crisp. The floating widget keeps its plain dark haze.
 
-Play/Pause, Previous/Next, Like, Shuffle, Repeat, seek, and volume operate directly on the large player. Hardware playback controls also work while browsing. **Transparency** applies here too, never fading below 20% so the title bar stays grabbable. The iPod and Zune interfaces keep their existing behavior.
+Play/Pause, Previous/Next, Like, Shuffle, Repeat, seek, and volume operate directly on the large player. Hardware playback controls also work while browsing. **Transparency** applies here too, never fading below 20% so the title bar stays grabbable.
 
-### The iPod and Zune interfaces are paused
+### Archived interfaces
 
-Both still ship and stay selectable under Settings → Appearance → Interface, and shared behavior keeps working for them. They are simply not being developed for now, so the turnbit interface gets the attention. Their own suite is kept intact at `npm run smoke:paused`, and no routine command runs it. See [CLAUDE.md](CLAUDE.md) for what that means while working in this repo.
+The iPod and Zune interfaces are preserved on [archive/ipod-zune-interfaces](https://github.com/JonathanLynnSmith/turnbit/tree/archive/ipod-zune-interfaces) at `c73554c`, including their assets and tests. Main ships only the turnbit interface so development can stay focused. Saved iPod or Zune selections fall back to turnbit; other preferences and saved song lists are retained. To revisit them later, check out the archive branch and start with its `CLAUDE.md` restoration notes.
 
 ### Keyboard
 
@@ -183,15 +183,12 @@ Settings are grouped into five categories. On/off settings sit inside a category
 | Playback | When Nothing Is Playing | What Play starts when Spotify has nothing loaded: Last Session, Liked Songs, a playlist you pick, or Off | Last Session |
 | Playback | Keep Song Position | Selecting the song that is already playing opens Now Playing instead of restarting it | On |
 | Playback | Spotify Connection | Connect or disconnect your Spotify account |  |
-| Appearance | Interface | turnbit, or the paused iPod and Zune extras | turnbit |
 | Appearance | Curved Menu | Lays the turnbit menu out along a curve; off shows a straight list | On |
 | Appearance | Text Alignment | Aligns menu text: Auto (toward the docked edge), Left, or Right | Auto |
 | Appearance | Screen Edge / Menu Side | Chooses the left or right edge for the widget or window menu | Left |
 | Appearance | Smoky Background | Strength of the dark backdrop behind the menu | 24% |
 | Appearance | Text Color | Color of the menu text |  |
 | Appearance | Accent Color | Color of the current song, progress, and Now Playing controls |  |
-| Appearance | Case Color | Case finish (iPod and Zune interfaces) | Silver |
-| Appearance | Screen Theme | Light or dark screen (iPod and Zune interfaces) | Light |
 | Navigation | Reverse Dial Direction | Flips the dial's direction | Off |
 | Navigation | Dial Double-Press | What a double-press of the dial does: go Back one level, or go Home | Back |
 | Navigation | Back in Lists | Shows a Back row at the top of every list below Home | On |
@@ -265,7 +262,6 @@ TURNBIT_DEBUG_API=1 npm start
 | `npm start` | Run turnbit |
 | `npm run check` | Syntax checks and unit tests |
 | `npm run test:desktop` | Check Window Mode, saved placement, the large player, real bridge input, menu dismissal, responsive layout, and keyboard/mouse controls in isolated sessions |
-| `npm run smoke:paused` | Drive the real app in demo mode with simulated dial input, across the paused iPod and Zune interfaces |
 | `npm run package` | Build the standalone app |
 | `npm run plugin:build` | Build the Ulanzi plugin |
 | `npm run plugin:install` | Install the plugin into Ulanzi Studio |

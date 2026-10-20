@@ -1,7 +1,7 @@
 {
   "Name": "turnbit",
   "Author": "turnbit",
-  "Description": "iPod-style desktop Spotify controller for Ulanzi D100H.",
+  "Description": "Desktop Spotify controller for Ulanzi D100H.",
   "Version": "0.2.0",
   "UUID": "com.turnbit.spotify",
   "Type": "JavaScript",

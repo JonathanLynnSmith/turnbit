@@ -28,8 +28,5 @@ app.whenReady().then(async()=>{try{
   await post({type:'command',command:'menu-down'});await post({type:'command',command:'menu-up'});await wait(300);
   s=await selectedSong();assert.equal(s.kind,'list');assert.equal(s.selected,now,'Playlist list lands on the playing song');
 
-  // iPod: Back from Now Playing still goes Home; a single click returns to the list on the playing song.
-  await reset('ipod');await click();await post({type:'command',command:'next'});const ipodSong=(await selectedSong()).playing;
-  await click();s=await selectedSong();assert.equal(s.kind,'list');assert.equal(s.selected,ipodSong,'iPod click lands on the playing song');
-  console.log('Back and single click from Now Playing land on the playing song in Liked Songs, playlists, and both interfaces.');app.quit();
+  console.log('Back and single click from Now Playing land on the playing song in Liked Songs, playlists.');app.quit();
 }catch(error){console.error(error);app.exit(1);}});

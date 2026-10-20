@@ -13,7 +13,7 @@ app.whenReady().then(async()=>{try{
   const menu=async()=>{await send({type:'command',command:'menu-down'});await send({type:'command',command:'menu-up'});await wait(300);};
   const page=()=>js(`({title:nav.current.title,kind:nav.current.kind,highlighted:nav.current.rows?.[nav.current.selected]?.label})`);
   const intoPlaylist=async()=>{await js(`nav.reset(root());nav.current.selected=nav.current.rows.findIndex(r=>r.action==='playlists');drawNavigation();`);await click();await js(`nav.current.selected=nav.current.rows.findIndex(r=>r.action==='playlist');drawNavigation();`);await click();assert.equal((await page()).title,'After Hours');};
-  for(const style of ['radial','ipod']){
+  for(const style of ['radial']){
     await js(`savePreferences({interfaceStyle:'${style}',doublePress:'back',hoverBack:true,idleNowPlaying:false,idlePinned:false,songOpensNowPlaying:true,visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:10}});demo=true;`);
     await intoPlaylist();await doublePress();assert.equal((await page()).title,'Playlists',`${style}: Back mode goes back one level`);
     // Switch the setting from Settings.

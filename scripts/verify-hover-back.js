@@ -12,7 +12,7 @@ app.whenReady().then(async()=>{try{
   const page=()=>js(`({title:nav.current.title,highlighted:nav.current.rows[nav.current.selected]?.label,first:nav.current.rows[0]?.label,hold:document.body.dataset.backHold,progress:Number(getComputedStyle(document.documentElement).getPropertyValue('--back-hold')||0)})`);
   const reset=async(style,prefs='')=>{await js(`savePreferences({interfaceStyle:'${style}',backRow:true,hoverBack:true,idleNowPlaying:false,idlePinned:false,dialOnlyWake:false,visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:10}${prefs}});demo=true;nav.reset(root());nav.current.selected=nav.current.rows.findIndex(r=>r.action==='songs');showLibrary('songs');drawNavigation();`);await wait(200);};
 
-  for(const style of ['radial','ipod']){
+  for(const style of ['radial']){
     await reset(style);
     await turn(-1);let p=await page();assert.equal(p.highlighted,'Back');assert.equal(p.hold,'true',`${style}: turning onto Back starts the hold`);
     await wait(450);p=await page();assert.equal(p.title,'Liked Songs','still on Liked Songs halfway');assert.ok(p.progress>0.25&&p.progress<0.8,`${style}: ring is partly filled (${p.progress})`);
@@ -50,14 +50,12 @@ app.whenReady().then(async()=>{try{
   assert.deepEqual(await js(`[preferences.backRow,JSON.parse(localStorage.getItem('turnbit-preferences')).backRow]`),[true,true],'setting is saved');
   // Home: Now Playing sits on top as a shortcut; Home opens on Music; resting on it opens Now Playing.
   const home=async style=>{await js(`savePreferences({interfaceStyle:'${style}',hoverBack:true,idleNowPlaying:false,lastSongList:null});demo=true;nav.reset(root());drawNavigation();`);await wait(200);};
-  for(const style of ['radial','ipod']){
+  for(const style of ['radial']){
     await home(style);p=await page();assert.equal(p.first,'Now Playing',`${style}: Now Playing is first on Home`);assert.equal(p.highlighted,'Liked Songs','Home opens on Music');
     await turn(-1);await turn(-1);p=await page();assert.equal(p.highlighted,'Now Playing');assert.equal(p.hold,'true','ring starts on the Home shortcut');
     await wait(1150);assert.equal(await js('nav.current.kind'),'now',`${style}: resting on Now Playing opens it`);
   }
   await home('radial');await turn(-1);await wait(500);await turn(1);await wait(800);p=await page();assert.equal(p.highlighted,'Liked Songs','turning away from the Home shortcut cancels');
-  await home('zune');p=await page();assert.equal(p.first,'Music','Zune keeps its own Home order');assert.equal(await js(`nav.current.rows.findIndex(r=>r.action==='now')`),1);
-  await js(`savePreferences({interfaceStyle:'radial'});drawNavigation();`);p=await page();assert.equal(p.first,'Now Playing','switching back moves the shortcut to the top');assert.equal(p.highlighted,'Liked Songs','and keeps the highlight');
   await js(`savePreferences({hoverBack:false});`);await turn(-1);await wait(1300);assert.equal(await js('nav.current.kind'),'list','Hover Shortcuts off: no auto Now Playing');
-  console.log('Hover Shortcuts: resting 1s on Back goes back and on Now Playing (top of Home) opens it, with a filling ring in both interfaces; turning away cancels, chains, skips empty lists; Zune keeps its Home; both settings work.');app.quit();
+  console.log('Hover Shortcuts: resting 1s on Back goes back and on Now Playing (top of Home) opens it, with a filling ring in turnbit; turning away cancels, chains, skips empty lists; both settings work.');app.quit();
 }catch(error){console.error(error);app.exit(1);}});

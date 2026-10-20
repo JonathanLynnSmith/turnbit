@@ -4,7 +4,7 @@
   "author": "turnbit contributors",
   "license": "MIT",
   "private": true,
-  "description": "iPod-like Spotify controller for Electron + Ulanzi D100H",
+  "description": "Desktop Spotify controller for Electron + Ulanzi D100H",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
@@ -15,7 +15,6 @@
     "plugin:build": "node scripts/build-plugin.js",
     "plugin:install": "node scripts/install-plugin.js",
     "studio:restart": "node scripts/restart-studio.js",
-    "smoke:paused": "electron scripts/smoke.js",
     "package": "electron-builder --dir",
     "demo:gif": "electron scripts/make-demo-gif.js",
     "test:playback": "electron scripts/verify-playback-service.js",

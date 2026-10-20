@@ -14,7 +14,7 @@ function storage(entries = {}) {
   };
 }
 
-test("legacy preferences migrate without losing paused interfaces or song lists", () => {
+test("legacy preferences migrate archived interfaces to radial without losing song lists", () => {
   const store = storage({
     "dialpod-preferences": JSON.stringify({
       interfaceStyle: "zune",
@@ -28,7 +28,7 @@ test("legacy preferences migrate without losing paused interfaces or song lists"
     }),
   });
   const value = loadPreferences(store, options);
-  assert.equal(value.interfaceStyle, "zune");
+  assert.equal(value.interfaceStyle, "radial");
   assert.equal(value.autoLaunchSpotify, true);
   assert.equal(value.radialWidthPct, 70);
   assert.deepEqual(value.lastSongList.playlist.demoIndexes, [0, 2]);
@@ -52,3 +52,15 @@ test("corrupt storage falls back to independent defaults and failed writes leave
   );
   assert.equal(value.clicker, false);
 });
+
+for (const interfaceStyle of ['ipod', 'zune']) {
+  test(`saved ${interfaceStyle} selection falls back to turnbit and retains other preferences`, () => {
+    const value = loadPreferences(storage({'turnbit-preferences': JSON.stringify({interfaceStyle, clicker: true, radialSide: 'right', appearance: 'spotify'})}), options);
+    assert.equal(value.interfaceStyle, 'radial');
+    assert.equal(value.clicker, true);
+    assert.equal(value.radialSide, 'right');
+    assert.equal(value.appearance, 'spotify');
+    const next = persistPreferences(storage(), value, {interfaceStyle});
+    assert.equal(next.interfaceStyle, 'radial');
+  });
+}

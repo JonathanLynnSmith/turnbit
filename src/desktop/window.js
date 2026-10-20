@@ -90,7 +90,7 @@ function createDesktopWindow({
       saved || mainWindow.getBounds(),
     ).workArea;
     const width = style === 'radial' ? 960 : 380,
-      height = style === 'radial' ? 720 : style === 'zune' ? 655 : 710;
+      height = 720;
     const bounds = saved || {
       x: area.x + (area.width - width) / 2,
       y: area.y + (area.height - height) / 2,
@@ -416,8 +416,7 @@ function createDesktopWindow({
 
   function setInterface(_, style, side = 'left', layout) {
     setImmediate(revealWindow);
-    if (!['ipod', 'zune', 'radial'].includes(style))
-      throw new Error('Unknown interface');
+    if (style !== 'radial') throw new Error('Unknown interface');
     side = side === 'right' ? 'right' : 'left';
     const size = style === 'radial' ? radialLayout(layout) : null,
       key = `${style}:${side}${size ? ':' + JSON.stringify(size) : ''}`;
@@ -503,25 +502,6 @@ function createDesktopWindow({
       }
       return;
     }
-    mainWindow.setResizable(true);
-    mainWindow.setMinimumSize(360, style === 'zune' ? 640 : 700);
-    mainWindow.setMaximumSize(460, 800);
-    if (windowMode) {
-      if (!previous?.startsWith(style + ':')) restoreWindow(style);
-      return;
-    }
-    if (previous?.startsWith('radial:')) {
-      mainWindow.setSize(380, 710);
-      mainWindow.center();
-    }
-    const [width] = mainWindow.getSize();
-    mainWindow.setMinimumSize(360, style === 'zune' ? 640 : 700);
-    mainWindow.setSize(
-      width,
-      style === 'zune'
-        ? Math.max(640, Math.min(800, Math.round((width - 24) * 1.77 + 24)))
-        : 710,
-    );
   }
 
   function showWindow() {

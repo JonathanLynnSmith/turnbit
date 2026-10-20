@@ -164,8 +164,8 @@
         preferences.screenTheme = saved.screenTheme;
       else if (preferences.appearance === 'spotify')
         preferences.screenTheme = 'dark';
-      if (['ipod', 'zune', 'radial'].includes(saved.interfaceStyle))
-        preferences.interfaceStyle = saved.interfaceStyle;
+      // Archived interface selections migrate to the active desktop interface.
+      preferences.interfaceStyle = 'radial';
       for (const [key, min, max] of [
         ['radialWidthPct', 15, 70],
         ['radialHeight', 30, 100],
@@ -220,7 +220,7 @@
   }
 
   function persistPreferences(storage, current, patch) {
-    const next = { ...current, ...patch };
+    const next = { ...current, ...patch, interfaceStyle: 'radial' };
     storage.setItem('turnbit-preferences', JSON.stringify(next));
     storage.removeItem('dialpod-preferences');
     return next;
