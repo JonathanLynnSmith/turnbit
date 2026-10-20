@@ -246,8 +246,14 @@ body[data-window-mode=true][data-interface=radial] .window-handle{display:none}
 #radialBackdropBrowse .return-symbol{display:none}
 body[data-dial-overlay=true] #radialBackdropBrowse .browse-symbol{display:none}
 body[data-dial-overlay=true] #radialBackdropBrowse .return-symbol{display:block}
-.radial-backdrop-info{position:absolute;inset:105px clamp(28px,6vw,84px) 32px;display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;gap:30px 7%;align-items:center;max-width:1300px;margin:0 auto;opacity:1;visibility:visible;transition:opacity .26s ease .08s,visibility 0s,inset-inline-start .3s cubic-bezier(.2,.8,.2,1),inset-inline-end .3s cubic-bezier(.2,.8,.2,1)}
-.radial-backdrop-cover{width:min(100%,390px,calc(100vh - 340px));aspect-ratio:1;justify-self:center;overflow:hidden;border-radius:12px;background:radial-gradient(ellipse at 20% 10%,#a8c1b74d,transparent 65%),linear-gradient(145deg,#284c48,#181d2d 72%);box-shadow:0 24px 80px #0005;display:grid;place-items:center}
+/* The artwork and the track text are one unit a fixed gap apart, so the artwork stays with the song info
+   however much room the player has. The text column is only as wide as the song's text (up to 560px), so
+   the pair centres over the controls below it whatever the title's length. The unit is only as wide as it needs to be (max-content, since a box at left:50% would otherwise
+   shrink to the half of the window on its right) and is placed by left and
+   translate alone: centred here, beside the divider in Split View. Both animate, so opening the menu
+   glides the whole unit over instead of snapping it to a new alignment first. */
+.radial-backdrop-info{--art-gap:clamp(32px,3.5vw,72px);position:absolute;top:105px;bottom:32px;left:50%;translate:-50% 0;width:max-content;max-width:min(1300px,calc(100% - 2 * clamp(28px,6vw,84px)));display:grid;grid-template-columns:auto fit-content(560px);grid-template-rows:minmax(0,1fr) auto;gap:30px var(--art-gap);justify-content:center;align-items:center;opacity:1;visibility:visible;transition:opacity .26s ease .08s,visibility 0s,left .3s cubic-bezier(.2,.8,.2,1),translate .3s cubic-bezier(.2,.8,.2,1),scale .3s cubic-bezier(.2,.8,.2,1),max-width .3s cubic-bezier(.2,.8,.2,1)}
+.radial-backdrop-cover{width:min(28vw,390px,calc(100vh - 340px));aspect-ratio:1;justify-self:center;overflow:hidden;border-radius:12px;background:radial-gradient(ellipse at 20% 10%,#a8c1b74d,transparent 65%),linear-gradient(145deg,#284c48,#181d2d 72%);box-shadow:0 24px 80px #0005;display:grid;place-items:center}
 .radial-backdrop-cover img{width:100%;height:100%;object-fit:cover;display:block;grid-area:1/1}
 .radial-backdrop-cover .radial-art-fallback{font:300 clamp(64px,10vw,130px) -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#d0e6dc70;grid-area:1/1}
 .radial-backdrop-track{min-width:0;align-self:center}
@@ -258,7 +264,8 @@ body[data-dial-overlay=true] #radialBackdropBrowse .return-symbol{display:block}
 #radialBackdropDevice{display:inline-flex;align-items:center;gap:8px;max-width:100%;padding:0;margin-top:24px;border:0;background:none;color:#a6baad;font-size:11px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #radialBackdropDevice::before{content:'';width:5px;height:5px;flex:none;border-radius:50%;background:#79d69b}
 #radialBackdropDevice:hover{color:#effaf2}
-.radial-backdrop-controls{grid-column:1/-1;width:min(100%,680px);justify-self:center}
+/* contain keeps the wide controls from stretching the artwork's column; they fit under the pair instead. */
+.radial-backdrop-controls{grid-column:1/-1;width:min(100%,680px);justify-self:center;contain:inline-size}
 .radial-backdrop-transport{display:flex;align-items:center;justify-content:center;gap:clamp(12px,2.5vw,28px);margin-bottom:18px}
 .radial-backdrop-transport button{display:grid;place-items:center;flex:none;width:40px;height:44px;padding:9px;border:0;border-radius:50%;background:transparent;color:#cbd4cd;transition:color .15s,background .15s,transform .15s}
 .radial-backdrop-transport button:hover{color:white;background:#ffffff12}
@@ -302,15 +309,24 @@ body[data-backdrop-active=true]:not([data-backdrop-split=true]) #radial{width:mi
    so the idle timeout collapses it and the player expands over its half. Narrow windows stay on the
    overlay (SPLIT_MIN_WIDTH). The menu keeps this geometry while hidden, so it slides out of its own half.
    It takes a third of the window at any size, so a large or full-screen window doesn't leave it a slim strip. */
-body[data-backdrop-active=true][data-backdrop-split=true]{--split-menu:max(230px,33.333%)}
+/* While the menu is up, the space beside it splits into three equal gaps: menu text, divider, player,
+   window edge. The menu's highlighted row stops 30px inside its own edge (radial.js). --player-width is the
+   widest the open player can be (artwork, gap and a full 560px text column, the sizes .radial-backdrop-info
+   and .radial-backdrop-cover use), capped to fit; --player-live is its actual width for the current song,
+   measured by radial-view.mjs. Either is drawn at --player-scale. So the divider can be placed in CSS:
+   midway between the menu and the player, with the player centred in the space beyond the line. */
+body[data-backdrop-active=true][data-backdrop-split=true]{--split-menu:max(230px,33.333%);--split-gap:clamp(48px,4vw,88px);--player-scale:.82;--split-edge:calc(var(--split-menu) - 30px);--player-width:min(calc(min(28vw,390px,100vh - 340px) + clamp(32px,3.5vw,72px) + 560px),calc((100% - var(--split-menu)) / var(--player-scale) - 2 * var(--split-gap)));--split-line:calc((2 * var(--split-edge) + 100% - var(--player-scale) * min(var(--player-live,var(--player-width)),var(--player-width))) / 3);--split-start:calc(var(--split-line) + var(--split-gap))}
 body[data-backdrop-active=true][data-backdrop-split=true] #radial{position:fixed;top:0;bottom:0;left:0;width:var(--split-menu);height:auto;margin:0}
 body[data-backdrop-active=true][data-backdrop-split=true][data-edge=right] #radial{left:auto;right:0}
-body[data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true] .radial-backdrop-info{inset-inline:calc(var(--split-menu) + clamp(16px,2.4vw,40px)) clamp(22px,2.6vw,40px);max-width:none}
-body[data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true][data-edge=right] .radial-backdrop-info{inset-inline:clamp(22px,2.6vw,40px) calc(var(--split-menu) + clamp(16px,2.4vw,40px))}
-/* A hairline marks the seam, and fades with the menu that makes it. */
-body[data-backdrop-active=true][data-backdrop-split=true] #radialBackdrop::after{content:'';position:absolute;top:9%;bottom:9%;left:var(--split-menu);width:1px;background:linear-gradient(to bottom,#ffffff00,#ffffff1f 22%,#ffffff1f 78%,#ffffff00);z-index:1;pointer-events:none;opacity:0;transition:opacity .22s ease}
-body[data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true][data-split-divider=true] #radialBackdrop::after{opacity:1;transition:opacity .26s ease .10s}
-body[data-backdrop-active=true][data-backdrop-split=true][data-edge=right] #radialBackdrop::after{left:auto;right:var(--split-menu)}
+body[data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true] .radial-backdrop-info{left:calc((100% + var(--split-line)) / 2);max-width:var(--player-width)}
+body[data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true][data-edge=right] .radial-backdrop-info{left:calc((100% - var(--split-line)) / 2)}
+/* The player steps back while the menu is up: it shrinks about its own centre as it slides over, so the
+   change reads clearly even when it only moves a short way. The stacked layout is already compact. */
+body[data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true]:not([data-player-column=narrow]) .radial-backdrop-info{scale:var(--player-scale)}
+/* A hairline marks the seam, and fades with the menu that makes it. It glides when a new song's width moves it. */
+body[data-backdrop-active=true][data-backdrop-split=true] #radialBackdrop::after{content:'';position:absolute;top:9%;bottom:9%;left:var(--split-line);width:1px;background:linear-gradient(to bottom,#ffffff00,#ffffff1f 22%,#ffffff1f 78%,#ffffff00);z-index:1;pointer-events:none;opacity:0;transition:opacity .22s ease,left .3s cubic-bezier(.2,.8,.2,1),right .3s cubic-bezier(.2,.8,.2,1)}
+body[data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true][data-split-divider=true] #radialBackdrop::after{opacity:1;transition:opacity .26s ease .10s,left .3s cubic-bezier(.2,.8,.2,1),right .3s cubic-bezier(.2,.8,.2,1)}
+body[data-backdrop-active=true][data-backdrop-split=true][data-edge=right] #radialBackdrop::after{left:auto;right:var(--split-line)}
 /* The playing row's artwork floats outside its label. In Split View that room only exists on the
    menu's own side of the seam, so a right-docked menu keeps it inboard. */
 body[data-backdrop-active=true][data-backdrop-split=true][data-edge=right] .radial-mini .mini-cover{left:auto;right:-72px}
@@ -324,8 +340,13 @@ body[data-backdrop-active=true][data-edge=right] #actionNotice{left:auto;right:4
 /* Artwork beside the text needs a wide column. data-player-column measures the player's own column:
    the window in Overlay, the half beside the menu in Split View. The height rules below carry the
    same attribute so the cascade between them stays in file order, as it was when both were media queries. */
-body[data-player-column=narrow] .radial-backdrop-info{inset:86px 28px 22px;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(80px,1fr) auto auto;gap:20px;text-align:center}
+body[data-player-column=narrow] .radial-backdrop-info{inset:86px 28px 22px;width:auto;max-width:none;translate:none;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(80px,1fr) auto auto;gap:20px;text-align:center}
 body[data-player-column=narrow] .radial-backdrop-cover{width:min(100%,280px,27vh)}
+/* Stacked beside the menu, the player fills from the divider's far side to the window edge, so its width
+   follows the divider; the divider keeps to the widest player here rather than chase that width. */
+body[data-player-column=narrow][data-backdrop-active=true][data-backdrop-split=true]{--split-line:calc((2 * var(--split-edge) + 100% - var(--player-scale) * var(--player-width)) / 3)}
+body[data-player-column=narrow][data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true] .radial-backdrop-info{left:var(--split-start);right:28px;max-width:none}
+body[data-player-column=narrow][data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true][data-edge=right] .radial-backdrop-info{left:28px;right:var(--split-start)}
 body[data-player-column=narrow] .radial-backdrop-track{grid-column:1;max-width:100%}
 body[data-player-column=narrow] .radial-backdrop-state{margin-bottom:9px;font-size:9px}
 body[data-player-column=narrow] .radial-backdrop-title{font-size:clamp(25px,5.5vw,35px);-webkit-line-clamp:2;line-height:1.1;margin-bottom:7px}
@@ -335,7 +356,7 @@ body[data-player-column=narrow] #radialBackdropDevice{margin-top:10px}
 body[data-player-column=narrow] .radial-backdrop-transport{margin-bottom:12px;gap:12px}
 body[data-player-column=narrow] #radialBackdropPlay{width:56px;height:56px;padding:16px}
 @media(max-height:600px){
-  body[data-player-column] .radial-backdrop-info{gap:16px 6%;inset-block:88px 20px}
+  body[data-player-column] .radial-backdrop-info{gap:16px var(--art-gap);inset-block:88px 20px}
   body[data-player-column] .radial-backdrop-title{font-size:clamp(26px,4vw,42px);-webkit-line-clamp:2}
   body[data-player-column] .radial-backdrop-state{margin-bottom:10px}
   body[data-player-column] .radial-backdrop-album{display:none}

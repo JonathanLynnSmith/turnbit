@@ -220,7 +220,7 @@ async function main(){
   const menuEdge=()=>run(`$('#radial').getBoundingClientRect().right`);
   assert.equal(await run(`document.body.dataset.backdropSplit`),'true','Split View turns on');
   assert.equal(await hidden(),true,'it still starts on an unobstructed player');
-  assert.ok(await playerLeft()<120,'with the menu away the player keeps the whole window');
+  assert.equal(await run(`(()=>{const r=$('.radial-backdrop-info').getBoundingClientRect();return Math.abs(r.left+r.width/2-innerWidth/2)<=2;})()`),true,'with the menu away the player centres in the whole window');
   assert.equal(await run(`document.body.dataset.playerColumn`),'wide','and lays itself out for the full width');
   assert.equal(await run(`getComputedStyle($('#radialBackdropBrowse')).display!=='none'`),true,'Browse still opens the menu');
   // An opening press reveals the menu without selecting, exactly as the overlay does.
@@ -242,7 +242,7 @@ async function main(){
   // The idle timeout puts the menu away and the player expands over its half.
   await run(`savePreferences({menuTimeout:2});dialOverlay.lastInput=Date.now()-20000;`);await wait(700);
   assert.equal(await hidden(),true,'idle collapses the menu');
-  assert.ok(await playerLeft()<120,'and the player expands to fill the window');
+  await wait(350);assert.equal(await run(`(()=>{const r=$('.radial-backdrop-info').getBoundingClientRect();return Math.abs(r.left+r.width/2-innerWidth/2)<=2;})()`),true,'and the player returns to the centre of the whole window');
   assert.equal(await run(`document.body.dataset.playerColumn`),'wide','the expanded player uses the full width again');
   // Pin Dial Menu holds the split open.
   await run(`browseFromPlayer();savePreferences({idlePinned:true,menuTimeout:2});`);await wait(400);
@@ -287,6 +287,8 @@ async function main(){
   assert.equal(await run(`document.body.dataset.backdropSplit`),'true','widening restores Split View');
   assert.equal(await run(`document.body.dataset.playerColumn`),'wide','a wide enough half puts artwork beside the text');
   assert.equal(await run(`Math.abs($('#radial').getBoundingClientRect().width-innerWidth/3)<=1`),true,'the menu takes a third of a large window rather than a fixed-width strip');
+  assert.equal(await run(`(()=>{const line=parseFloat(getComputedStyle($('#radialBackdrop'),'::after').left),row=$('#radial').getBoundingClientRect().right-30,r=$('.radial-backdrop-info').getBoundingClientRect(),gaps=[line-row,r.left-line,innerWidth-r.right];return Math.max(...gaps)-Math.min(...gaps)<=2;})()`),true,'the divider sits midway between the menu and the player, which centres in the space beyond it');
+  assert.equal(await run(`(()=>{const pair=()=>{const c=$('.radial-backdrop-cover').getBoundingClientRect(),t=$('.radial-backdrop-track').getBoundingClientRect(),k=$('.radial-backdrop-controls').getBoundingClientRect();return Math.abs((c.left+t.right)/2-(k.left+k.right)/2)<=2;};const title=$('#radialBackdropTitle'),before=title.textContent,short=pair();title.textContent='An Unusually Long Song Title That Keeps Going Past One Line';const long=pair();title.textContent=before;return short&&long;})()`),true,'artwork and song info centre over the controls for short and long titles');
   await run(`savePreferences({backdropLayout:'overlay'});drawNavigation();`);await wait(400);
   assert.equal(await run(`document.body.dataset.backdropSplit`),'false','switching back leaves one view at a time');
   assert.equal(await run(`$('#radialBackdropDismiss').hidden`),false,'the overlay gets its dismiss target back');

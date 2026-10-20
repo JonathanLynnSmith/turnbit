@@ -262,6 +262,16 @@ export function createRadialView({
     document.body.dataset.playerColumn =
       column <= PLAYER_STACK_WIDTH ? 'narrow' : 'wide';
   }
+  // The player is as wide as its artwork and the current song's text, so Split View's divider (radial.css)
+  // reads that width to stay midway between the menu and the player. offsetWidth ignores the scale.
+  const playerInfo = $('.radial-backdrop-info');
+  if (playerInfo && typeof ResizeObserver === 'function')
+    new ResizeObserver(() =>
+      document.body.style.setProperty(
+        '--player-live',
+        playerInfo.offsetWidth + 'px',
+      ),
+    ).observe(playerInfo);
   function syncDialOverlay() {
     const active = backdropActive(),
       split = splitActive();
