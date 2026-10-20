@@ -1,15 +1,19 @@
 # turnbit
 
-Electron + Spotify controller for the Ulanzi D100H dial. The renderer is plain
-ES modules-free scripts (`renderer/`), the main process lives in `src/`, and the
-Ulanzi Studio plugin in `ulanzi-plugin/`.
+Electron + Spotify controller for the Ulanzi D100H dial. The main process composes application services, desktop adapters, and provider
+integrations in `src/`. The renderer uses an ES module bootstrap and feature
+factories, with a classic coordinator retained for the existing interfaces and
+verification harnesses. The Ulanzi Studio plugin lives in `ulanzi-plugin/`.
+See [docs/architecture.md](docs/architecture.md) for contracts and dependency rules.
 
 ## Commands
 
 | Command | What it runs |
 | --- | --- |
-| `npm run check` | `node --check` over every source file, then the `node --test` unit suite |
+| `npm run check` | ESLint with dependency rules, then the `node --test` unit suite |
 | `npm run test:desktop` | Window Mode and Now Playing Backdrop verification in real Electron windows |
+| `npm run test:playback` | Normalized services and hardware commands in real Electron with a fake provider |
+| `npm run format:check` | Source formatting verification |
 | `npm start` | The app |
 | `npm run smoke:paused` | The paused interfaces' suite — see below |
 

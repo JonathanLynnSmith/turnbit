@@ -5,11 +5,23 @@ class DialOverlay {
     this.visible = false;
     this.lastInput = 0;
   }
-  show() { const opened = !this.visible;this.visible = true;this.lastInput = this.now();return opened; }
-  hide() { const changed = this.visible;this.visible = false;return changed; }
+  show() {
+    const opened = !this.visible;
+    this.visible = true;
+    this.lastInput = this.now();
+    return opened;
+  }
+  hide() {
+    const changed = this.visible;
+    this.visible = false;
+    return changed;
+  }
   tick(protectedView = false) {
     if (!this.visible) return false;
-    if (protectedView) { this.lastInput = this.now();return false; }
+    if (protectedView) {
+      this.lastInput = this.now();
+      return false;
+    }
     return this.now() - this.lastInput >= this.timeout ? this.hide() : false;
   }
 }

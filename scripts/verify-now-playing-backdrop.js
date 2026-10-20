@@ -48,7 +48,7 @@ async function main(){
   assert.equal(await run(`$('#radialBackdrop').hidden`),false,'Window Mode opens the large player by default');
   assert.equal(await hidden(),true,'the window starts with an unobstructed player');
   assert.equal(await run(`preferences.menuTimeout`),8,'the browsing timeout starts at the original 8 seconds');
-  await run(`clearTimeout(pollTimer);savePreferences({idleNowPlaying:false,hoverBack:false,mouseModeKey:'off'});demo=false;acceptPlayback({item:{uri:'spotify:track:AAAAAAAAAAAAAAAAAAAAAA',name:'Night Drive',artists:[{name:'turnbit sessions'}],album:{name:'After Hours',images:[{url:${JSON.stringify(ART)}}]},duration_ms:214000},is_playing:true,progress_ms:62000,liked:false,shuffle_state:false,repeat_state:'off',device:{id:'test',name:'Living Room',volume_percent:62}});drawNavigation();`);
+  await run(`savePreferences({idleNowPlaying:false,hoverBack:false,mouseModeKey:'off'});demo=false;acceptPlayback({item:{uri:'spotify:track:AAAAAAAAAAAAAAAAAAAAAA',name:'Night Drive',artists:[{name:'turnbit sessions'}],album:{name:'After Hours',images:[{url:${JSON.stringify(ART)}}]},duration_ms:214000},is_playing:true,progress_ms:62000,liked:false,shuffle_state:false,repeat_state:'off',device:{id:'test',name:'Living Room',volume_percent:62}});drawNavigation();`);
   assert.equal(await run(`$('#radialBackdropTitle').textContent`),'Night Drive');
   assert.equal(await run(`$('#radialBackdropArtist').textContent`),'turnbit sessions');
   for(const selector of ['#radialBackdropSeek','#radialBackdropVolume','#radialBackdropPlay','#radialBackdropBrowse'])assert.equal(await hittable(selector),true,selector+' receives input');

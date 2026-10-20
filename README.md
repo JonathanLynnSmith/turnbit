@@ -308,3 +308,7 @@ The turnbit software is released under the [MIT License](LICENSE).
 
 **turnbit™** is a trademark. The MIT License does not grant rights to the turnbit name or logo. The bundled Ulanzi SDK keeps its Apache 2.0 license (`libs/LICENSE` and `libs/NOTICE.md` in the plugin folder), and other third-party components keep their own licenses.
 
+
+## Development architecture
+
+See [Application architecture](docs/architecture.md) for module responsibilities, internal desktop APIs, saved-settings migration, and verification commands. Run `npm run check` before submitting changes.
