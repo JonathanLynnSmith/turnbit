@@ -102,10 +102,10 @@ Every list starts with a **Back** row, so the dial alone gets you everywhere. Re
 
 ### Window Mode
 
-Turn on **Settings > Window > Window Mode** for a regular window with a large Now Playing screen.
-Turning the dial brings in the menu; it goes away again after a few seconds without navigation.
+turnbit opens as a regular window with a large Now Playing screen. Turning the dial brings in the menu; it goes away again after a few seconds without navigation.
 Choose **Dial Menu Layout > Split View** to keep the player on screen beside the menu, as in the GIF
-above. Details: [Window Mode](docs/window-mode.md).
+above. Prefer a transparent widget docked to your screen edge? Turn off **Settings > Window > Window
+Mode**. Details: [Window Mode](docs/window-mode.md).
 
 ### Keyboard and mouse
 

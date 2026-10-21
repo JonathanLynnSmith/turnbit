@@ -37,9 +37,13 @@ function readWindowState(file) {
       )
         bounds[style] = value;
     }
-    return { enabled: saved.enabled === true, bounds };
+    return {
+      enabled: typeof saved.enabled === 'boolean' ? saved.enabled : true,
+      bounds,
+    };
   } catch {
-    return { enabled: false, bounds: {} };
+    // Window Mode is the default; the frameless widget is the alternative.
+    return { enabled: true, bounds: {} };
   }
 }
 

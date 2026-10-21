@@ -75,7 +75,15 @@ async function press() {
   await command('center-up');
   await command('center-click');
 }
+// Window Mode (the default) shows the player until the dial asks for the menu; the
+// first press only brings the menu up.
+async function openMenu() {
+  if (!(await run('backdropActive() && !dialOverlay.visible'))) return;
+  await press();
+  await expect('dialOverlay.visible', 'dial menu opens over the player');
+}
 async function choose(predicate) {
+  await openMenu();
   const target = await run(`nav.current.rows.findIndex(row=>${predicate})`);
   assert.ok(target >= 0, `Menu item exists: ${predicate}`);
   let selected = await run('nav.current.selected');
@@ -94,6 +102,7 @@ async function choose(predicate) {
   await press();
 }
 async function back(title) {
+  await openMenu();
   await command('menu-down');
   await command('menu-up');
   await expect(

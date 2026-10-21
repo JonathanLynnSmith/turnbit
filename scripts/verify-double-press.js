@@ -1,7 +1,7 @@
 const {app,BrowserWindow}=require('electron');
 const path=require('node:path'),assert=require('node:assert/strict');
 app.disableHardwareAcceleration();app.setPath('userData',path.join(app.getPath('temp'),'turnbit-double-press-test'));
-process.env.TURNBIT_BRIDGE_PORT='4801';require('../src/main');
+process.env.TURNBIT_BRIDGE_PORT='4801';require('./widget-profile')(app);require('../src/main');
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 // Dial Double-Press: Back (one level, like Menu) or Home (straight to Home). The Menu button is unaffected.
 app.whenReady().then(async()=>{try{

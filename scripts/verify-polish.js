@@ -3,7 +3,7 @@ const {app,BrowserWindow,screen}=require('electron');
 const path=require('node:path'),fs=require('node:fs'),assert=require('node:assert/strict');
 app.disableHardwareAcceleration();
 app.setPath('userData',fs.mkdtempSync(path.join(app.getPath('temp'),'turnbit-polish-')));
-process.env.TURNBIT_BRIDGE_PORT='4827';require('../src/main');
+process.env.TURNBIT_BRIDGE_PORT='4827';require('./widget-profile')(app);require('../src/main');
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 app.whenReady().then(async()=>{try{
   await wait(1200);const win=BrowserWindow.getAllWindows()[0],js=code=>win.webContents.executeJavaScript(code);

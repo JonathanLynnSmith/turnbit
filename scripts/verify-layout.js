@@ -1,7 +1,7 @@
 const {app,BrowserWindow,screen}=require('electron');
 const path=require('node:path'),assert=require('node:assert/strict');
 app.disableHardwareAcceleration();app.setPath('userData',path.join(app.getPath('temp'),'turnbit-layout-test'));
-process.env.TURNBIT_BRIDGE_PORT='4813';require('../src/main');
+process.env.TURNBIT_BRIDGE_PORT='4813';require('./widget-profile')(app);require('../src/main');
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 // Size & Position: width, height (with live preview and cancel), vertical position, and display for the turnbit interface.
 app.whenReady().then(async()=>{try{

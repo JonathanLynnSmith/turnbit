@@ -20,5 +20,16 @@ test('window state migrates the original mode file and discards malformed placem
   writeWindowState(file,{enabled:false,bounds:{radial,ipod:{x:null,y:0,width:-1,height:710}}});
   assert.deepEqual(readWindowState(file),{enabled:false,bounds:{radial}});
   fs.writeFileSync(file,'{broken');
-  assert.deepEqual(readWindowState(file),{enabled:false,bounds:{}});
+  assert.deepEqual(readWindowState(file),{enabled:true,bounds:{}});
+});
+
+test('window mode is the default until the widget is chosen', t => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(),'turnbit-state-'));
+  t.after(() => fs.rmSync(dir,{recursive:true,force:true}));
+  const file = path.join(dir,'window-mode.json');
+  assert.equal(readWindowState(file).enabled,true);
+  fs.writeFileSync(file,JSON.stringify({bounds:{}}));
+  assert.equal(readWindowState(file).enabled,true);
+  writeWindowState(file,{enabled:false,bounds:{}});
+  assert.equal(readWindowState(file).enabled,false);
 });

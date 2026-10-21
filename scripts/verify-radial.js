@@ -1,7 +1,7 @@
 const {app,BrowserWindow,screen}=require('electron');
 const path=require('node:path'),assert=require('node:assert/strict'),fs=require('node:fs');
 app.disableHardwareAcceleration();app.setPath('userData',path.join(app.getPath('temp'),'turnbit-radial-test'));
-process.env.TURNBIT_BRIDGE_PORT='4771';require('../src/main');
+process.env.TURNBIT_BRIDGE_PORT='4771';require('./widget-profile')(app);require('../src/main');
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 app.whenReady().then(async()=>{
   try{

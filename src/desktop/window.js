@@ -97,7 +97,17 @@ function createDesktopWindow({
       width,
       height,
     };
-    mainWindow.setBounds(fitWindow(bounds, area));
+    const target = fitWindow(bounds, area);
+    mainWindow.setBounds(target);
+    // At fractional display scaling, Windows rounds a framed window's size up, so the
+    // window would grow a few pixels every time Window Mode recreates it. Correct once.
+    const actual = mainWindow.getBounds();
+    if (actual.width !== target.width || actual.height !== target.height)
+      mainWindow.setBounds({
+        ...target,
+        width: 2 * target.width - actual.width,
+        height: 2 * target.height - actual.height,
+      });
   }
   let mousePassthrough = false,
     mouseIgnored = false,

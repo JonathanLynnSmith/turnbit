@@ -1,8 +1,9 @@
 # Window Mode
 
-By default turnbit is a floating, transparent widget docked to the edge of your screen. Turn on
-**Settings > Window > Window Mode** to use it as an ordinary window instead: it gets a title bar, a
-taskbar or Dock icon, native minimize and full screen, and it remembers its size and position.
+By default turnbit is an ordinary window: it has a title bar, a taskbar or Dock icon, native minimize
+and full screen, and it remembers its size and position. Turn off **Settings > Window > Window Mode** to
+use the alternative, a floating, transparent widget docked to the edge of your screen. The choice is
+saved, so an existing install keeps the mode it was last switched to.
 
 ## The window player
 

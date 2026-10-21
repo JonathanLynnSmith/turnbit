@@ -451,6 +451,7 @@ const radialView = window.TurnbitFeatures.createRadialView({
   visibilityState,
   getState: getPlaybackView,
   isCurrentSong: (...args) => isCurrentSong(...args),
+  selectPlayingSong: (...args) => selectPlayingSong(...args),
   duration,
   currentProgress,
   time,

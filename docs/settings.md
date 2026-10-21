@@ -20,7 +20,7 @@ marked › open one more screen to pick a value.
 | Setting | What it does | Default |
 | --- | --- | --- |
 | Curved Menu | Lays the menu out along a curve; off shows a straight list | On |
-| Text Alignment | Aligns menu text: Auto (toward the docked edge), Left, or Right | Auto |
+| Text Alignment | Aligns menu text: Left, Right, or Auto (toward the docked edge) | Left |
 | Screen Edge / Menu Side | The left or right edge for the widget, or the window menu's side | Left |
 | Smoky Background | Strength of the dark backdrop behind the menu | 24% |
 | Text Color | Colour of the menu text | |
@@ -54,7 +54,7 @@ To stay in the song list instead of switching to Now Playing, turn off **Idle to
 
 | Setting | What it does | Default |
 | --- | --- | --- |
-| Window Mode | Uses a titled window with a taskbar/Dock icon and a saved size and position. See [Window Mode](window-mode.md) | Off |
+| Window Mode | Uses a titled window with a taskbar/Dock icon and a saved size and position. Off switches to the transparent widget docked to a screen edge. See [Window Mode](window-mode.md) | On |
 | Now Playing Backdrop | The large Now Playing screen in Window Mode | On |
 | Dial Menu Layout | Overlay covers the player while you browse; Split View puts the menu beside it (overlay below 960 px wide) | Overlay |
 | Dial Menu Timeout | Seconds without navigation before the dial menu hides and the player returns | 8 sec |

@@ -1,7 +1,7 @@
 const {app,BrowserWindow}=require('electron');
 const path=require('node:path'),assert=require('node:assert/strict');
 app.disableHardwareAcceleration();app.setPath('userData',path.join(app.getPath('temp'),'turnbit-return-song-test'));
-process.env.TURNBIT_BRIDGE_PORT='4779';require('../src/main');
+process.env.TURNBIT_BRIDGE_PORT='4779';require('./widget-profile')(app);require('../src/main');
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 // Leaving Now Playing (Back, or a single center press) turns the song list to the playing song.
 app.whenReady().then(async()=>{try{

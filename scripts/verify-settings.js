@@ -1,7 +1,7 @@
 const {app,BrowserWindow}=require('electron');
 const path=require('node:path'),assert=require('node:assert/strict');
 app.disableHardwareAcceleration();app.setPath('userData',path.join(app.getPath('temp'),'turnbit-settings-test'));
-process.env.TURNBIT_BRIDGE_PORT='4802';require('../src/main');
+process.env.TURNBIT_BRIDGE_PORT='4802';require('./widget-profile')(app);require('../src/main');
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 // Settings are grouped: Settings > category > setting, with value screens (marked ›) one level further.
 app.whenReady().then(async()=>{try{

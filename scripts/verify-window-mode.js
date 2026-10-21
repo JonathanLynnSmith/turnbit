@@ -10,6 +10,8 @@ const userData=fs.mkdtempSync(path.join(os.tmpdir(),'turnbit-window-mode-test-')
 // Electron can still hold the profile open at exit on Windows; a leftover temp folder is not a failure.
 process.on('exit',()=>{try{fs.rmSync(userData,{recursive:true,force:true,maxRetries:3});}catch(error){console.warn(`Temporary profile cleanup skipped: ${error.message}`);}});
 app.setPath('userData',userData);
+// Window Mode is the default, so start from the widget to cover the switch in both directions.
+fs.writeFileSync(path.join(userData,'window-mode.json'),JSON.stringify({enabled:false,bounds:{}}));
 process.env.TURNBIT_BRIDGE_PORT='0';
 const watchdog=setTimeout(()=>{console.error('Window verification timed out');app.exit(1);},20000);watchdog.unref();
 require('../src/main');
@@ -59,6 +61,9 @@ app.whenReady().then(async()=>{
     assert.equal(await window.webContents.executeJavaScript(`settingsRows('window').some(row=>row.action==='radial-layout')`),false,'widget sizing settings are hidden in Window Mode');
     // Dial Menu Layout: whether the menu overlays the player or takes its own half of the window.
     assert.equal(await window.webContents.executeJavaScript(`settingsRows('window').find(row=>row.action==='backdrop-layout')?.detail`),'Overlay','Window Mode offers the menu layout, starting on Overlay');
+    // Split View needs at least 960px; narrower windows fall back to the overlay.
+    const wide=require('electron').screen.getDisplayMatching(window.getBounds()).workArea;
+    window.setBounds({x:wide.x,y:wide.y,width:Math.min(wide.width,1100),height:Math.min(wide.height,720)});await wait(300);
     await window.webContents.executeJavaScript(`showSetting(row=>row.action==='backdrop-layout');selectItem();`);await wait(250);
     assert.deepEqual(await window.webContents.executeJavaScript(`[preferences.backdropLayout,JSON.parse(localStorage.getItem('turnbit-preferences')).backdropLayout,document.body.dataset.backdropSplit,nav.current.rows[nav.current.selected].detail]`),['split','split','true','Split View'],'selecting it switches to Split View and saves');
     await window.webContents.executeJavaScript(`selectItem();`);await wait(250);

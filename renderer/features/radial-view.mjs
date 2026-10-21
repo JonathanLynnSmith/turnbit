@@ -9,6 +9,7 @@ export function createRadialView({
   visibilityState,
   getState,
   isCurrentSong,
+  selectPlayingSong,
   duration,
   currentProgress,
   time,
@@ -322,6 +323,8 @@ export function createRadialView({
     if (nav.current.kind === 'now') {
       nav.dismissIdle();
       if (nav.current.kind === 'now') nav.back();
+      // Like pressing from the widget's Now Playing, land on the song that is playing now.
+      selectPlayingSong();
     }
     syncDialOverlay();
     return opened;

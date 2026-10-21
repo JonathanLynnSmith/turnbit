@@ -1,7 +1,7 @@
 const {app,BrowserWindow}=require('electron');
 const path=require('node:path'),assert=require('node:assert/strict');
 app.disableHardwareAcceleration();app.setPath('userData',path.join(app.getPath('temp'),'turnbit-quiet-play-test'));
-process.env.TURNBIT_BRIDGE_PORT='4778';require('../src/main');
+process.env.TURNBIT_BRIDGE_PORT='4778';require('./widget-profile')(app);require('../src/main');
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 // Play Opens Now Playing applies whenever turnbit is visible; Dial Only Wake only changes Play while turnbit is faded out.
 app.whenReady().then(async()=>{try{

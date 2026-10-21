@@ -21,7 +21,7 @@ async function main(){
   // Use an OS-assigned port, so the real app and concurrent tests remain independent.
   const reservation=net.createServer();await new Promise(resolve=>reservation.listen(0,'127.0.0.1',resolve));
   const port=reservation.address().port;await new Promise(resolve=>reservation.close(resolve));
-  process.env.TURNBIT_BRIDGE_PORT=String(port);require('../src/main');await app.whenReady();await wait(1000);
+  process.env.TURNBIT_BRIDGE_PORT=String(port);require('./widget-profile')(app);require('../src/main');await app.whenReady();await wait(1000);
   let win=BrowserWindow.getAllWindows()[0];
   const run=code=>win.webContents.executeJavaScript(code);
   const errors=[];const listen=()=>{

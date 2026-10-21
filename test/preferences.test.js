@@ -14,6 +14,13 @@ function storage(entries = {}) {
   };
 }
 
+test("fresh installs open in Window Mode with left-aligned text on the curved menu", () => {
+  const value = loadPreferences(storage(), options);
+  assert.equal(value.windowMode, true);
+  assert.equal(value.radialAlign, "left");
+  assert.equal(value.radialCurve, true);
+});
+
 test("legacy preferences migrate archived interfaces to radial without losing song lists", () => {
   const store = storage({
     "dialpod-preferences": JSON.stringify({
