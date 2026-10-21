@@ -57,8 +57,9 @@ To stay in the song list instead of switching to Now Playing, turn off **Idle to
 | Window Mode | Uses a titled window with a taskbar/Dock icon and a saved size and position. Off switches to the transparent widget docked to a screen edge. See [Window Mode](window-mode.md) | On |
 | Now Playing Backdrop | The large Now Playing screen in Window Mode | On |
 | Dial Menu Layout | Overlay covers the player while you browse; Split View puts the menu beside it (overlay below 960 px wide) | Overlay |
+| Dial Menu Background | The look behind the dial menu: Matching shares the player's background; Black, Glass, and Artwork (the playing song's cover, blurred) give the menu its own panel | Matching |
 | Dial Menu Timeout | Seconds without navigation before the dial menu hides and the player returns | 8 sec |
-| Dial Menu Divider | The hairline between the menu and the player in Split View | On |
+| Dial Menu Divider | The hairline between the menu and the player in Split View, with the Matching background | On |
 | Transparency | Off, Always, or Idle Fade, with opacity and idle timeout. Window Mode keeps opacity at 20% or above | Off |
 | Size & Position | Widget only: which display, width (15 to 70% of the screen, never under 400 px), height (30 to 100%), and vertical position, previewed live | Automatic, 35%, 100%, Center |
 | Keep on Top | Keeps turnbit above other windows | Off |

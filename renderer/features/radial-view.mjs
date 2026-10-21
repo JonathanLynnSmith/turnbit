@@ -116,6 +116,13 @@ export function createRadialView({
       glow.style.backgroundImage = source
         ? `url(${JSON.stringify(source)})`
         : 'none';
+      // The Artwork dial menu background (radial.css) paints the same image.
+      if (source)
+        $('#radialBackdrop').style.setProperty(
+          '--menu-art',
+          `url(${JSON.stringify(source)})`,
+        );
+      else $('#radialBackdrop').style.removeProperty('--menu-art');
     }
     glow.style.opacity = source ? GLOW_STRENGTH : 0;
   }
@@ -250,6 +257,14 @@ export function createRadialView({
   // the selected row near the middle of the window, and its labels bow further out along the way.
   function wideMenu() {
     return backdropActive() && !splitActive();
+  }
+  function menuBackgroundName() {
+    return {
+      match: 'Matching',
+      black: 'Black',
+      glass: 'Glass',
+      artwork: 'Artwork',
+    }[preferences.menuBackground];
   }
   function backdropLayoutName() {
     return preferences.backdropLayout === 'split' ? 'Split View' : 'Overlay';
@@ -587,6 +602,7 @@ export function createRadialView({
     splitActive,
     wideMenu,
     backdropLayoutName,
+    menuBackgroundName,
     syncPlayerColumn,
     syncDialOverlay,
     revealDialOverlay,

@@ -6,6 +6,8 @@
     idleOpacity: 20,
     timeout: 10,
   };
+  // Dial Menu Background, in the order the setting cycles through them.
+  const MENU_BACKGROUNDS = ['match', 'black', 'glass', 'artwork'];
   function cleanVisibility(value = {}) {
     const number = (key, min, max) =>
       Number.isFinite(value[key])
@@ -84,6 +86,7 @@
       windowMode: true,
       nowPlayingBackdrop: true,
       backdropLayout: 'overlay',
+      menuBackground: 'match',
       menuTimeout: 8,
       splitDivider: true,
     };
@@ -210,6 +213,8 @@
         preferences.mouseModeKey = saved.mouseModeKey;
       if (['overlay', 'split'].includes(saved.backdropLayout))
         preferences.backdropLayout = saved.backdropLayout;
+      if (MENU_BACKGROUNDS.includes(saved.menuBackground))
+        preferences.menuBackground = saved.menuBackground;
       if (Number.isFinite(saved.menuTimeout))
         preferences.menuTimeout = Math.max(
           1,
@@ -231,6 +236,7 @@
     persistPreferences,
     cleanVisibility,
     cleanLastSongList,
+    MENU_BACKGROUNDS,
   };
   if (typeof module !== 'undefined') module.exports = settings;
   else window.TurnbitSettings = settings;

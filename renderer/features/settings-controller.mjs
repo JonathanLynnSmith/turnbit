@@ -13,6 +13,7 @@ export function createSettingsController({
   radialColorName,
   backdropActive,
   backdropLayoutName,
+  menuBackgroundName,
   revealDialOverlay,
   visibilityNow,
   valueText,
@@ -218,6 +219,11 @@ export function createSettingsController({
                   detail: backdropLayoutName(),
                 },
                 {
+                  label: 'Dial Menu Background',
+                  action: 'menu-background',
+                  detail: menuBackgroundName(),
+                },
+                {
                   label: 'Dial Menu Timeout',
                   action: 'menu-timeout',
                   key: 'menuTimeout',
@@ -225,7 +231,9 @@ export function createSettingsController({
                   branch: true,
                   showDetail: true,
                 },
-                ...(preferences.backdropLayout === 'split'
+                // A background panel's own edge marks the seam, so the divider only goes with Matching.
+                ...(preferences.backdropLayout === 'split' &&
+                preferences.menuBackground === 'match'
                   ? [toggle('Dial Menu Divider', 'splitDivider')]
                   : []),
               ]
@@ -568,6 +576,29 @@ export function createSettingsController({
           drawNavigation();
         }
         break;
+      case 'menu-background': {
+        const backgrounds = window.TurnbitSettings.MENU_BACKGROUNDS;
+        if (
+          savePreferences({
+            menuBackground:
+              backgrounds[
+                (backgrounds.indexOf(preferences.menuBackground) + 1) %
+                  backgrounds.length
+              ],
+          })
+        ) {
+          // The menu stays up so the new look shows straight away; the divider row follows Matching.
+          const page = nav.current,
+            back = page.rows[0]?.action === 'nav-back' ? [page.rows[0]] : [];
+          page.rows = [...back, ...settingsRows('window')];
+          page.selected = page.rows.findIndex(
+            (item) => item.action === 'menu-background',
+          );
+          revealDialOverlay();
+          drawNavigation();
+        }
+        break;
+      }
       case 'idle-pin':
         toggleIdlePin();
         break;

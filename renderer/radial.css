@@ -399,3 +399,29 @@ body[data-player-column=narrow] #radialBackdropPlay{width:56px;height:56px;paddi
   body[data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true] #radialBackdrop::after,
   #radialBackdropArt,.radial-backdrop-transport button{transition:none;transform:none}
 }
+
+/* Dial Menu Background: Matching shares the player's backdrop and smoke, as above. The other looks
+   give the menu its own panel on its docked side, inside the backdrop so it can reach exactly to
+   Split View's seam (--split-line) and come and go with the menu. Its edge marks the seam, so the
+   hairline divider and the menu's smoke step aside. */
+/* Overlay: as wide as the menu plus the playing row's artwork, which hangs outside its label. */
+#radialMenuPanel{display:none}
+body[data-backdrop-active=true]:not([data-menu-background=match]) #radialMenuPanel{display:block;position:absolute;top:0;bottom:0;left:0;width:min(100%,calc(50% + 250px));z-index:1;pointer-events:none;opacity:0;transform:translateX(-14px);transition:opacity .18s ease,transform .22s ease,width .3s cubic-bezier(.2,.8,.2,1)}
+body[data-backdrop-active=true][data-backdrop-split=true] #radialMenuPanel{width:var(--split-line)}
+body[data-backdrop-active=true][data-edge=right] #radialMenuPanel{left:auto;right:0;transform:translateX(14px)}
+body[data-backdrop-active=true][data-dial-overlay=true] #radialMenuPanel{opacity:1;transform:none;transition:opacity .26s ease .06s,transform .32s cubic-bezier(.2,.8,.2,1) .06s,width .3s cubic-bezier(.2,.8,.2,1)}
+body[data-backdrop-active=true]:not([data-menu-background=match]) #radialHaze{visibility:hidden}
+body[data-backdrop-active=true][data-backdrop-split=true]:not([data-menu-background=match]) #radialBackdrop::after{display:none}
+/* Black: a solid panel that casts a shadow across the player. */
+body[data-menu-background=black] #radialMenuPanel{background:#050607;box-shadow:24px 0 70px #000d,1px 0 0 #ffffff0f}
+body[data-menu-background=black][data-edge=right] #radialMenuPanel{box-shadow:-24px 0 70px #000d,-1px 0 0 #ffffff0f}
+/* Glass: frosted over the artwork wash, a little lighter than the player, with a lit edge. */
+body[data-menu-background=glass] #radialMenuPanel{background:linear-gradient(to right,#ffffff17,#ffffff0a);-webkit-backdrop-filter:blur(30px) saturate(1.5);backdrop-filter:blur(30px) saturate(1.5);box-shadow:inset -1px 0 0 #ffffff26,20px 0 60px #0007}
+body[data-menu-background=glass][data-edge=right] #radialMenuPanel{background:linear-gradient(to left,#ffffff17,#ffffff0a);box-shadow:inset 1px 0 0 #ffffff26,-20px 0 60px #0007}
+/* Artwork: the playing song's cover, blurred to colour and dimmed under the labels. The blurred
+   layer overhangs the panel so its soft edges are clipped away. Without artwork it uses a deep
+   green wash. */
+body[data-menu-background=artwork] #radialMenuPanel{overflow:hidden;background:#0b0d10;box-shadow:20px 0 60px #0007}
+body[data-menu-background=artwork][data-edge=right] #radialMenuPanel{box-shadow:-20px 0 60px #0007}
+body[data-menu-background=artwork] #radialMenuPanel::before{content:'';position:absolute;inset:-180px;background:var(--menu-art,linear-gradient(160deg,#2f6b58,#173039 55%,#0b0d10)) center/cover;filter:blur(90px) saturate(1.6) brightness(.6)}
+@media(prefers-reduced-motion:reduce){#radialMenuPanel{transition:none!important;transform:none!important}}

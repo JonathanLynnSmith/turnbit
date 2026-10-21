@@ -21,6 +21,25 @@ test("fresh installs open in Window Mode with left-aligned text on the curved me
   assert.equal(value.radialCurve, true);
 });
 
+test("dial menu background keeps known looks and falls back to Matching", () => {
+  assert.equal(loadPreferences(storage(), options).menuBackground, "match");
+  for (const look of ["black", "glass", "artwork"])
+    assert.equal(
+      loadPreferences(
+        storage({ "turnbit-preferences": JSON.stringify({ menuBackground: look }) }),
+        options,
+      ).menuBackground,
+      look,
+    );
+  assert.equal(
+    loadPreferences(
+      storage({ "turnbit-preferences": JSON.stringify({ menuBackground: "neon" }) }),
+      options,
+    ).menuBackground,
+    "match",
+  );
+});
+
 test("legacy preferences migrate archived interfaces to radial without losing song lists", () => {
   const store = storage({
     "dialpod-preferences": JSON.stringify({

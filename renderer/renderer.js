@@ -480,6 +480,7 @@ const {
   splitActive,
   wideMenu,
   backdropLayoutName,
+  menuBackgroundName,
   syncPlayerColumn,
   syncDialOverlay,
   revealDialOverlay,
@@ -903,6 +904,7 @@ const settingsController = window.TurnbitFeatures.createSettingsController({
   radialColorName,
   backdropActive,
   backdropLayoutName,
+  menuBackgroundName,
   revealDialOverlay,
   visibilityNow,
   valueText,
@@ -947,6 +949,8 @@ function savePreferences(patch) {
     Object.assign(preferences, next);
     applyTheme(document.body, preferences.appearance);
     document.body.dataset.windowMode = String(preferences.windowMode);
+    document.body.dataset.menuBackground = preferences.menuBackground;
+    document.body.dataset.menuBackground = preferences.menuBackground;
     document.body.dataset.screen = preferences.screenTheme;
     document.body.dataset.interface = preferences.interfaceStyle;
     document.body.dataset.edge = preferences.radialSide;

@@ -68,6 +68,16 @@ app.whenReady().then(async()=>{
     assert.deepEqual(await window.webContents.executeJavaScript(`[preferences.backdropLayout,JSON.parse(localStorage.getItem('turnbit-preferences')).backdropLayout,document.body.dataset.backdropSplit,nav.current.rows[nav.current.selected].detail]`),['split','split','true','Split View'],'selecting it switches to Split View and saves');
     await window.webContents.executeJavaScript(`selectItem();`);await wait(250);
     assert.deepEqual(await window.webContents.executeJavaScript(`[preferences.backdropLayout,document.body.dataset.backdropSplit]`),['overlay','false'],'selecting again returns to Overlay');
+    // Dial Menu Background cycles Matching, Black, Glass, Artwork; only the panel looks draw a panel.
+    assert.equal(await window.webContents.executeJavaScript(`settingsRows('window').find(row=>row.action==='menu-background')?.detail`),'Matching','menu background starts on Matching');
+    const panel=`[preferences.menuBackground,document.body.dataset.menuBackground,getComputedStyle($('#radialMenuPanel')).display,nav.current.rows[nav.current.selected].detail]`;
+    await window.webContents.executeJavaScript(`showSetting(row=>row.action==='menu-background');selectItem();`);await wait(250);
+    assert.deepEqual(await window.webContents.executeJavaScript(panel),['black','black','block','Black'],'Black draws its own menu panel');
+    for(const [look,name] of [['glass','Glass'],['artwork','Artwork'],['match','Matching']]){
+      await window.webContents.executeJavaScript(`selectItem();`);await wait(150);
+      assert.deepEqual(await window.webContents.executeJavaScript(panel),[look,look,look==='match'?'none':'block',name],`${name} menu background`);
+    }
+    assert.equal(JSON.parse(await window.webContents.executeJavaScript(`localStorage.getItem('turnbit-preferences')`)).menuBackground,'match','menu background is saved');
     await window.webContents.executeJavaScript(`nav.goHome();dismissDialOverlay();drawNavigation();`);
     const area=require('electron').screen.getDisplayMatching(window.getBounds()).workArea;
     window.setBounds({x:area.x+45,y:area.y+45,width:800,height:600});

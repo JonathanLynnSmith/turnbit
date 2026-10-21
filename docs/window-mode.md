@@ -38,6 +38,12 @@ playback controls whatever the title's length.
 Split View needs room for both, so a window narrower than 960 px uses the overlay until you widen it.
 When the player's own column is narrower than 640 px it stacks the artwork above the song info.
 
+**Dial Menu Background** sets the look behind the menu. **Matching** (the default) shares the player's
+background, so both views read as one surface. The others give the menu its own panel on its side
+that comes and goes with it: **Black** is solid and casts a shadow across the player, **Glass** is a
+lighter frosted pane, and **Artwork** fills the panel with the playing song's cover, blurred to its
+colours. In Split View the panel's edge is the seam, so the divider is only offered with Matching.
+
 ## Look and feel
 
 - An ambient glow, tinted by the playing artwork, sits behind the middle of the menu and washes out
