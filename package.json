@@ -50,7 +50,8 @@
       "category": "public.app-category.music",
       "icon": "assets/branding/turnbit-512.png",
       "extendInfo": {
-        "LSUIElement": true
+        "LSUIElement": true,
+        "NSAppleEventsUsageDescription": "turnbit controls the Spotify app on this Mac so play, pause, skip, and seek respond instantly."
       }
     },
     "win": {

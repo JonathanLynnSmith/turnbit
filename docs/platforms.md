@@ -4,7 +4,7 @@ turnbit is one codebase and behaves the same on both. Everything that differs is
 
 | | Windows | macOS |
 | --- | --- | --- |
-| Local Spotify control | Play, pause, skip, and seek go straight to Spotify's own media session: instant, and no API calls | Goes through the Spotify Web API, so transport is a round trip and counts against the rate limit |
+| Local Spotify control | Play, pause, skip, and seek go straight to Spotify's own media session: instant, and no API calls | The same, through the Spotify app's AppleScript controls. The first time, macOS asks to let turnbit control Spotify; if you decline, transport uses the Web API (a round trip that counts against the rate limit). Change it later in System Settings > Privacy & Security > Automation |
 | Lives in | The system tray. Left-click toggles the widget, right-click opens the menu | The menu bar. Clicking opens the menu; the Dock icon appears only in Window Mode |
 | The widget and other desktops | Always on top is enough | turnbit also puts the widget on every Space and above fullscreen apps |
 | Ulanzi plugin folder | `%APPDATA%\Ulanzi\UlanziDeck\Plugins` | `~/Library/Application Support/Ulanzi/UlanziDeck/Plugins` |

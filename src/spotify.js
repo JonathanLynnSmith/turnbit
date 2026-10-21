@@ -55,7 +55,7 @@ class SpotifyClient {
     // Liked status only changes on a new track or a Like press; recheck occasionally for changes made in other Spotify apps.
     this.likedCache = null;
     this.likedRecheck = options.likedRecheck ?? 60000;
-    // Optional Windows media session for the Spotify desktop app: local state and transport without Web API calls.
+    // Optional local session for the Spotify desktop app (Windows media session or macOS AppleScript): local state and transport without Web API calls.
     this.media = options.media || null;
     this.webCacheMs = options.webCacheMs ?? 25000;
     this.mismatchRetries = 0;
@@ -519,7 +519,7 @@ class SpotifyClient {
       this.rememberDevice(picked);
       return;
     }
-    // Transport goes to Spotify's own Windows media session when it is the active player; the Web API is the fallback.
+    // Transport goes to the Spotify desktop app's own controls when it is the active player; the Web API is the fallback.
     const localReady = {
       play: true,
       pause: true,

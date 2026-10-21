@@ -24,6 +24,7 @@ const { createSessionStorage } = require('./desktop/session-storage');
 const { createBridge } = require('./bridge');
 const { DisplayWake } = require('./display-wake');
 const { MediaSession } = require('./media-session');
+const { MacMediaSession } = require('./mac-media-session');
 const { createTray } = require('./tray');
 const { MouseMode } = require('./mouse-mode');
 
@@ -77,8 +78,15 @@ else {
       defaults: RECOVERY_DEFAULTS,
       normalize: normalizeRecoverySettings,
     });
-    if (process.platform === 'win32')
-      media = new MediaSession((state) => spotify?.localChanged(state));
+    // The Spotify desktop app's own controls: Windows media sessions, or AppleScript on a Mac.
+    const LocalSession =
+      process.platform === 'win32'
+        ? MediaSession
+        : process.platform === 'darwin'
+          ? MacMediaSession
+          : null;
+    if (LocalSession)
+      media = new LocalSession((state) => spotify?.localChanged(state));
     spotify = new SpotifyClient(null, {
       media,
       recovery: settings.get(),

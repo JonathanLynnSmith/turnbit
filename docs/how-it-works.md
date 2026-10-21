@@ -4,9 +4,10 @@
 
 - turnbit controls Spotify through the [Spotify Web API](https://developer.spotify.com/documentation/web-api).
   Audio always plays in Spotify itself.
-- On Windows, when the Spotify desktop app is playing on the same PC, play, pause, skip, and seek go
-  straight to Spotify's own media session. They work instantly, use no API calls, and never affect
-  other apps. macOS has no equivalent, so everything there goes through the Web API.
+- When the Spotify desktop app is playing on the same computer, play, pause, skip, and seek go
+  straight to the app: through its media session on Windows, and through its AppleScript controls on
+  macOS. They work instantly, use no API calls, and never affect other apps. Phones, speakers, and
+  other computers go through the Web API.
 - turnbit checks Spotify less often when music is paused or the window is hidden, which helps it stay
   within Spotify's rate limits. If Spotify rate-limits a feature, only that feature pauses, and
   turnbit shows when it will be available again.

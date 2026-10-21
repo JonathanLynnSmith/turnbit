@@ -17,6 +17,7 @@ only for the external Ulanzi plugin; there is no frontend server to deploy.
 | `src/desktop/*storage.js` | Filesystem persistence and injected secure storage |
 | `src/integrations/spotify/` | Authentication, HTTP policy, provider codecs, recovery, and local-media reconciliation |
 | `src/spotify.js` | Compose the Spotify integration and coordinate its playback actions and like confirmation |
+| `src/media-session.js`, `src/mac-media-session.js` | The Spotify desktop app's local controls: Windows media sessions through a PowerShell helper, macOS through AppleScript. Both expose the same `state`, `current()`, and `command()` |
 | `renderer/bootstrap.mjs` | Explicit imports for frontend dependencies and feature factories |
 | `renderer/features/` | Settings and library controllers, playback rendering, and the radial view |
 | `renderer/client/` | IPC clients and adapters for the existing screens |
