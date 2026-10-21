@@ -6,6 +6,18 @@ const os = require('node:os');
 const path = require('node:path');
 
 app.disableHardwareAcceleration();
+// Windows keeps the profile locked until Electron exits, so earlier runs can
+// leave theirs behind. Sweep any that are old enough not to be in use.
+for (const entry of fs.readdirSync(os.tmpdir())) {
+  if (!entry.startsWith('turnbit-smoke-')) continue;
+  const stale = path.join(os.tmpdir(), entry);
+  try {
+    if (Date.now() - fs.statSync(stale).mtimeMs < 10 * 60000) continue;
+    fs.rmSync(stale, { recursive: true, force: true });
+  } catch {
+    // Still in use or already gone.
+  }
+}
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'turnbit-smoke-'));
 app.setPath('userData', profile);
 process.env.TURNBIT_BRIDGE_PORT = '4826';
@@ -22,7 +34,9 @@ app.once('quit', () => {
   try {
     fs.rmSync(profile, { recursive: true, force: true, maxRetries: 3 });
   } catch (error) {
-    console.warn(`Temporary profile cleanup skipped: ${error.message}`);
+    if (error.code !== 'EPERM' && error.code !== 'EBUSY') {
+      console.warn(`Temporary profile cleanup skipped: ${error.message}`);
+    }
   }
 });
 require('../src/main');
