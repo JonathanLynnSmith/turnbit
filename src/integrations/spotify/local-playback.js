@@ -62,6 +62,16 @@ function createLocalPlayback({
         provisional: true,
       };
     }
+    // Spotify's resuming/pausing disallows describe the Web API snapshot's play state. Once the local
+    // session or a picked song says otherwise, they are stale and would block Play or Pause.
+    if (
+      merged &&
+      merged.is_playing !== web?.is_playing &&
+      merged.actions?.disallows
+    ) {
+      const { resuming, pausing, ...disallows } = merged.actions.disallows;
+      merged = { ...merged, actions: { ...merged.actions, disallows } };
+    }
     return merged;
   }
   function localChanged(local) {

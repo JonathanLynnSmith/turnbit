@@ -68,3 +68,10 @@ test('A volume change survives cached state and lagging Spotify reads without ex
  await client.getPlaybackState({force:true});assert.equal(states.at(-1).device.volume_percent,70);
  client.volumeWrite.at-=5000;await client.getPlaybackState({force:true});assert.equal(states.at(-1).device.volume_percent,30);
 });
+test('Pausing locally does not leave Play blocked by a stale Web API snapshot',async()=>{
+ const requests=[],states=[];const media=fakeMedia({playing:false});
+ const client=new SpotifyClient(state=>states.push(state),{media,fetch:async(url,options)=>{requests.push(url);if(url.includes('/contains'))return new Response('[false]');if(options.method)return new Response(null,{status:204});return new Response(JSON.stringify({is_playing:true,progress_ms:0,device:{type:'Computer',name:'PC'},actions:{disallows:{resuming:true,toggling_shuffle:true}},item:{uri,name:'Song A',duration_ms:200000}}));}});
+ client.setTokens({access_token:'test',refresh_token:'test',expires_in:3600});await client.getPlaybackState();
+ const {normalizePlayback}=require('../src/integrations/spotify/playback-provider');const shown=normalizePlayback(states.at(-1));
+ assert.equal(shown.playing,false);assert.equal(shown.capabilities.play,true,'resume is allowed once paused locally');assert.equal(shown.capabilities.shuffle,false,'other restrictions remain');
+});
