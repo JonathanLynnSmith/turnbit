@@ -43,7 +43,11 @@ const getPlaybackView = () => ({
       : playback?.item?.artists?.map((a) => a.name).join(', ') ||
         'Open Spotify to start listening',
     album: demo ? demos[index]?.album : playback?.item?.album?.name || '',
-    artwork: (!demo && playback?.item?.album?.images?.[0]?.url) || '',
+    // Demo tracks may carry their own artwork (the README GIF gives its fictional songs covers).
+    artwork:
+      (demo
+        ? demos[index]?.artwork
+        : playback?.item?.album?.images?.[0]?.url) || '',
   },
 });
 let demo = true,
@@ -1111,7 +1115,8 @@ async function playRow(row) {
     return;
   }
   if (demo) {
-    demoQueue = row.playlist?.demoIndexes || row.queue || [0, 1, 2];
+    demoQueue =
+      row.playlist?.demoIndexes || row.queue || demos.map((_, i) => i);
     index = row.demoIndex ?? demoQueue[0];
     progress = 0;
     updated = Date.now();

@@ -32,7 +32,7 @@ export function createLibraryController({
         ],
         next: null,
       };
-    const indexes = playlist?.demoIndexes || [0, 1, 2];
+    const indexes = playlist?.demoIndexes || demos.map((_, i) => i);
     return {
       items: indexes.map((i) => ({ item: demos[i], demoIndex: i })),
       next: null,
