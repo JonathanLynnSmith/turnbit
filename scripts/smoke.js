@@ -150,10 +150,12 @@ async function main() {
     `index===2 && document.querySelector('#radialTitle').textContent==='Sunday Morning'`,
     'hardware Next updates playback and title',
   );
+  const indicator = `getComputedStyle(document.querySelector('.radial-backdrop-state .eq')).display!=='none'`;
+  await expect(indicator, 'playing indicator shows');
   await command('toggle');
-  await expect('!playing', 'hardware Pause');
+  await expect(`!playing && !(${indicator})`, 'hardware Pause hides the playing indicator');
   await command('toggle');
-  await expect('playing', 'hardware Play');
+  await expect(`playing && ${indicator}`, 'hardware Play');
   await command('volume-up');
   await expect(
     `volume>50 && document.querySelector('#radialVolumeValue').textContent===volume+'%'`,

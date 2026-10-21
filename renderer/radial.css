@@ -199,7 +199,26 @@ body[data-edge=right] #radialNow .playback-indicators,body[data-edge=right] .rad
 @keyframes like-pending{from{opacity:.35}to{opacity:1}}
 @media(prefers-reduced-motion:reduce){.playback-indicators [data-pending=true]{animation:none;opacity:.6}}
 
+/* Playing indicator: three accent bars that bounce while music is actually playing, and step away
+   when it pauses (the text beside them already says Paused). Badged onto the artwork in the menu's
+   playing row and the widget's Now Playing; inline before PLAYING in the window player. */
+.eq{box-sizing:content-box;display:inline-flex;align-items:flex-end;gap:2px;height:12px;flex:none;color:var(--radial-accent,#86e6aa);pointer-events:none}
+.eq i{display:block;width:3px;height:100%;border-radius:1px;background:currentColor;transform-origin:bottom;transform:scaleY(.3)}
+.eq[data-playing=true] i{animation:eq-bounce .9s ease-in-out infinite alternate}
+.eq[data-playing=true] i:nth-child(2){animation-duration:.7s;animation-delay:-.35s}
+.eq[data-playing=true] i:nth-child(3){animation-duration:1.1s;animation-delay:-.6s}
+.eq:not([data-playing=true]){display:none}
+@keyframes eq-bounce{0%{transform:scaleY(.25)}50%{transform:scaleY(1)}100%{transform:scaleY(.45)}}
+:is(.radial-art,.mini-cover) .eq{position:absolute;right:6px;bottom:6px;padding:4px;border-radius:4px;background:#000000a6;box-shadow:0 1px 4px #0006}
+.radial-mini .mini-cover .eq{right:4px;bottom:4px;height:10px;padding:3px}
+.radial-mini .mini-cover .eq i{width:3px}
+.radial-backdrop-state{display:flex;align-items:center;gap:10px}
+.radial-backdrop-state .eq{height:10px;color:#86e6aa}
+body[data-player-column=narrow] .radial-backdrop-state{justify-content:center}
+@media(prefers-reduced-motion:reduce){.eq[data-playing=true] i{animation:none}.eq i:nth-child(1){transform:scaleY(.55)}.eq i:nth-child(2){transform:scaleY(1)}.eq i:nth-child(3){transform:scaleY(.7)}}
+
 /* Gaming Mode pauses decorative motion at rest; input immediately resumes it. */
+body[data-gaming-idle=true] .eq i,
 body[data-gaming-idle=true] .scrolling>span,
 body[data-gaming-idle=true] .scrolling-title>span,
 body[data-gaming-idle=true] .radial-mini,

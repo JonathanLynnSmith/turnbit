@@ -385,6 +385,7 @@ export function createRadialView({
     const { demo, playing, playback, volume } = getState();
 
     updateBackdropControls();
+    $('.radial-backdrop-state .eq').dataset.playing = String(playing);
     $('#radialBackdropState').textContent = demo
       ? 'DEMO · NO AUDIO'
       : playing
@@ -528,6 +529,7 @@ export function createRadialView({
           ].join('|'),
         );
       const track = getState().track;
+      $('#radialNow .eq').dataset.playing = String(playing);
       $('#radialTitle').textContent = track.title;
       $('#radialArtist').textContent = track.artist;
       $('#radialAlbum').textContent = track.album;

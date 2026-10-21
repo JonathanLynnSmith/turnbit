@@ -158,7 +158,14 @@ class RadialCarousel {
       image.alt = '';
       const fallback = document.createElement('span');
       fallback.textContent = '♫';
-      cover.append(image, fallback);
+      // Bars on the artwork while the song is actually playing (radial.css).
+      const eq = document.createElement('div');
+      eq.className = 'eq';
+      eq.setAttribute('aria-hidden', 'true');
+      eq.append(
+        ...Array.from({ length: 3 }, () => document.createElement('i')),
+      );
+      cover.append(image, fallback, eq);
       const info = document.createElement('div');
       info.className = 'mini-info';
       const title = document.createElement('strong'),
@@ -174,6 +181,7 @@ class RadialCarousel {
       mini.append(cover, info);
       node.append(mini);
     }
+    mini.querySelector('.eq').dataset.playing = String(!!data.playing);
     const image = mini.querySelector('img');
     image.hidden = !data.art;
     image.nextElementSibling.hidden = !!data.art;
