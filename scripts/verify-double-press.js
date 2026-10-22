@@ -36,7 +36,7 @@ app.whenReady().then(async()=>{try{
   assert.equal((await page()).highlighted,'Back in Lists','Settings opens on the toggle');
   const before=await js(`preferences.backRow`);
   await press();await wait(60);await press();await wait(450);
-  assert.equal((await page()).title,'Navigation','a fast double press on a toggle stays on the page');
+  assert.equal((await page()).title,'General','a fast double press on a toggle stays on the page');
   assert.equal(await js(`preferences.backRow`),before,'both presses landed, so the toggle is back where it started');
   await press();await wait(450);
   assert.equal(await js(`preferences.backRow`),!before,'a later press still toggles');
