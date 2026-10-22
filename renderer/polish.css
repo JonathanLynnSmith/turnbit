@@ -9,11 +9,16 @@ body[data-interface=radial] {
   font-weight: 400;
   line-height: 1.35;
   letter-spacing: -.35px;
-  text-shadow: 0 1px 3px #0009,0 4px 18px #0003;
+  /* --light (radial.js) is 1 on the selected row and fades with distance, so the glow follows the dial. */
+  text-shadow: 0 1px 3px #0009,0 4px 18px #0003,
+    0 0 calc(var(--light,0) * 8px) color-mix(in srgb,var(--radial-primary) calc(var(--light,0) * 30%),transparent),
+    0 0 calc(var(--light,0) * 18px) color-mix(in srgb,var(--radial-accent) calc(var(--light,0) * 18%),transparent);
   transition: color 160ms ease,filter 160ms ease;
   touch-action: manipulation;
 }
-#radial .radial-label[aria-selected=true] {font-weight:400}
+#radial .radial-label[aria-selected=true] {font-weight:600}
+/* The title clips long names, which would cut the glow off square; pad the clip box without moving the text. */
+#radial .radial-label:not(.has-mini)>span {padding:6px 12px;margin:-6px -12px}
 #radial .radial-label>small {
   font-size: 11px;
   line-height: 1.6;

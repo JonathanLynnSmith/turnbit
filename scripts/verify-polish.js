@@ -12,9 +12,9 @@ app.whenReady().then(async()=>{try{
   for(const side of ['left','right']){
     await js(`savePreferences({radialSide:'${side}'});nav.reset(root());showLibrary('songs');`);await wait(500);
     const weights=await js(`(()=>{rotate(1);const node=radial.nodes.get(nav.current.selected);window.weightCheckNode=node;return [getComputedStyle(node).fontWeight,node.getAttribute('aria-selected')];})()`);
-    assert.deepEqual(weights,['400','true'],'selection is immediate and keeps a regular weight');
+    assert.deepEqual(weights,['600','true'],'selection is immediate and semibold');
     await wait(500);
-    assert.equal(await js(`getComputedStyle(window.weightCheckNode).fontWeight`),'400','settling never switches text to bold');
+    assert.equal(await js(`getComputedStyle(window.weightCheckNode).fontWeight`),'600','the weight does not change while the carousel settles');
     fs.writeFileSync(path.join(__dirname,`../artifacts/turnbit-polish-${side}.png`),(await win.webContents.capturePage()).toPNG());
     await js('showNow()');await wait(400);
     for(const [width,height] of [[600,850],[400,600],[400,340]]){
