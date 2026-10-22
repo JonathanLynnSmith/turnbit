@@ -19,15 +19,15 @@ app.whenReady().then(async()=>{try{
     await js(`savePreferences({interfaceStyle:'${style}'});`);
     assert.equal(await js(`preferences.interfaceStyle`),'radial',`${style} selection migrates to turnbit`);
   }
-  assert.equal(await labels(),'Playback, Appearance, Navigation, Now Playing, Window','five categories, most used first');
-  assert.equal(await js(`nav.current.rows.find(r=>r.label==='Playback').detail`),'Volume and devices','categories have subtitles');
-  assert.equal((await page()).highlighted,'Playback','Settings opens on the first category');
+  assert.equal(await labels(),'General, Playback, Controls, Appearance, Window','five categories in the usual app order');
+  assert.equal(await js(`nav.current.rows.find(r=>r.label==='Playback').detail`),'Spotify, devices, and volume','categories have subtitles');
+  assert.equal((await page()).highlighted,'General','Settings opens on the first category');
   const expected={
-    playback:'Volume, Playback Device, Preferred Device, Open Spotify Automatically, When Nothing Is Playing, Keep Song Position, Spotify Connection',
-    appearance:'Curved Menu, Text Alignment, Screen Edge, Smoky Background, Text Color, Accent Color',
-    navigation:'Reverse Dial Direction, Dial Double-Press, Back in Lists, Last Song List on Home, Hover Shortcuts, Mouse Mode Key, Click Sounds',
-    'now-playing':'Play Opens Now Playing, Open Song in Now Playing, Idle to Now Playing, Follow Playing Song',
-    window:'Window Mode, Transparency, Size & Position, Keep on Top, Pin Widget, Dial Only Wake, Mouse Click Through, Gaming Mode'};
+    general:'Back in Lists, Last Song List on Home, Play Opens Now Playing, Open Song in Now Playing, Idle to Now Playing, Follow Playing Song',
+    playback:'Volume, Playback Device, Preferred Device, When Nothing Is Playing, Keep Song Position, Open Spotify Automatically, Spotify Account',
+    controls:'Reverse Dial Direction, Dial Double-Press, Hover Shortcuts, Dial Only Wake, Mouse Mode Key, Click Sounds',
+    appearance:'Curved Menu, Text Alignment, Screen Edge, Text Color, Accent Color, Smoky Background',
+    window:'Window Mode, Size & Position, Keep on Top, Transparency, Mouse Click Through, Pin Widget, Gaming Mode'};
   for(const [id,want] of Object.entries(expected)){
     await js(`nav.reset(root());showSettings();nav.current.selected=nav.current.rows.findIndex(r=>r.group==='${id}');drawNavigation();`);await click();
     assert.equal(await labels(),want,`${id} contents`);assert.equal((await page()).depth,3,`${id}: settings are two levels below Home`);

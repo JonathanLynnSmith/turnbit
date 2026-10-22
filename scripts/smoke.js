@@ -196,10 +196,10 @@ async function main() {
     'Curved Menu toggles and saves',
   );
   await back('Settings');
-  await choose(`row.group==='navigation'`);
+  await choose(`row.group==='controls'`);
   await expect(
-    `nav.current.settingsGroup==='navigation'`,
-    'Navigation settings open',
+    `nav.current.settingsGroup==='controls'`,
+    'Controls settings open',
   );
   await choose(`row.action==='double-press'`);
   await expect(

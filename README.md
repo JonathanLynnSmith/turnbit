@@ -53,7 +53,7 @@ Next, [connect Spotify](#connect-spotify) and, if you have one, [set up the D100
 1. In the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard), create an app and select **Web API**.
 2. Add this redirect URI exactly: `http://127.0.0.1:43821/callback`
 3. Under **User Management**, add the Spotify account you will use.
-4. In turnbit, open **Settings > Playback > Spotify Connection**, paste your app's **Client ID**, and select **Connect Spotify**.
+4. In turnbit, open **Settings > Playback > Spotify Account**, paste your app's **Client ID**, and select **Connect Spotify**.
 5. Approve access in your browser, then start a song in Spotify.
 
 > [!NOTE]
@@ -115,7 +115,7 @@ and **Shift + Left/Right** to seek 10 seconds.
 
 No dial nearby? Hold **Ctrl + Alt + Z** anywhere: scroll to move, left-click to select, right-click to
 go back, middle-click to play or pause. Tap the shortcut instead of holding it to leave the mode on;
-tap again or press **Esc** to turn it off. You can change the shortcut in **Settings > Navigation**.
+tap again or press **Esc** to turn it off. You can change the shortcut in **Settings > Controls > Mouse Mode Key**.
 
 If turnbit is fully transparent and you lose track of it, press **Ctrl + Alt + Shift + D**.
 
@@ -139,7 +139,7 @@ See [all settings](docs/settings.md).
 | "Retry loading" on Liked Songs | Spotify may be rate-limiting your library. The message shows when it will clear |
 | A playlist's songs will not load | Spotify only lists songs in playlists you own or collaborate on. **Play this playlist** still works |
 | The D100H does nothing | Make sure Ulanzi Studio is running and the device is paired, then run `npm run studio:restart` |
-| Like asks for permission | Reconnect in **Settings > Playback > Spotify Connection** to grant the newer permissions |
+| Like asks for permission | Reconnect in **Settings > Playback > Spotify Account** to grant the newer permissions |
 
 For more, see [How turnbit works](docs/how-it-works.md), including how to log every Spotify call.
 

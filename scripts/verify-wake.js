@@ -31,7 +31,7 @@ app.whenReady().then(async()=>{
     // Direct playback mode toggles from menus, including when faded out.
     await js(`savePreferences({playOpensNowPlaying:false});nav.reset(root());playing=true;`);await sleep(false);await command('toggle');assert.equal(await js(`nav.current.kind==='list'&&!playing`),true);
     // All three switches are real menu actions and survive reload.
-    await js(`showSettings();showSettingsGroup('now-playing');`);
+    await js(`showSettings();showSettingsGroup('general');`);
     for(const key of ['idleNowPlaying','songOpensNowPlaying','playOpensNowPlaying']){
       await js(`nav.current.selected=nav.current.rows.findIndex(row=>row.key==='${key}');drawNavigation();`);await command('select');assert.equal(await js(`preferences.${key}`),true);
     }

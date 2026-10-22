@@ -29,12 +29,19 @@ export function createSettingsController({
   openSettings,
 }) {
   let knownDisplays = [];
+  // Each category answers one question, in the order most apps use: General (what the menus show
+  // and when), Playback (what plays and where), Controls (how the dial and buttons respond),
+  // Appearance (how it looks), Window (how the window behaves).
   const settingsGroups = [
-    { id: 'playback', label: 'Playback', detail: 'Volume and devices' },
-    { id: 'appearance', label: 'Appearance', detail: 'Interface and colors' },
-    { id: 'navigation', label: 'Navigation', detail: 'Dial and shortcuts' },
-    { id: 'now-playing', label: 'Now Playing', detail: 'When it opens' },
-    { id: 'window', label: 'Window', detail: 'Visibility and focus' },
+    { id: 'general', label: 'General', detail: 'Menus and Now Playing' },
+    {
+      id: 'playback',
+      label: 'Playback',
+      detail: 'Spotify, devices, and volume',
+    },
+    { id: 'controls', label: 'Controls', detail: 'Dial, mouse, and sounds' },
+    { id: 'appearance', label: 'Appearance', detail: 'Layout and colors' },
+    { id: 'window', label: 'Window', detail: 'Mode, size, and visibility' },
   ];
   function displayName(id) {
     if (id == null) return 'Automatic';
@@ -112,15 +119,6 @@ export function createSettingsController({
         detail: preferences.radialSide === 'left' ? 'Left' : 'Right',
       },
       {
-        label: 'Smoky Background',
-        action: 'radial-background',
-        detail: preferences.radialBackground
-          ? preferences.radialBackground + '%'
-          : 'Off',
-        branch: true,
-        showDetail: true,
-      },
-      {
         label: 'Text Color',
         action: 'radial-color',
         key: 'primaryHue',
@@ -134,6 +132,15 @@ export function createSettingsController({
         detail: radialColorName(preferences.accentHue),
         branch: true,
       },
+      {
+        label: 'Smoky Background',
+        action: 'radial-background',
+        detail: preferences.radialBackground
+          ? preferences.radialBackground + '%'
+          : 'Off',
+        branch: true,
+        showDetail: true,
+      },
     ];
   }
   function settingsRows(group) {
@@ -144,6 +151,15 @@ export function createSettingsController({
       detail: preferences[key] ? 'On' : 'Off',
     });
     switch (group) {
+      case 'general':
+        return [
+          toggle('Back in Lists', 'backRow'),
+          toggle('Last Song List on Home', 'homeLastSongList'),
+          toggle('Play Opens Now Playing', 'playOpensNowPlaying'),
+          toggle('Open Song in Now Playing', 'songOpensNowPlaying'),
+          toggle('Idle to Now Playing', 'idleNowPlaying'),
+          toggle('Follow Playing Song', 'idleFollowSong'),
+        ];
       case 'playback':
         return [
           { label: 'Volume', action: 'volume', branch: true },
@@ -155,7 +171,6 @@ export function createSettingsController({
             branch: true,
             showDetail: true,
           },
-          toggle('Open Spotify Automatically', 'autoLaunchSpotify'),
           {
             label: 'When Nothing Is Playing',
             action: 'cold-start',
@@ -168,11 +183,10 @@ export function createSettingsController({
             action: 'current-song',
             detail: preferences.keepCurrentSongPosition ? 'On' : 'Off',
           },
-          { label: 'Spotify Connection', action: 'connect', branch: true },
+          toggle('Open Spotify Automatically', 'autoLaunchSpotify'),
+          { label: 'Spotify Account', action: 'connect', branch: true },
         ];
-      case 'appearance':
-        return radialSettingsRows();
-      case 'navigation':
+      case 'controls':
         return [
           toggle('Reverse Dial Direction', 'reverseDial'),
           {
@@ -180,9 +194,8 @@ export function createSettingsController({
             action: 'double-press',
             detail: preferences.doublePress === 'home' ? 'Home' : 'Back',
           },
-          toggle('Back in Lists', 'backRow'),
-          toggle('Last Song List on Home', 'homeLastSongList'),
           toggle('Hover Shortcuts', 'hoverBack'),
+          toggle('Dial Only Wake', 'dialOnlyWake'),
           {
             label: 'Mouse Mode Key',
             action: 'mouse-mode-key',
@@ -194,20 +207,10 @@ export function createSettingsController({
             detail: preferences.clicker ? 'On' : 'Off',
           },
         ];
-      case 'now-playing':
+      case 'appearance':
         return [
-          toggle('Play Opens Now Playing', 'playOpensNowPlaying'),
-          toggle('Open Song in Now Playing', 'songOpensNowPlaying'),
-          toggle('Idle to Now Playing', 'idleNowPlaying'),
-          toggle('Follow Playing Song', 'idleFollowSong'),
-        ];
-      case 'window':
-        return [
-          {
-            label: 'Window Mode',
-            action: 'window-mode',
-            detail: preferences.windowMode ? 'On' : 'Off',
-          },
+          ...radialSettingsRows(),
+          // The window player's own look, only in Window Mode.
           ...(preferences.windowMode && preferences.interfaceStyle === 'radial'
             ? [toggle('Now Playing Backdrop', 'nowPlayingBackdrop')]
             : []),
@@ -223,14 +226,6 @@ export function createSettingsController({
                   action: 'menu-background',
                   detail: menuBackgroundName(),
                 },
-                {
-                  label: 'Dial Menu Timeout',
-                  action: 'menu-timeout',
-                  key: 'menuTimeout',
-                  detail: valueText('menuTimeout', preferences.menuTimeout),
-                  branch: true,
-                  showDetail: true,
-                },
                 // A background panel's own edge marks the seam, so the divider only goes with Matching.
                 ...(preferences.backdropLayout === 'split' &&
                 preferences.menuBackground === 'match'
@@ -238,7 +233,14 @@ export function createSettingsController({
                   : []),
               ]
             : []),
-          { label: 'Transparency', action: 'visibility', branch: true },
+        ];
+      case 'window':
+        return [
+          {
+            label: 'Window Mode',
+            action: 'window-mode',
+            detail: preferences.windowMode ? 'On' : 'Off',
+          },
           ...(preferences.interfaceStyle === 'radial' && !preferences.windowMode
             ? [
                 {
@@ -253,15 +255,27 @@ export function createSettingsController({
             action: 'pin',
             detail: getState().pinned ? 'On' : 'Off',
           },
+          { label: 'Transparency', action: 'visibility', branch: true },
+          ...(preferences.windowMode
+            ? []
+            : [toggle('Mouse Click Through', 'mousePassthrough')]),
           {
             label: backdropActive() ? 'Pin Dial Menu' : 'Pin Widget',
             action: 'idle-pin',
             detail: preferences.idlePinned ? 'On' : 'Off',
           },
-          toggle('Dial Only Wake', 'dialOnlyWake'),
-          ...(preferences.windowMode
-            ? []
-            : [toggle('Mouse Click Through', 'mousePassthrough')]),
+          ...(backdropActive()
+            ? [
+                {
+                  label: 'Dial Menu Timeout',
+                  action: 'menu-timeout',
+                  key: 'menuTimeout',
+                  detail: valueText('menuTimeout', preferences.menuTimeout),
+                  branch: true,
+                  showDetail: true,
+                },
+              ]
+            : []),
           toggle('Gaming Mode', 'gamingMode'),
         ];
     }
@@ -590,7 +604,7 @@ export function createSettingsController({
           // The menu stays up so the new look shows straight away; the divider row follows Matching.
           const page = nav.current,
             back = page.rows[0]?.action === 'nav-back' ? [page.rows[0]] : [];
-          page.rows = [...back, ...settingsRows('window')];
+          page.rows = [...back, ...settingsRows(page.settingsGroup)];
           page.selected = page.rows.findIndex(
             (item) => item.action === 'menu-background',
           );

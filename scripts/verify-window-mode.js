@@ -60,7 +60,7 @@ app.whenReady().then(async()=>{
     assert.equal(await window.webContents.executeJavaScript(`getComputedStyle($('#windowMove')).display`),'none','widget move handle is hidden in Window Mode');
     assert.equal(await window.webContents.executeJavaScript(`settingsRows('window').some(row=>row.action==='radial-layout')`),false,'widget sizing settings are hidden in Window Mode');
     // Dial Menu Layout: whether the menu overlays the player or takes its own half of the window.
-    assert.equal(await window.webContents.executeJavaScript(`settingsRows('window').find(row=>row.action==='backdrop-layout')?.detail`),'Overlay','Window Mode offers the menu layout, starting on Overlay');
+    assert.equal(await window.webContents.executeJavaScript(`settingsRows('appearance').find(row=>row.action==='backdrop-layout')?.detail`),'Overlay','Window Mode offers the menu layout, starting on Overlay');
     // Split View needs at least 960px; narrower windows fall back to the overlay.
     const wide=require('electron').screen.getDisplayMatching(window.getBounds()).workArea;
     window.setBounds({x:wide.x,y:wide.y,width:Math.min(wide.width,1100),height:Math.min(wide.height,720)});await wait(300);
@@ -69,7 +69,7 @@ app.whenReady().then(async()=>{
     await window.webContents.executeJavaScript(`selectItem();`);await wait(250);
     assert.deepEqual(await window.webContents.executeJavaScript(`[preferences.backdropLayout,document.body.dataset.backdropSplit]`),['overlay','false'],'selecting again returns to Overlay');
     // Dial Menu Background cycles Matching, Black, Glass, Artwork; only the panel looks draw a panel.
-    assert.equal(await window.webContents.executeJavaScript(`settingsRows('window').find(row=>row.action==='menu-background')?.detail`),'Matching','menu background starts on Matching');
+    assert.equal(await window.webContents.executeJavaScript(`settingsRows('appearance').find(row=>row.action==='menu-background')?.detail`),'Matching','menu background starts on Matching');
     const panel=`[preferences.menuBackground,document.body.dataset.menuBackground,getComputedStyle($('#radialMenuPanel')).display,nav.current.rows[nav.current.selected].detail]`;
     await window.webContents.executeJavaScript(`showSetting(row=>row.action==='menu-background');selectItem();`);await wait(250);
     assert.deepEqual(await window.webContents.executeJavaScript(panel),['black','black','block','Black'],'Black draws its own menu panel');
