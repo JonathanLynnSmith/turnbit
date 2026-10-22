@@ -10,6 +10,7 @@ import './radial.js';
 import './track-transition.js';
 import './dial-overlay.js';
 import './settings/preferences.js';
+import './settings/value-steps.js';
 import './client/playback-client.js';
 import './client/settings-client.js';
 import { createRadialView } from './features/radial-view.mjs';

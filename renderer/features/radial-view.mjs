@@ -579,9 +579,7 @@ export function createRadialView({
             label:
               page.kind === 'volume'
                 ? volume + '%'
-                : page.key === 'timeout'
-                  ? page.value + ' seconds'
-                  : valueText(page.key, page.value),
+                : valueText(page.key, page.value),
           },
           { label: 'Press to save' },
         ],

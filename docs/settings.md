@@ -1,7 +1,10 @@
 # Settings
 
 Open Settings from Home. Settings are grouped into five categories, in the order most apps use, and
-saved between restarts. Rows marked › open one more screen to pick a value.
+saved between restarts. Rows marked › open one more screen to pick a value. Values move between
+preset stops, so a few dial clicks reach any of them: colours step through twelve named colours and
+White, percentages move in 5% steps, and timeouts use 3, 5, 8, 10, 15, 20, 30, 45 seconds and on up to
+10 minutes.
 
 | Category | Answers |
 | --- | --- |
@@ -55,8 +58,8 @@ To stay in the song list instead of switching to Now Playing, turn off **Idle to
 | Curved Menu | Lays the menu out along a curve; off shows a straight list | On |
 | Text Alignment | Aligns menu text: Left, Right, or Auto (toward the docked edge) | Left |
 | Screen Edge / Menu Side | The left or right edge for the widget, or the window menu's side | Left |
-| Text Color | Colour of the menu text | |
-| Accent Color | Colour of the current song, progress, and Now Playing controls | |
+| Text Color | Colour of the menu text: White or one of twelve named colours | White |
+| Accent Color | Colour of the current song, progress, and Now Playing controls | Mint |
 | Smoky Background | Strength of the dark backdrop behind the menu | 24% |
 | Now Playing Backdrop | Window Mode: the large Now Playing screen | On |
 | Dial Menu Layout | Window Mode: Overlay covers the player while you browse; Split View puts the menu beside it (overlay below 960 px wide) | Overlay |

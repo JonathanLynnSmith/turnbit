@@ -90,7 +90,7 @@ app.whenReady().then(async()=>{
     await check(`getComputedStyle(document.querySelector('#radialContext')).textAlign==='right' && getComputedStyle(document.querySelector('#radialNow')).right==='72px'`);
     await js(`savePreferences({radialSide:'left'});`);
     await js(`nav.reset(root());showSetting(row=>row.action==='radial-background');`);
-    await select();await turn(16);await check(`nav.current.value===40 && preferences.radialBackground===24 && document.querySelector('#radial').style.getPropertyValue('--smoke-opacity')==='0.4'`);
+    await select();await turn(3);await check(`nav.current.value===35 && preferences.radialBackground===24 && document.querySelector('#radial').style.getPropertyValue('--smoke-opacity')==='0.35'`);
     await back();await check(`preferences.radialBackground===24 && document.querySelector('#radial').style.getPropertyValue('--smoke-opacity')==='0.24'`);
     await select();await turn(-20);await turn(-4);await select();await check(`preferences.radialBackground===0 && document.querySelector('#radial').style.getPropertyValue('--smoke-opacity')==='0'`);
     window.webContents.reload();await wait(1200);await check(`preferences.interfaceStyle==='radial' && preferences.radialSide==='left' && preferences.radialBackground===0`);
@@ -102,12 +102,12 @@ app.whenReady().then(async()=>{
     await js(`showSetting(row=>row.action==='pin');`);await select();await wait(400);assert.equal(window.isAlwaysOnTop(),false);await check(`!preferences.keepOnTop`);
     await js(`showSetting(row=>row.key==='accentHue');`);await select();
     await check(`nav.current.kind==='color' && nav.current.value===145 && !document.querySelector('#radialColor').hidden && nav.current.visibilitySettings`);
-    await turn(20);await check(`nav.current.value===165 && preferences.accentHue===145 && document.querySelector('#radial').style.getPropertyValue('--radial-accent')==='hsl(165 75% 68%)'`);
+    await turn(2);await check(`nav.current.value===180 && preferences.accentHue===145 && document.querySelector('#radial').style.getPropertyValue('--radial-accent')==='hsl(180 75% 68%)'`);
     await back();await check(`preferences.accentHue===145 && document.querySelector('#radial').style.getPropertyValue('--radial-accent')==='hsl(145 75% 68%)'`);
-    await select();await turn(20);await select();await check(`nav.current.title==='Appearance' && preferences.accentHue===165`);
+    await select();await turn(1);await select();await check(`nav.current.title==='Appearance' && preferences.accentHue===150`);
     await js(`nav.current.selected=nav.current.rows.findIndex(row=>row.key==='primaryHue');drawNavigation();`);await select();await turn(1);
     await check(`nav.current.value===0 && preferences.primaryHue===360`);await select();await check(`preferences.primaryHue===0`);
-    window.webContents.reload();await new Promise(resolve=>window.webContents.once('did-finish-load',resolve));await wait(400);await check(`preferences.primaryHue===0 && preferences.accentHue===165`);
+    window.webContents.reload();await new Promise(resolve=>window.webContents.once('did-finish-load',resolve));await wait(400);await check(`preferences.primaryHue===0 && preferences.accentHue===150`);
     await js(`nav.reset(root());showLibrary('songs');`);await wait(200);await js(`index=1;playing=true;render();`);await wait(100);
     await check(`getComputedStyle(radial.nodes.get(2).children[0]).color!==getComputedStyle(radial.nodes.get(1).children[0]).color && radial.nodes.get(2).classList.contains('has-mini')`);
     await js(`showSetting(row=>row.key==='accentHue');`);await select();await wait(300);

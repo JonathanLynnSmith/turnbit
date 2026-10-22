@@ -79,7 +79,7 @@
       radialCurve: true,
       radialBackground: 24,
       primaryHue: 360,
-      accentHue: 145,
+      accentHue: 150,
       visibility: { ...visibilityDefaults },
       clicker: false,
       mouseModeKey: 'ctrl-alt-z',

@@ -761,17 +761,23 @@ function rotate(delta) {
     return;
   }
   if (nav.current.kind === 'color') {
-    nav.current.value = (nav.current.value + (delta % 361) + 361) % 361;
+    const { stepThrough, COLOR_STOPS } = window.TurnbitValueSteps;
+    nav.current.value = stepThrough(
+      COLOR_STOPS,
+      nav.current.value,
+      delta,
+      true,
+    );
     drawNavigation();
     return;
   }
   if (nav.current.kind === 'visibility') {
     const page = nav.current,
-      spec = valueSpec(page.key);
-    page.value = Math.max(
-      spec.min,
-      Math.min(spec.max, page.value + delta * spec.step),
-    );
+      spec = valueSpec(page.key),
+      { stepThrough, stepEvenly } = window.TurnbitValueSteps;
+    page.value = spec.stops
+      ? stepThrough(spec.stops, page.value, delta)
+      : stepEvenly(spec, page.value, delta);
     drawNavigation();
     return;
   }
@@ -831,7 +837,12 @@ function showMusic() {
 // Value pickers: each key carries its own range, step, and unit.
 function valueSpec(key) {
   return ['timeout', 'menuTimeout'].includes(key)
-    ? { min: 1, max: 600, step: 1, unit: ' sec' }
+    ? {
+        min: 1,
+        max: 600,
+        stops: window.TurnbitValueSteps.TIMEOUT_STOPS,
+        unit: ' sec',
+      }
     : key === 'radialWidthPct'
       ? { min: 15, max: 70, step: 5, unit: '%' }
       : key === 'radialHeight'
@@ -842,7 +853,7 @@ function valueSpec(key) {
                 ? WINDOW_MIN_OPACITY
                 : 0,
             max: 100,
-            step: 1,
+            step: 5,
             unit: '%',
           };
 }
