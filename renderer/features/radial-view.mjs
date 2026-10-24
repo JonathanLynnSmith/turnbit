@@ -110,7 +110,8 @@ export function createRadialView({
   const GLOW_STRENGTH = 0.3;
   function syncRadialGlow() {
     const glow = $('#radialGlow'),
-      source = backdropActive() ? getState().track.artwork : '';
+      // The artwork the player is showing, which can briefly trail the song during a crossfade.
+      source = backdropActive() ? shownArtwork : '';
     if (syncRadialGlow.source !== source) {
       syncRadialGlow.source = source;
       glow.style.backgroundImage = source
@@ -396,6 +397,117 @@ export function createRadialView({
       }
     }
   }
+  // A song change in the window player: the new cover is loaded and decoded first, then cover, song
+  // text, and the artwork wash behind them change together in one short crossfade, so text never
+  // runs ahead of a cover that pops in later. The Spotify desktop app can report a new song before
+  // the Web API supplies its cover; the outgoing song holds for up to HOLD_FOR_ART_MS rather than
+  // flashing the placeholder.
+  const HOLD_FOR_ART_MS = 1200;
+  let shownTrackKey = null,
+    shownArtwork = '',
+    trackGeneration = 0,
+    holdingTitle = null,
+    holdingSince = 0;
+  function applyBackdropTrack(track, decoded = null) {
+    for (const key of ['Title', 'Artist', 'Album']) {
+      const node = $('#radialBackdrop' + key);
+      node.textContent = track[key.toLowerCase()];
+      node.title = node.textContent;
+    }
+    const artwork = track.artwork;
+    shownArtwork = artwork;
+    // Swap in the image that was already decoded off screen, so the cover is ready the frame it appears.
+    if (decoded) {
+      const current = $('#radialBackdropArtImg');
+      decoded.id = current.id;
+      decoded.alt = current.alt;
+      current.replaceWith(decoded);
+    }
+    $('#radialBackdropArtImg').hidden = !artwork;
+    $('#radialBackdropArtImg').nextElementSibling.hidden = !!artwork;
+    if (
+      artwork &&
+      $('#radialBackdropArtImg').src !== new URL(artwork, location.href).href
+    )
+      $('#radialBackdropArtImg').src = artwork;
+    $('#radialBackdropArt').style.backgroundImage = artwork
+      ? `url(${JSON.stringify(artwork)})`
+      : 'none';
+    syncRadialGlow();
+  }
+  // Resolves with the decoded image, or null when there is none or it takes too long.
+  function decodeArtwork(url) {
+    if (!url) return Promise.resolve(null);
+    const image = new Image();
+    image.src = url;
+    return Promise.race([
+      image.decode().then(
+        () => image,
+        () => null,
+      ),
+      new Promise((resolve) => setTimeout(() => resolve(null), 900)),
+    ]);
+  }
+  function syncBackdropTrack() {
+    const { demo, playback } = getState(),
+      track = { ...getState().track },
+      key = [track.title, track.artist, track.album, track.artwork].join('|');
+    if (key === shownTrackKey) return;
+    if (shownTrackKey === null || radial.reducedMotion?.()) {
+      trackGeneration++;
+      shownTrackKey = key;
+      applyBackdropTrack(track);
+      return;
+    }
+    if (!demo && playback?.provisional && !track.artwork && shownArtwork) {
+      if (holdingTitle !== track.title) {
+        holdingTitle = track.title;
+        holdingSince = Date.now();
+      }
+      if (Date.now() - holdingSince < HOLD_FOR_ART_MS) return;
+    }
+    holdingTitle = null;
+    shownTrackKey = key;
+    const generation = ++trackGeneration,
+      sameSong = $('#radialBackdropTitle').textContent === track.title,
+      parts = [
+        $('.radial-backdrop-cover'),
+        $('.radial-backdrop-song'),
+        $('#radialBackdropArt'),
+      ];
+    decodeArtwork(track.artwork).then(async (decoded) => {
+      if (generation !== trackGeneration) return;
+      // Only the cover changes when Spotify fills in artwork for the song already shown.
+      const moving = sameSong ? [parts[0], parts[2]] : parts;
+      const out = moving.map((element) =>
+        element.animate(
+          [
+            { opacity: 1 },
+            { opacity: 0, scale: element === parts[2] ? 1 : 0.97 },
+          ],
+          { duration: 140, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' },
+        ),
+      );
+      await Promise.all(
+        out.map((animation) => animation.finished.catch(() => {})),
+      );
+      if (generation !== trackGeneration) {
+        out.forEach((animation) => animation.cancel());
+        return;
+      }
+      applyBackdropTrack(track, decoded);
+      out.forEach((animation) => animation.cancel());
+      moving.forEach((element) =>
+        element.animate(
+          [
+            { opacity: 0, scale: element === parts[2] ? 1 : 0.985 },
+            { opacity: 1, scale: 1 },
+          ],
+          { duration: 300, easing: 'cubic-bezier(.2,.8,.2,1)' },
+        ),
+      );
+    });
+  }
   function updateBackdropInfo() {
     const { demo, playing, playback, volume } = getState();
 
@@ -409,21 +521,7 @@ export function createRadialView({
     $('#radialBackdropDevice').textContent = demo
       ? 'Connect Spotify'
       : playback?.device?.name || 'Choose a device';
-    const track = getState().track;
-    for (const key of ['Title', 'Artist', 'Album']) {
-      const node = $('#radialBackdrop' + key);
-      node.textContent = track[key.toLowerCase()];
-      node.title = node.textContent;
-    }
-    const artwork = track.artwork;
-    $('#radialBackdropArtImg').hidden = !artwork;
-    $('#radialBackdropArtImg').nextElementSibling.hidden = !!artwork;
-    if (artwork) {
-      if ($('#radialBackdropArtImg').src !== artwork)
-        $('#radialBackdropArtImg').src = artwork;
-      $('#radialBackdropArt').style.backgroundImage =
-        `url(${JSON.stringify(artwork)})`;
-    } else $('#radialBackdropArt').style.backgroundImage = 'none';
+    syncBackdropTrack();
     $('#radialBackdropElapsed').textContent = time(currentProgress());
     $('#radialBackdropDuration').textContent = time(duration());
     const seekInput = $('#radialBackdropSeek');

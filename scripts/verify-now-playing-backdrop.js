@@ -50,8 +50,8 @@ async function main(){
   assert.equal(await hidden(),true,'the window starts with an unobstructed player');
   assert.equal(await run(`preferences.menuTimeout`),8,'the browsing timeout starts at the original 8 seconds');
   await run(`savePreferences({idleNowPlaying:false,hoverBack:false,mouseModeKey:'off'});demo=false;acceptPlayback({item:{uri:'spotify:track:AAAAAAAAAAAAAAAAAAAAAA',name:'Night Drive',artists:[{name:'turnbit sessions'}],album:{name:'After Hours',images:[{url:${JSON.stringify(ART)}}]},duration_ms:214000},is_playing:true,progress_ms:62000,liked:false,shuffle_state:false,repeat_state:'off',device:{id:'test',name:'Living Room',volume_percent:62}});drawNavigation();`);
-  assert.equal(await run(`$('#radialBackdropTitle').textContent`),'Night Drive');
-  assert.equal(await run(`$('#radialBackdropArtist').textContent`),'turnbit sessions');
+  // Song text and cover change together after the cover decodes, in a short crossfade.
+  await until(()=>run(`$('#radialBackdropTitle').textContent==='Night Drive'&&$('#radialBackdropArtist').textContent==='turnbit sessions'`),'the player shows the new song');
   for(const selector of ['#radialBackdropSeek','#radialBackdropVolume','#radialBackdropPlay','#radialBackdropBrowse'])assert.equal(await hittable(selector),true,selector+' receives input');
   const out=path.join(__dirname,'../artifacts');fs.mkdirSync(out,{recursive:true});
   const shot=async name=>fs.writeFileSync(path.join(out,name),(await win.webContents.capturePage()).toPNG());
@@ -178,6 +178,8 @@ async function main(){
   const playing=`{item:{uri:'spotify:track:AAAAAAAAAAAAAAAAAAAAAA',name:'Night Drive',artists:[{name:'turnbit sessions'}],album:{name:'After Hours',images:[{url:${JSON.stringify(ART)}}]},duration_ms:214000},is_playing:true,progress_ms:62000,device:{id:'test',name:'Living Room',volume_percent:62}}`;
   await run(`demo=false;acceptPlayback(${playing});render();`);await wait(250);
   const glow=()=>run(`(()=>{const el=$('#radialGlow'),style=getComputedStyle(el);return {opacity:style.opacity,art:el.style.backgroundImage.startsWith('url('),masked:(style.maskImage||style.webkitMaskImage||'').includes('gradient'),blurred:style.filter.includes('blur')};})()`);
+  // The glow follows the cover through the song crossfade, then eases in.
+  await until(()=>run(`Number(getComputedStyle($('#radialGlow')).opacity)>0.1`),'the glow fades in with the new cover');
   let glowState=await glow();
   assert.equal(glowState.art,true,'the glow takes its colour from the playing artwork');
   assert.ok(Number(glowState.opacity)>0&&Number(glowState.opacity)<0.5,'subtly: '+glowState.opacity);
@@ -294,7 +296,7 @@ async function main(){
   assert.equal(await run(`$('#radialBackdropDismiss').hidden`),false,'the overlay gets its dismiss target back');
   await run(`dismissDialOverlay();`);win.setSize(960,720);await wait(300);
   await run(`demo=false;acceptPlayback(null);render();`);
-  assert.equal(await run(`$('#radialBackdropTitle').textContent`),'Nothing playing');
+  await until(()=>run(`$('#radialBackdropTitle').textContent==='Nothing playing'`),'the player clears when nothing is playing');
   assert.equal(await run(`$('#radialBackdropArt').style.backgroundImage`),'none');
   // A loop here asserted the backdrop hides for every non-radial interface. Both of those are paused:
   // see CLAUDE.md. Turning the backdrop off below still covers the same hiding path.
