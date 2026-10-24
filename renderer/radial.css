@@ -277,7 +277,9 @@ body[data-dial-overlay=true] #radialBackdropBrowse .return-symbol{display:block}
 .radial-backdrop-cover .radial-art-fallback{font:300 clamp(64px,10vw,130px) -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#d0e6dc70;grid-area:1/1}
 .radial-backdrop-track{min-width:0;align-self:center}
 .radial-backdrop-state{font-size:10px;letter-spacing:2px;font-weight:600;color:#aebbb4;margin:0 0 18px}
-.radial-backdrop-title{font-size:clamp(30px,4.7vw,64px);font-weight:750;line-height:1.05;letter-spacing:-.045em;margin:0 0 16px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+/* The tight line height crops descenders inside the clamp's overflow box, so the title keeps
+   room for them below its last line. */
+.radial-backdrop-title{font-size:clamp(30px,4.7vw,64px);font-weight:750;line-height:1.05;letter-spacing:-.045em;margin:0 0 calc(16px - .16em);padding-bottom:.16em;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
 .radial-backdrop-artist{font-size:clamp(17px,2.4vw,27px);line-height:1.35;font-weight:450;color:#e1e6e2;margin:0 0 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .radial-backdrop-album{font-size:14px;line-height:1.4;color:#9eaaa3;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #radialBackdropDevice{display:inline-flex;align-items:center;gap:8px;max-width:100%;padding:0;margin-top:24px;border:0;background:none;color:#a6baad;font-size:11px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -386,7 +388,7 @@ body[data-player-column=narrow][data-backdrop-active=true][data-backdrop-split=t
 body[data-player-column=narrow][data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true][data-edge=right] .radial-backdrop-info{left:28px;right:var(--split-start)}
 body[data-player-column=narrow] .radial-backdrop-track{grid-column:1;max-width:100%}
 body[data-player-column=narrow] .radial-backdrop-state{margin-bottom:9px;font-size:9px}
-body[data-player-column=narrow] .radial-backdrop-title{font-size:clamp(25px,5.5vw,35px);-webkit-line-clamp:2;line-height:1.1;margin-bottom:7px}
+body[data-player-column=narrow] .radial-backdrop-title{font-size:clamp(25px,5.5vw,35px);-webkit-line-clamp:2;line-height:1.1;margin-bottom:calc(7px - .16em)}
 body[data-player-column=narrow] .radial-backdrop-artist{font-size:17px;margin-bottom:5px}
 body[data-player-column=narrow] .radial-backdrop-album{font-size:12px}
 body[data-player-column=narrow] #radialBackdropDevice{margin-top:0}
