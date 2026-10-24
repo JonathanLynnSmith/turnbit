@@ -53,10 +53,12 @@ export function createRadialView({
         page.kind === 'color' && page.key === key
           ? page.value
           : preferences[key];
-      $('#radial').style.setProperty(
-        key === 'primaryHue' ? '--radial-primary' : '--radial-accent',
-        radialColor(hue, key === 'accentHue'),
-      );
+      // The menu and the window player share Text Color and Accent Color.
+      for (const host of [$('#radial'), $('#radialBackdrop')])
+        host.style.setProperty(
+          key === 'primaryHue' ? '--radial-primary' : '--radial-accent',
+          radialColor(hue, key === 'accentHue'),
+        );
     }
   }
   function radialRowDetail(row) {

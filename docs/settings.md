@@ -58,8 +58,8 @@ To stay in the song list instead of switching to Now Playing, turn off **Idle to
 | Curved Menu | Lays the menu out along a curve; off shows a straight list | On |
 | Text Alignment | Aligns menu text: Left, Right, or Auto (toward the docked edge) | Left |
 | Screen Edge / Menu Side | The left or right edge for the widget, or the window menu's side | Left |
-| Text Color | Colour of the menu text: White or one of twelve named colours | White |
-| Accent Color | Colour of the current song, progress, and Now Playing controls | Mint |
+| Text Color | Colour of text and controls in the menu and the window player: White or one of twelve named colours | White |
+| Accent Color | Colour of the current song, the playing indicator, and controls that are on (shuffle, repeat, Like) | Mint |
 | Smoky Background | Strength of the dark backdrop behind the menu | 24% |
 | Now Playing Backdrop | Window Mode: the large Now Playing screen | On |
 | Dial Menu Layout | Window Mode: Overlay covers the player while you browse; Split View puts the menu beside it (overlay below 960 px wide) | Overlay |
