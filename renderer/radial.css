@@ -285,30 +285,48 @@ body[data-dial-overlay=true] #radialBackdropBrowse .return-symbol{display:block}
 #radialBackdropDevice:hover{color:#effaf2}
 /* contain keeps the wide controls from stretching the artwork's column; they fit under the pair instead. */
 .radial-backdrop-controls{grid-column:1/-1;width:min(100%,680px);justify-self:center;contain:inline-size}
-.radial-backdrop-transport{display:flex;align-items:center;justify-content:center;gap:clamp(12px,2.5vw,28px);margin-bottom:18px}
-.radial-backdrop-transport button{display:grid;place-items:center;flex:none;width:40px;height:44px;padding:9px;border:0;border-radius:50%;background:transparent;color:#cbd4cd;transition:color .15s,background .15s,transform .15s}
-.radial-backdrop-transport button:hover{color:white;background:#ffffff12}
-.radial-backdrop-transport button:active{transform:scale(.95)}
-.radial-backdrop-transport svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
-.radial-backdrop-transport :is([data-backdrop-command=previous],[data-backdrop-command=next]) svg{fill:currentColor;stroke-width:1.2}
-#radialBackdropPlay{width:64px;height:64px;background:#f1f6f2;color:#142019;padding:20px}
-#radialBackdropPlay:hover{background:white;transform:scale(1.04)}
-#radialBackdropPlay .play-symbol{fill:currentColor;stroke:none}
-#radialBackdropPlay .pause-symbol{display:none;stroke-width:3.5}
+/* Transport: filled, rounded glyphs on frosted glass, in the spirit of current car and phone players
+   rather than a copy of one. Play is the one solid surface; skip buttons bloom a glass circle on
+   hover; shuffle and repeat sit back until they are on, then hold a tinted pill. Every button springs
+   down a touch when pressed. */
+.radial-backdrop-transport{display:flex;align-items:center;justify-content:center;gap:clamp(14px,2.6vw,34px);margin-bottom:22px}
+.radial-backdrop-transport button,.radial-backdrop-actions [data-backdrop-command]{display:grid;place-items:center;flex:none;width:48px;height:48px;padding:12px;border:0;border-radius:50%;background:transparent;color:#e9eeeb;transition:color .18s ease,background-color .18s ease,box-shadow .18s ease,transform .32s cubic-bezier(.3,1.6,.5,1)}
+.radial-backdrop-transport button:hover,.radial-backdrop-actions [data-backdrop-command]:hover{color:white;background:#ffffff14;box-shadow:inset 0 0 0 1px #ffffff12}
+.radial-backdrop-transport button:active,.radial-backdrop-actions [data-backdrop-command]:active{transform:scale(.9);transition-duration:.08s}
+.radial-backdrop-transport svg,.radial-backdrop-actions svg{width:100%;height:100%;overflow:visible;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.radial-backdrop-transport .transport-skip{width:58px;height:58px;padding:13px}
+.radial-backdrop-transport .transport-skip svg{fill:currentColor;stroke:none}
+.radial-backdrop-transport .transport-mode{width:42px;height:42px;padding:11px;color:#ffffff8c}
+.radial-backdrop-transport .transport-mode[aria-pressed=true]{color:#a6f0c0;background:#86e6aa24;box-shadow:inset 0 0 0 1px #86e6aa38}
+#radialBackdropPlay{width:76px;height:76px;padding:22px;color:white;background:linear-gradient(160deg,#ffffff38,#ffffff17);box-shadow:inset 0 1px 0 #ffffff40,inset 0 0 0 1px #ffffff1f,0 10px 30px #0000004d;-webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6)}
+#radialBackdropPlay:hover{background:linear-gradient(160deg,#ffffff47,#ffffff1f);transform:scale(1.04)}
+#radialBackdropPlay:active{transform:scale(.92)}
+#radialBackdropPlay svg{fill:currentColor;stroke:none}
+#radialBackdropPlay .play-symbol{transform:translateX(1px)}
+#radialBackdropPlay .pause-symbol{display:none}
 #radialBackdropPlay[data-playing=true] .play-symbol{display:none}
 #radialBackdropPlay[data-playing=true] .pause-symbol{display:block}
-.radial-backdrop-transport button[aria-pressed=true]{color:#86e6aa}
-.radial-backdrop-transport [data-backdrop-command=like][aria-pressed=true] svg{fill:currentColor}
-.radial-backdrop-transport [aria-busy=true]{opacity:.5}
-.radial-backdrop-timeline input[type=range]{appearance:none;-webkit-appearance:none;display:block;width:100%;height:20px;padding:0;margin:0;background:transparent;cursor:pointer;accent-color:#e4f1e8}
-.radial-backdrop-timeline input[type=range]::-webkit-slider-runnable-track{height:4px;border:0;border-radius:4px;background:linear-gradient(to right,#e0eee4 var(--fill),#e0eee426 var(--fill))}
-.radial-backdrop-timeline input[type=range]::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:10px;height:10px;border:0;border-radius:50%;margin-top:-3px;background:#f0fff8}
-.radial-backdrop-timeline>div{display:flex;justify-content:space-between;font-size:11px;font-variant-numeric:tabular-nums;color:#b3beb6;margin-top:3px}
-.radial-backdrop-volume{display:flex;align-items:center;justify-content:center;gap:12px;width:min(230px,100%);margin:16px auto 0;font-size:10px;color:#98a89e}
-.radial-backdrop-volume input{appearance:none;-webkit-appearance:none;min-width:0;flex:1;height:18px;margin:0;background:transparent;cursor:pointer}
-.radial-backdrop-volume input::-webkit-slider-runnable-track{height:3px;border-radius:3px;background:linear-gradient(to right,#a8cdb6 var(--fill),#a8cdb626 var(--fill))}
-.radial-backdrop-volume input::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:8px;height:8px;margin-top:-2.5px;border:0;border-radius:50%;background:#cbe4d3}
-.radial-backdrop-volume output{min-width:29px;text-align:right;font-variant-numeric:tabular-nums}
+.radial-backdrop-transport [aria-busy=true],.radial-backdrop-actions [aria-busy=true]{opacity:.5}
+/* Like sits with the song it saves, beside the device it plays on. */
+.radial-backdrop-actions{display:flex;align-items:center;gap:14px;margin-top:20px}
+.radial-backdrop-actions [data-backdrop-command=like]{width:38px;height:38px;padding:9px;margin-left:-9px;color:#ffffffa6}
+.radial-backdrop-actions [data-backdrop-command=like][aria-pressed=true]{color:#86e6aa}
+.radial-backdrop-actions [data-backdrop-command=like][aria-pressed=true] svg{fill:currentColor}
+.radial-backdrop-actions #radialBackdropDevice{margin-top:0}
+/* Progress and volume: thick rounded tracks with no thumb until the pointer arrives, as on a phone. */
+.radial-backdrop-timeline input[type=range]{appearance:none;-webkit-appearance:none;display:block;width:100%;height:22px;padding:0;margin:0;background:transparent;cursor:pointer}
+.radial-backdrop-timeline input[type=range]::-webkit-slider-runnable-track{height:6px;border:0;border-radius:6px;background:linear-gradient(to right,#ffffffd9 var(--fill),#ffffff2e var(--fill));transition:height .18s ease}
+.radial-backdrop-timeline input[type=range]::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:0;height:0;border:0;margin-top:3px;background:transparent}
+.radial-backdrop-timeline input[type=range]:is(:hover,:active,:focus-visible)::-webkit-slider-runnable-track{height:10px;border-radius:10px}
+.radial-backdrop-timeline>div{display:flex;justify-content:space-between;font-size:11.5px;font-weight:500;font-variant-numeric:tabular-nums;color:#ffffff8c;margin-top:4px}
+.radial-backdrop-volume{display:flex;align-items:center;justify-content:center;gap:12px;width:min(300px,100%);margin:18px auto 0;font-size:10px;color:#ffffff80}
+.radial-backdrop-volume svg{width:18px;height:18px;flex:none;fill:currentColor;stroke:none}
+.radial-backdrop-volume svg .wave{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.radial-backdrop-volume input{appearance:none;-webkit-appearance:none;min-width:0;flex:1;height:20px;margin:0;background:transparent;cursor:pointer}
+.radial-backdrop-volume input::-webkit-slider-runnable-track{height:6px;border-radius:6px;background:linear-gradient(to right,#ffffffb3 var(--fill),#ffffff29 var(--fill));transition:height .18s ease}
+.radial-backdrop-volume input::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:0;height:0;border:0;margin-top:3px;background:transparent}
+.radial-backdrop-volume input:is(:hover,:active,:focus-visible)::-webkit-slider-runnable-track{height:9px;border-radius:9px}
+.radial-backdrop-volume output{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 #radialBackdropDismiss{position:absolute;inset:0;z-index:2;width:100%;height:100%;border:0;padding:0;background:transparent;cursor:default!important}
 body[data-backdrop-active=true] #radial{pointer-events:none;opacity:0;visibility:hidden;transform:translateX(-12px);transition:opacity .18s ease,transform .22s ease,visibility 0s .22s}
 body[data-backdrop-active=true][data-edge=right] #radial{transform:translateX(12px)}
@@ -371,15 +389,17 @@ body[data-player-column=narrow] .radial-backdrop-state{margin-bottom:9px;font-si
 body[data-player-column=narrow] .radial-backdrop-title{font-size:clamp(25px,5.5vw,35px);-webkit-line-clamp:2;line-height:1.1;margin-bottom:7px}
 body[data-player-column=narrow] .radial-backdrop-artist{font-size:17px;margin-bottom:5px}
 body[data-player-column=narrow] .radial-backdrop-album{font-size:12px}
-body[data-player-column=narrow] #radialBackdropDevice{margin-top:10px}
+body[data-player-column=narrow] #radialBackdropDevice{margin-top:0}
 body[data-player-column=narrow] .radial-backdrop-transport{margin-bottom:12px;gap:12px}
-body[data-player-column=narrow] #radialBackdropPlay{width:56px;height:56px;padding:16px}
+body[data-player-column=narrow] #radialBackdropPlay{width:64px;height:64px;padding:18px}
+body[data-player-column=narrow] .radial-backdrop-transport .transport-skip{width:50px;height:50px;padding:11px}
+body[data-player-column=narrow] .radial-backdrop-actions{justify-content:center;margin-top:10px}
 @media(max-height:600px){
   body[data-player-column] .radial-backdrop-info{gap:16px var(--art-gap);inset-block:88px 20px}
   body[data-player-column] .radial-backdrop-title{font-size:clamp(26px,4vw,42px);-webkit-line-clamp:2}
   body[data-player-column] .radial-backdrop-state{margin-bottom:10px}
   body[data-player-column] .radial-backdrop-album{display:none}
-  body[data-player-column] #radialBackdropDevice{margin-top:12px}
+  body[data-player-column] .radial-backdrop-actions{margin-top:12px}
   body[data-player-column] .radial-backdrop-transport{margin-bottom:8px}
   body[data-player-column] .radial-backdrop-volume{margin-top:8px}
   body[data-player-column=narrow] .radial-backdrop-info{gap:12px;grid-template-rows:minmax(70px,1fr) auto auto}
@@ -397,7 +417,7 @@ body[data-player-column=narrow] #radialBackdropPlay{width:56px;height:56px;paddi
   body[data-backdrop-active=true]:not([data-backdrop-split=true])[data-dial-overlay=true] .radial-backdrop-info,
   body[data-backdrop-active=true][data-backdrop-split=true] #radialBackdrop::after,
   body[data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true] #radialBackdrop::after,
-  #radialBackdropArt,.radial-backdrop-transport button{transition:none;transform:none}
+  #radialBackdropArt,.radial-backdrop-transport button,.radial-backdrop-actions button{transition:none;transform:none}
 }
 
 /* Dial Menu Background: Matching shares the player's backdrop and smoke, as above. The other looks
