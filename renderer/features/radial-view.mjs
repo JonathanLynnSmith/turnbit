@@ -474,19 +474,20 @@ export function createRadialView({
         $('.radial-backdrop-cover'),
         $('.radial-backdrop-song'),
         $('#radialBackdropArt'),
+        $('#radialGlow'),
       ];
     decodeArtwork(track.artwork).then(async (decoded) => {
       if (generation !== trackGeneration) return;
-      // Only the cover changes when Spotify fills in artwork for the song already shown.
-      const moving = sameSong ? [parts[0], parts[2]] : parts;
+      // Only the artwork changes when Spotify fills in the cover for the song already shown.
+      const moving = sameSong ? parts.filter((_, i) => i !== 1) : parts;
+      // Opacity only, and each layer fades from and back to its own resting value (the photo wash
+      // rests at .24, the glow at .3), so nothing flashes brighter or changes size.
       const out = moving.map((element) =>
-        element.animate(
-          [
-            { opacity: 1 },
-            { opacity: 0, scale: element === parts[2] ? 1 : 0.97 },
-          ],
-          { duration: 140, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' },
-        ),
+        element.animate([{ opacity: 0 }], {
+          duration: 200,
+          easing: 'cubic-bezier(.4,0,.6,1)',
+          fill: 'forwards',
+        }),
       );
       await Promise.all(
         out.map((animation) => animation.finished.catch(() => {})),
@@ -498,13 +499,13 @@ export function createRadialView({
       applyBackdropTrack(track, decoded);
       out.forEach((animation) => animation.cancel());
       moving.forEach((element) =>
-        element.animate(
-          [
-            { opacity: 0, scale: element === parts[2] ? 1 : 0.985 },
-            { opacity: 1, scale: 1 },
-          ],
-          { duration: 300, easing: 'cubic-bezier(.2,.8,.2,1)' },
-        ),
+        element.animate([{ offset: 0, opacity: 0 }], {
+          duration: 560,
+          // The song text follows the cover by a beat.
+          delay: element === parts[1] ? 60 : 0,
+          easing: 'cubic-bezier(.25,.1,.25,1)',
+          fill: 'backwards',
+        }),
       );
     });
   }
