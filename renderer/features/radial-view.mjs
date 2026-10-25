@@ -275,6 +275,12 @@ export function createRadialView({
   // The player stacks artwork above its text when its column is too narrow to hold both side by side:
   // the whole window, or the half left over while Split View has the menu up beside it.
   function syncPlayerColumn(sharing = false) {
+    // The window player is laid out for about 1440×880. Larger windows (a big or 4K display) scale it
+    // up as a whole, up to twice the size, so it fills the space instead of floating small in the middle.
+    document.body.style.setProperty(
+      '--ui-scale',
+      Math.max(1, Math.min(2, innerWidth / 1440, innerHeight / 880)).toFixed(3),
+    );
     const column = sharing
       ? Math.max(0, innerWidth - ($('#radial')?.clientWidth || 0))
       : innerWidth;

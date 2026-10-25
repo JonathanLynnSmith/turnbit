@@ -447,3 +447,7 @@ body[data-menu-background=artwork] #radialMenuPanel{overflow:hidden;background:#
 body[data-menu-background=artwork][data-edge=right] #radialMenuPanel{box-shadow:-20px 0 60px #0007}
 body[data-menu-background=artwork] #radialMenuPanel::before{content:'';position:absolute;inset:-180px;background:var(--menu-art,linear-gradient(160deg,#2f6b58,#173039 55%,#0b0d10)) center/cover;filter:blur(90px) saturate(1.6) brightness(.6)}
 @media(prefers-reduced-motion:reduce){#radialMenuPanel{transition:none!important;transform:none!important}}
+
+/* Large windows: the player's parts scale together by --ui-scale (radial-view.mjs), from 1 at the
+   design size up to 2, so a big display is filled rather than left mostly empty. */
+body[data-backdrop-active=true] :is(.radial-backdrop-header,.radial-backdrop-info,#radial){zoom:var(--ui-scale,1)}
