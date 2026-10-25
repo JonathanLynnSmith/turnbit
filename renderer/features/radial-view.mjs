@@ -544,11 +544,15 @@ export function createRadialView({
 
     updateBackdropControls();
     $('.radial-backdrop-state .eq').dataset.playing = String(playing);
+    const empty = !demo && !playback?.item;
+    document.body.dataset.playerEmpty = String(empty);
     $('#radialBackdropState').textContent = demo
       ? 'DEMO · NO AUDIO'
-      : playing
-        ? 'PLAYING'
-        : 'PAUSED';
+      : empty
+        ? 'NOT PLAYING'
+        : playing
+          ? 'PLAYING'
+          : 'PAUSED';
     $('#radialBackdropDevice').textContent = demo
       ? 'Connect Spotify'
       : playback?.device?.name || 'Choose a device';

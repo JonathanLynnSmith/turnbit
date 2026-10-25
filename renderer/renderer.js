@@ -1789,6 +1789,14 @@ for (const button of document.querySelectorAll('[data-backdrop-command]'))
   button.onclick = () => command(button.dataset.backdropCommand);
 $('#radialBackdropVolume').oninput = (event) =>
   changeVolume(Number(event.target.value));
+// The progress bar previews the time under the pointer before a click seeks there.
+$('#radialBackdropSeek').addEventListener('pointermove', (event) => {
+  const bar = event.currentTarget.getBoundingClientRect(),
+    ratio = Math.max(0, Math.min(1, (event.clientX - bar.left) / bar.width)),
+    preview = $('.seek-preview');
+  preview.textContent = duration() ? time(ratio * duration()) : '';
+  preview.style.left = ratio * 100 + '%';
+});
 $('#radialBackdropSeek').onchange = (event) => {
   seek(Number(event.target.value));
   event.target.blur();
