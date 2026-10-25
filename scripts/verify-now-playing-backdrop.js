@@ -50,7 +50,7 @@ async function main(){
   assert.equal(await hidden(),true,'the window starts with an unobstructed player');
   assert.equal(await run(`preferences.menuTimeout`),8,'the browsing timeout starts at the original 8 seconds');
   await run(`savePreferences({idleNowPlaying:false,hoverBack:false,mouseModeKey:'off'});demo=false;acceptPlayback({item:{uri:'spotify:track:AAAAAAAAAAAAAAAAAAAAAA',name:'Night Drive',artists:[{name:'turnbit sessions'}],album:{name:'After Hours',images:[{url:${JSON.stringify(ART)}}]},duration_ms:214000},is_playing:true,progress_ms:62000,liked:false,shuffle_state:false,repeat_state:'off',device:{id:'test',name:'Living Room',volume_percent:62}});drawNavigation();`);
-  // Song text and cover change together after the cover decodes, in a short crossfade.
+  // Song text updates after cover decoding; the cover itself swaps without animation.
   await until(()=>run(`$('#radialBackdropTitle').textContent==='Night Drive'&&$('#radialBackdropArtist').textContent==='turnbit sessions'`),'the player shows the new song');
   for(const selector of ['#radialBackdropSeek','#radialBackdropVolume','#radialBackdropPlay','#radialBackdropBrowse'])assert.equal(await hittable(selector),true,selector+' receives input');
   const out=path.join(__dirname,'../artifacts');fs.mkdirSync(out,{recursive:true});
@@ -113,9 +113,8 @@ async function main(){
   await run(`showLibrary('songs');`);
   await until(()=>run(`nav.current.rows.some(row=>row.action==='song'&&row.demoIndex===1)`),'the demo song list did not load');
   await run(`nav.current.selected=nav.current.rows.findIndex(row=>row.action==='song'&&row.demoIndex===1);drawNavigation();selectItem();`);
-  await wait(400);
-  assert.equal(await hidden(),true,'song selection returns to the player');
-  assert.equal(await run(`$('#radialBackdropTitle').textContent`),'A Little Further','the returned player shows the selected song');
+  await until(hidden,'song selection did not return to the player');
+  await until(()=>run(`$('#radialBackdropTitle').textContent==='A Little Further'`),'the returned player did not show the selected song');
   // Reversing an in-flight transition should settle on the last requested view.
   await run(`browseFromPlayer();`);await wait(60);
   await run(`dismissDialOverlay();`);await wait(60);
@@ -177,14 +176,18 @@ async function main(){
   // Ambient glow: the artwork tints the middle of the menu, with the mask carrying the falloff.
   const playing=`{item:{uri:'spotify:track:AAAAAAAAAAAAAAAAAAAAAA',name:'Night Drive',artists:[{name:'turnbit sessions'}],album:{name:'After Hours',images:[{url:${JSON.stringify(ART)}}]},duration_ms:214000},is_playing:true,progress_ms:62000,device:{id:'test',name:'Living Room',volume_percent:62}}`;
   await run(`demo=false;acceptPlayback(${playing});render();`);await wait(250);
-  const glow=()=>run(`(()=>{const el=$('#radialGlow'),style=getComputedStyle(el);return {opacity:style.opacity,art:el.style.backgroundImage.startsWith('url('),masked:(style.maskImage||style.webkitMaskImage||'').includes('gradient'),blurred:style.filter.includes('blur')};})()`);
+  const glow=()=>run(`(()=>{const el=$('#radialGlow'),style=getComputedStyle(el);return {opacity:style.opacity,color:style.backgroundColor,sampled:style.getPropertyValue('--artwork-color').trim(),image:style.backgroundImage,masked:(style.maskImage||style.webkitMaskImage||'').includes('gradient')};})()`);
   // The glow follows the cover through the song crossfade, then eases in.
   await until(()=>run(`Number(getComputedStyle($('#radialGlow')).opacity)>0.1`),'the glow fades in with the new cover');
+  // Sampling the cover is asynchronous and the colour then eases over its own transition, so wait for
+  // it to leave the neutral wash rather than reading mid-ease.
+  const NEUTRAL='rgb(25, 20, 20)';
+  await until(async()=>(await glow()).color!==NEUTRAL,'the glow never took the artwork colour up');
   let glowState=await glow();
-  assert.equal(glowState.art,true,'the glow takes its colour from the playing artwork');
+  assert.equal(glowState.color,glowState.sampled,'the glow takes its colour from the playing artwork');
   assert.ok(Number(glowState.opacity)>0&&Number(glowState.opacity)<0.5,'subtly: '+glowState.opacity);
   assert.equal(glowState.masked,true,'a gradient mask fades it out, so it has no edge');
-  assert.equal(glowState.blurred,true,'and it is blurred past recognition');
+  assert.equal(glowState.image,'none','painting that colour flat, so the cover itself stays untouched');
   assert.equal(await run(`(()=>{const g=$('#radialGlow').getBoundingClientRect();return Math.abs((g.top+g.bottom)/2-innerHeight/2)<2;})()`),true,'centred on the middle of the list rather than sitting low');
   assert.equal(await run(`(()=>{const g=$('#radialGlow').getBoundingClientRect();return g.left<0&&g.right>innerWidth&&g.width>=innerWidth*1.2;})()`),true,'and spread across the full window with room for the blurred falloff');
   assert.equal(await run(`$('#radialBackdrop').contains($('#radialGlow'))&&!!($('#radialGlow').compareDocumentPosition($('.radial-backdrop-info'))&Node.DOCUMENT_POSITION_FOLLOWING)`),true,'painting under the player, so it reaches behind the controls');
@@ -213,6 +216,40 @@ async function main(){
   await run(`dialOverlay.lastInput=Date.now()-20000;`);await wait(700);
   assert.equal(await hidden(),false,'a longer timeout outlasts the old fixed one');
   await run(`savePreferences({menuTimeout:600});dismissDialOverlay();`);await wait(250);
+
+  // Dial Menu Returns to Playlist: the menu rewinds to the list the playing song was chosen from, so
+  // browsing elsewhere never costs you your place in the music.
+  const wandered=async()=>{await run(`browseFromPlayer();nav.goHome();showMusic();drawNavigation();`);await wait(250);assert.equal(await run(`nav.current.title`),'Music','browsing wanders off the playlist');};
+  const atSource=()=>run(`[nav.current.playlist?.id,nav.current.rows[nav.current.selected]?.demoIndex,nav.stack.length]`);
+  await run(`savePreferences({menuTimeout:600,songOpensNowPlaying:true,menuReturnsToSource:true});demo=true;nav.reset(root());browseFromPlayer();showLibrary('playlist',{id:'demo-night',name:'After Hours',demoIndexes:[0,1]});`);
+  await until(()=>run(`nav.current.rows.some(row=>row.action==='song'&&row.demoIndex===1)`),'the demo playlist did not load');
+  assert.equal(await run(`settingsRows('window').find(row=>row.key==='menuReturnsToSource')?.detail`),'On','the Window menu offers the return, on by default');
+  await run(`nav.current.selected=nav.current.rows.findIndex(row=>row.action==='song'&&row.demoIndex===1);drawNavigation();selectItem();`);await wait(500);
+  assert.equal(await hidden(),true,'choosing the song puts the menu away');
+  // A close you asked for happens at once and rewinds behind the fade, with nothing caught halfway out.
+  await wandered();
+  await run(`dismissDialOverlay();`);
+  assert.equal(await hidden(),true,'the dismiss puts the player back without waiting');
+  assert.equal(await run(`nav.current.title`),'Music','and leaves the menu alone while it fades');
+  await until(async()=>(await atSource())[0]==='demo-night','the menu never rewound behind the fade');
+  assert.deepEqual(await atSource(),['demo-night',1,2],'the rewind lands on that playlist, on the song that is playing');
+  await run(`browseFromPlayer();`);await wait(250);
+  assert.equal(await run(`nav.current.playlist?.id`),'demo-night','so the next press opens the music again');
+  // The timeout shows the rewind instead: the list flows in while the menu is still up, then it goes.
+  await run(`savePreferences({menuTimeout:1});nav.goHome();showMusic();drawNavigation();dialOverlay.lastInput=Date.now()-20000;`);
+  await until(()=>run(`nav.current.playlist?.id==='demo-night'`),'the timeout did not rewind the menu');
+  assert.equal(await hidden(),false,'the menu holds on screen for the switch');
+  assert.equal(await run(`$('#radialLabels').dataset.rewind==='true'&&$('#windowViewLabel').textContent==='AFTER HOURS'`),true,'with the new list animating in under its own heading');
+  await until(hidden,'the menu did not close after the rewind had been seen');
+  // Reopening inside the hold keeps the menu up on the list it rewound to.
+  await run(`savePreferences({menuTimeout:600});browseFromPlayer();nav.goHome();showMusic();drawNavigation();savePreferences({menuTimeout:1});dialOverlay.lastInput=Date.now()-20000;`);
+  await until(()=>run(`nav.current.playlist?.id==='demo-night'`),'the timeout did not rewind the menu');
+  await run(`savePreferences({menuTimeout:600});browseFromPlayer();`);await wait(700);
+  assert.equal(await hidden(),false,'coming back during the hold cancels the close');
+  // Off, the menu keeps whatever page browsing ended on.
+  await run(`savePreferences({menuReturnsToSource:false});nav.goHome();showMusic();drawNavigation();dismissDialOverlay();`);await wait(500);
+  assert.equal(await run(`nav.current.title`),'Music','turned off, the menu stays where you left it');
+  await run(`savePreferences({menuReturnsToSource:true,songOpensNowPlaying:true});`);
 
   // Split View: while the menu is up it sits beside the player instead of covering it. The menu still
   // comes and goes the same way, so the idle timeout collapses it and the player expands to fill.
@@ -255,9 +292,9 @@ async function main(){
   await run(`savePreferences({songOpensNowPlaying:false});demo=true;showLibrary('songs');drawNavigation();`);
   await until(()=>run(`nav.current.rows.some(row=>row.action==='song'&&row.demoIndex===2)`),'the demo song list did not load');
   const chosen=await run(`nav.current.rows.find(row=>row.action==='song'&&row.demoIndex===2).label`);
-  await run(`nav.current.selected=nav.current.rows.findIndex(row=>row.action==='song'&&row.demoIndex===2);drawNavigation();selectItem();`);await wait(450);
+  await run(`nav.current.selected=nav.current.rows.findIndex(row=>row.action==='song'&&row.demoIndex===2);drawNavigation();selectItem();`);
+  await until(()=>run(`$('#radialBackdropTitle').textContent===${JSON.stringify(chosen)}`),'the player beside the menu did not follow the selection');
   assert.equal(await hidden(),false,'the menu stays put');
-  assert.equal(await run(`$('#radialBackdropTitle').textContent`),chosen,'and the player beside it follows the selection');
   assert.equal(await insideMenu(),true,'the playing row keeps its artwork inside the menu half');
   // The seam between the halves is a choice.
   const seam=()=>run(`Number(getComputedStyle($('#radialBackdrop'),'::after').opacity)`);
@@ -297,14 +334,14 @@ async function main(){
   await run(`dismissDialOverlay();`);win.setSize(960,720);await wait(300);
   await run(`demo=false;acceptPlayback(null);render();`);
   await until(()=>run(`$('#radialBackdropTitle').textContent==='Nothing playing'`),'the player clears when nothing is playing');
-  assert.equal(await run(`$('#radialBackdropArt').style.backgroundImage`),'none');
+  assert.equal(await run(`$('#radialBackdrop').dataset.hasArtwork`),'false','the artwork color wash clears with playback');
   // A loop here asserted the backdrop hides for every non-radial interface. Both of those are paused:
   // see CLAUDE.md. Turning the backdrop off below still covers the same hiding path.
   await run(`savePreferences({interfaceStyle:'radial',nowPlayingBackdrop:false});drawNavigation();`);
   assert.equal(await run(`$('#radialBackdrop').hidden`),true,'optional classic window presentation still works');
   assert.equal(await run(`$('#radial').inert`),false,'ordinary widget navigation remains accessible');
   assert.deepEqual(errors,[],'no renderer crashes');
-  console.log('Window views: complete player fade, an artwork-tinted menu glow, dedicated browsing, an adjustable menu timeout, Split View on both edges with its optional divider, idle collapse and narrow-window fallback, song selection, rapid reversals, idle return, focus, responsive controls, and playback passed.');
+  console.log('Window views: complete player fade, an artwork-tinted menu glow, dedicated browsing, an adjustable menu timeout, a watchable rewind to the playlist in play, Split View on both edges with its optional divider, idle collapse and narrow-window fallback, song selection, rapid reversals, idle return, focus, responsive controls, and playback passed.');
   app.quit();
 }
 main().catch(error=>{console.error(error);app.exit(1);});

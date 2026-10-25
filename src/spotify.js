@@ -376,13 +376,13 @@ class SpotifyClient {
     this.publishLike(
       uri,
       entry,
-      'Spotify has not confirmed the like change. Its latest state is shown; press Like to retry.',
+      'Spotify has not confirmed the save change. Its latest state is shown; use Save to Liked Songs to retry.',
     );
   }
   library(kind, id, offset = 0) {
     if (!Number.isInteger(offset) || offset < 0 || offset > 100000)
       throw new Error('Invalid library page.');
-    const paging = `limit=50&offset=${offset}`;
+    const paging = `limit=20&offset=${offset}`;
     if (kind === 'playlists') return this.api(`/me/playlists?${paging}`);
     if (kind === 'songs') return this.api(`/me/tracks?${paging}`);
     if (
@@ -441,8 +441,8 @@ class SpotifyClient {
         entry.verification = this.verifyLike(item.uri, entry);
         return {
           message: liked
-            ? 'Syncing like with Spotify…'
-            : 'Syncing unlike with Spotify…',
+            ? 'Adding to Liked Songs…'
+            : 'Removing from Liked Songs…',
         };
       }
       const next =

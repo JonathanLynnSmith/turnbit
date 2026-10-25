@@ -88,8 +88,8 @@ test('library paging uses current Spotify item endpoints and plays selected play
   client.setTokens({access_token:'test',refresh_token:'refresh',expires_in:3600});
   const id='a'.repeat(22);
   await client.library('playlists',null,50);await client.library('songs');await client.library('playlist',id,100);
-  assert.match(requests[0].url,/\/me\/playlists\?limit=50&offset=50$/);
-  assert.match(requests[1].url,/\/me\/tracks\?/);assert.match(requests[2].url,new RegExp(`/playlists/${id}/items\\?limit=50&offset=100$`));
+  assert.match(requests[0].url,/\/me\/playlists\?limit=20&offset=50$/);
+  assert.match(requests[1].url,/\/me\/tracks\?/);assert.match(requests[2].url,new RegExp(`/playlists/${id}/items\\?limit=20&offset=100$`));
   await client.command('play-item',{contextUri:`spotify:playlist:${id}`,position:104});
   assert.deepEqual(JSON.parse(requests[3].options.body),{context_uri:`spotify:playlist:${id}`,offset:{position:104}});
   await client.command('play-item',{uri:`spotify:track:${id}`});assert.deepEqual(JSON.parse(requests[4].options.body),{uris:[`spotify:track:${id}`]});

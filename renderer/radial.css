@@ -9,20 +9,26 @@ body[data-interface=radial] #radial{display:block;position:relative;z-index:1;wi
 .radial-label[aria-selected=true]{font-weight:400;color:#f6fffc}
 .radial-label:focus-visible{outline:0;text-decoration:underline;text-underline-offset:8px;text-decoration-thickness:1px}
 .radial-label:disabled{cursor:default}
+.radial-label.has-playlist-cover{padding-left:56px}
+.radial-label.has-playlist-cover::before{content:'';position:absolute;left:2px;top:50%;width:44px;height:44px;transform:translateY(-50%);border-radius:4px;background:#191414;box-shadow:0 4px 14px #0006;pointer-events:none}
+.radial-label .playlist-cover{position:absolute;left:2px;top:50%;width:44px;height:44px;transform:translateY(-50%);border-radius:4px;background:#191414;object-fit:contain;box-shadow:0 4px 14px #0006;pointer-events:none}
 #radialContext,#radialStatus{text-align:left;position:absolute;left:32px;right:32px;pointer-events:none;font-size:9px;letter-spacing:2.5px;color:#d1e9df;opacity:.45;text-shadow:0 1px 4px #000;z-index:1}
 #radialContext{top:28px}#radialStatus{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;bottom:28px;font-variant-numeric:tabular-nums;letter-spacing:1.8px}
 /* List text alignment follows Text Alignment (data-align); panel placement follows the docked edge (data-edge). */
 body[data-align=right] .radial-label{text-align:right;transform-origin:right center}
+body[data-align=right] .radial-label.has-playlist-cover{padding-left:2px;padding-right:56px}
+body[data-align=right] .radial-label.has-playlist-cover::before{left:auto;right:2px}
+body[data-align=right] .radial-label .playlist-cover{left:auto;right:2px}
 body[data-align=right] #radialContext,body[data-align=right] #radialStatus{text-align:right}
 body[data-interface=radial] dialog{color:#29343c}
 @media(prefers-reduced-motion:reduce){.radial-label{will-change:auto}}
 
 /* Playback floats in the inward belly of the same arc. */
-:is(#radialNow,.radial-now-snapshot){position:absolute;left:30px;top:50%;width:min(300px,calc(100% - 60px));transform:translateY(-50%);color:#eff8f5;animation:radial-panel-in .32s cubic-bezier(.2,.8,.2,1);text-shadow:0 2px 8px #0009}
+:is(#radialNow,.radial-now-snapshot){position:absolute;left:30px;top:50%;width:min(300px,calc(100% - 60px));transform:translateY(-50%);color:#eff8f5;text-shadow:0 2px 8px #0009}
 body[data-edge=left] :is(#radialNow,.radial-now-snapshot){left:auto;right:30px}
 :is(#radialNow,.radial-now-snapshot)::before{content:'';position:absolute;inset:-30px -20px;z-index:-1;border-radius:48% 12% 12% 48%;background:radial-gradient(ellipse at 75% 45%,#182a2580,transparent 73%);pointer-events:none}
 body[data-edge=right] :is(#radialNow,.radial-now-snapshot)::before{border-radius:12% 48% 48% 12%;background:radial-gradient(ellipse at 25% 45%,#182a2580,transparent 73%)}
-.radial-art{width:min(244px,82%);aspect-ratio:1;margin:0 0 26px;overflow:hidden;position:relative;border-radius:9px;background:linear-gradient(145deg,#263b3a,#122321);box-shadow:0 16px 40px -8px #0006,0 0 40px #bed9ce0a;display:grid;place-items:center}
+.radial-art{width:min(244px,82%);aspect-ratio:1;margin:0 0 26px;overflow:hidden;position:relative;border-radius:8px;background:linear-gradient(145deg,#263b3a,#122321);box-shadow:0 16px 40px -8px #0006,0 0 40px #bed9ce0a;display:grid;place-items:center}
 body[data-edge=left] .radial-art{margin-left:auto}
 .radial-art img{width:100%;height:100%;object-fit:cover;display:block}
 :is(#radialArtFallback,.radial-art-fallback){font-size:65px;font-weight:200;color:#d3eee57a;text-shadow:none}
@@ -39,9 +45,7 @@ body[data-edge=left] .radial-art{margin-left:auto}
 :is(#radialSongList,.radial-song-list){display:block;background:none;border:0;color:#bad5c8;font:300 10px 'Segoe UI',sans-serif;letter-spacing:1px;padding:10px 0;margin-top:14px;cursor:pointer;text-shadow:0 2px 5px #0008}
 body[data-edge=left] :is(#radialSongList,.radial-song-list){margin-left:auto}
 :is(#radialSongList,.radial-song-list):hover{color:#f1fff8}
-@keyframes radial-panel-in{from{opacity:0;transform:translate3d(var(--flow-enter),calc(-50% + 12px),0) scale(.985)}to{opacity:1;transform:translate3d(0,-50%,0) scale(1)}}
 @media(max-height:580px){.radial-art{width:145px;margin-bottom:15px}:is(#radialTitle,.radial-title){font-size:23px}:is(#radialAlbum,.radial-album){margin-bottom:12px}.radial-volume{margin-top:12px}}
-@media(prefers-reduced-motion:reduce){:is(#radialNow,.radial-now-snapshot){animation:none}}
 
 #radial{--flow-enter:14px}body[data-edge=left] #radial{--flow-enter:-14px}
 #radialLabels{animation:radial-list-in .18s ease-out}
@@ -52,7 +56,11 @@ body[data-edge=left] :is(#radialSongList,.radial-song-list){margin-left:auto}
 :is(#radialSongList,.radial-song-list){opacity:.65;transition:opacity .15s ease,color .15s ease}
 :is(#radialSongList,.radial-song-list):hover,:is(#radialSongList,.radial-song-list):focus-visible{opacity:1}
 @keyframes radial-list-in{from{opacity:0;transform:translate(var(--flow-enter),-50%)}to{opacity:1;transform:translate(0,-50%)}}
-@media(prefers-reduced-motion:reduce){#radialLabels{animation:none}:is(#radialSongList,.radial-song-list){transition:none}}
+/* Dial Menu Returns to Playlist: its own name so setting the attribute starts the entrance again, and
+   a longer travel than an ordinary page change, since this one is a switch the user is meant to catch. */
+#radialLabels[data-rewind=true]{animation:radial-rewind-in .34s cubic-bezier(.2,.8,.2,1)}
+@keyframes radial-rewind-in{from{opacity:0;transform:translate(calc(var(--flow-enter) * 2.4),-50%)}to{opacity:1;transform:translate(0,-50%)}}
+@media(prefers-reduced-motion:reduce){#radialLabels,#radialLabels[data-rewind=true]{animation:none}:is(#radialSongList,.radial-song-list){transition:none}}
 
 /* A broad scrim holds its strength past the text before an eased oval falloff. */
 body[data-edge=right] #radial{margin-left:auto}
@@ -111,8 +119,8 @@ body[data-edge=right] :is(#radialNow,.radial-now-snapshot) .radial-art{margin-le
 /* Current-track details extend the text row without replacing its typography. */
 .radial-label.has-mini{width:max-content;max-width:350px;padding-top:4px;padding-bottom:4px}
 .radial-label.has-mini>span,.radial-label.has-mini>small{display:block}
-.radial-mini{position:absolute;inset:0;pointer-events:none;text-align:inherit;animation:mini-reveal .2s ease-out}
-.radial-mini .mini-cover{position:absolute;left:-72px;top:6px;width:62px;height:62px;display:grid;place-items:center;overflow:hidden;border-radius:5px;background:linear-gradient(145deg,#263b3a,#122321);box-shadow:0 4px 12px #0004}
+.radial-mini{position:absolute;inset:0;pointer-events:none;text-align:inherit}
+.radial-mini .mini-cover{position:absolute;left:-72px;top:6px;width:62px;height:62px;display:grid;place-items:center;overflow:hidden;border-radius:4px;background:linear-gradient(145deg,#263b3a,#122321);box-shadow:0 4px 12px #0004}
 .radial-mini img{width:100%;height:100%;object-fit:cover}
 .radial-mini .mini-cover span{padding:0;font-size:26px;color:#d3eee5a0}
 .radial-mini .mini-info{position:absolute;left:0;right:auto;bottom:-10px;width:100%;display:flex;align-items:center;gap:10px}
@@ -125,7 +133,7 @@ body[data-edge=right] :is(#radialNow,.radial-now-snapshot) .radial-art{margin-le
 body[data-align=left] .radial-mini .mini-info{right:auto;left:0}
 @keyframes mini-reveal{from{opacity:0}to{opacity:1}}
 .radial-mini .mini-cover::after{content:'';position:absolute;inset:0;pointer-events:none;border:1px solid #e8f8ef12;border-radius:inherit}
-@media(prefers-reduced-motion:reduce){.radial-mini{animation:none}.radial-mini .mini-progress i{transition:none;will-change:auto}}
+@media(prefers-reduced-motion:reduce){.radial-mini .mini-progress i{transition:none;will-change:auto}}
 
 /* Independent text and playback accents for the radial interface. */
 #radial,#radialBackdrop{--radial-primary:#eef7f5;--radial-accent:hsl(150 75% 68%)}
@@ -190,7 +198,11 @@ body[data-interface=radial][data-edge=right] #actionNotice{left:auto;right:72px;
 .playback-indicators>span{display:inline-flex;width:16px;height:16px;color:currentColor;opacity:.28;transition:color .2s,opacity .2s}
 .playback-indicators>span[data-active=true]{opacity:1;color:var(--radial-accent,#1db954)}
 .playback-indicators svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
-.playback-indicators [data-mode=like][data-active=true] svg{fill:currentColor;stroke-width:1}
+.spotify-like-off{display:block;background:var(--radial-accent,#1db954);-webkit-mask:url('assets/spotify-like.svg') center/contain no-repeat;mask:url('assets/spotify-like.svg') center/contain no-repeat}
+.spotify-like-on{display:block;background:var(--radial-accent,#1db954);-webkit-mask:url('assets/spotify-liked.svg') center/contain no-repeat;mask:url('assets/spotify-liked.svg') center/contain no-repeat}
+.playback-indicators [data-mode=like] :is(.spotify-like-off,.spotify-like-on){width:100%;height:100%}
+.playback-indicators [data-mode=like] .spotify-like-on,.playback-indicators [data-mode=like][data-active=true] .spotify-like-off{display:none}
+.playback-indicators [data-mode=like][data-active=true] .spotify-like-on{display:block}
 .repeat-one{display:none;fill:currentColor;stroke:none;font:600 10px 'Segoe UI',sans-serif}
 [data-repeat=track] .repeat-one{display:block}
 body[data-edge=right] #radialNow .playback-indicators,body[data-edge=right] .radial-now-snapshot .playback-indicators{justify-content:flex-end}
@@ -199,9 +211,7 @@ body[data-edge=right] #radialNow .playback-indicators,body[data-edge=right] .rad
 @keyframes like-pending{from{opacity:.35}to{opacity:1}}
 @media(prefers-reduced-motion:reduce){.playback-indicators [data-pending=true]{animation:none;opacity:.6}}
 
-/* Playing indicator: three accent bars that bounce while music is actually playing, and step away
-   when it pauses (the text beside them already says Paused). Badged onto the artwork in the menu's
-   playing row and the widget's Now Playing; inline before PLAYING in the window player. */
+/* Playing indicator beside metadata; album artwork stays unobstructed. */
 .eq{box-sizing:content-box;display:inline-flex;align-items:flex-end;gap:2px;height:12px;flex:none;color:var(--radial-accent);pointer-events:none}
 .eq i{display:block;width:3px;height:100%;border-radius:1px;background:currentColor;transform-origin:bottom;transform:scaleY(.3)}
 .eq[data-playing=true] i{animation:eq-bounce .9s ease-in-out infinite alternate}
@@ -209,9 +219,7 @@ body[data-edge=right] #radialNow .playback-indicators,body[data-edge=right] .rad
 .eq[data-playing=true] i:nth-child(3){animation-duration:1.1s;animation-delay:-.6s}
 .eq:not([data-playing=true]){display:none}
 @keyframes eq-bounce{0%{transform:scaleY(.25)}50%{transform:scaleY(1)}100%{transform:scaleY(.45)}}
-:is(.radial-art,.mini-cover) .eq{position:absolute;right:6px;bottom:6px;padding:4px;border-radius:4px;background:#000000a6;box-shadow:0 1px 4px #0006}
-.radial-mini .mini-cover .eq{right:4px;bottom:4px;height:10px;padding:3px}
-.radial-mini .mini-cover .eq i{width:3px}
+:is(#radialNow,.radial-now-snapshot) .radial-track>.eq{margin-bottom:10px}
 .radial-backdrop-state{display:flex;align-items:center;gap:10px}
 .radial-backdrop-state .eq{height:10px}
 body[data-player-column=narrow] .radial-backdrop-state{justify-content:center}
@@ -227,16 +235,17 @@ body[data-render-suspended=true] *{animation-play-state:paused!important}
 /* Control rows (Back) use the header's small spaced capitals so they read as navigation, not music; full brightness when highlighted. */
 #radial .radial-label.radial-control>span{font-size:13px;font-weight:500;letter-spacing:2.5px;text-transform:uppercase;opacity:calc(.6 + .4*var(--light,0))}
 #radial .radial-label.radial-control .row-icon{width:1.1em;height:1.1em;margin-right:.55em;vertical-align:-.18em;background:var(--radial-accent)}
+.row-icon-settings{--icon:url('assets/menu-settings.svg')}
+.row-icon-playlists{--icon:url('assets/menu-playlists.svg')}
+.row-icon-liked-songs{--icon:url('assets/menu-liked-songs.svg')}
+#radial .radial-label.radial-control .row-icon-playing{width:1.1em;height:1.1em;margin-right:.55em;vertical-align:-.18em}
+body[data-back-hold=true] #radial .radial-label.radial-control[aria-selected=true] .row-icon-playing{background:conic-gradient(var(--radial-accent) calc(var(--back-hold,0)*1turn),color-mix(in srgb,var(--radial-accent) 28%,transparent) 0);-webkit-mask:radial-gradient(farthest-side,#0000 calc(100% - 2.4px),#000 calc(100% - 2px),#000 calc(100% - .6px),#0000 100%);mask:radial-gradient(farthest-side,#0000 calc(100% - 2.4px),#000 calc(100% - 2px),#000 calc(100% - .6px),#0000 100%)}
+body[data-back-hold=true] #radial .radial-label.radial-control[aria-selected=true] .row-icon-playing i{visibility:hidden}
 /* Hover to Go Back: the accent ring fills while the hold counts down. */
 body[data-back-hold=true] #radial .radial-label.radial-control :is(.row-icon-back,.row-icon-now,.row-icon-more){background:conic-gradient(var(--radial-accent) calc(var(--back-hold,0)*1turn),color-mix(in srgb,var(--radial-accent) 28%,transparent) 0)}
 
-/* Ambient glow: the playing artwork, blurred until little more than its average colour is left, then
-   masked to a broad oval centred on the middle of the menu. The mask carries the whole falloff, so the
-   colour washes along the label curve and outward across the page — behind the player's controls too —
-   and reaches nothing before any frame edge. It sits above the scrim and below every piece of content,
-   so the text over it stays crisp. Blurring to an average, rather than sampling a pixel, keeps the
-   artwork's own light and dark areas from pulling the glow off centre. */
-#radialGlow{position:absolute;inset:-12%;background-size:cover;background-position:center;filter:blur(150px) saturate(.85);opacity:0;pointer-events:none;transition:opacity .5s ease;-webkit-mask-image:var(--glow-mask);mask-image:var(--glow-mask)}
+/* The artwork remains intact in its cover frame. A sampled color supplies the ambient light. */
+#radialGlow{position:absolute;inset:-12%;background:var(--artwork-color,#191414);opacity:0;pointer-events:none;transition:opacity .5s ease;-webkit-mask-image:var(--glow-mask);mask-image:var(--glow-mask)}
 #radialBackdrop{--glow-mask:radial-gradient(ellipse 50% 44% at 32% 50%,#000,#000e 16%,#000a 34%,#0005 54%,#0002 72%,transparent 88%)}
 body[data-edge=right] #radialBackdrop{--glow-mask:radial-gradient(ellipse 50% 44% at 68% 50%,#000,#000e 16%,#000a 34%,#0005 54%,#0002 72%,transparent 88%)}
 @media(prefers-reduced-motion:reduce){#radialGlow{transition:none}}
@@ -249,17 +258,32 @@ body[data-edge=right] #radialHaze{left:auto;right:0;transform:scaleX(-1)}
 body[data-window-mode=true][data-interface=radial] .window-handle{display:none}
 
 /* Two window views share the frame. The player leaves before browsing takes focus. */
-#radialBackdrop{position:fixed;inset:0;z-index:0;overflow:hidden;background:#101214;color:var(--radial-primary);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
-#radialBackdropArt{position:absolute;inset:-90px;background-size:cover;background-position:center;filter:blur(85px) saturate(.8);opacity:.24;pointer-events:none;transition:opacity .28s ease}
+@property --artwork-color{syntax:'<color>';inherits:true;initial-value:#191414}
+#radialBackdrop{position:fixed;inset:0;z-index:0;overflow:hidden;background:#101214;color:var(--radial-primary);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;transition:--artwork-color .5s ease}
+#radialBackdropArt{position:absolute;inset:0;background:radial-gradient(ellipse 58% 70% at 38% 42%,color-mix(in srgb,var(--artwork-color,#191414) 42%,transparent),transparent 100%);opacity:1;pointer-events:none;transition:opacity .28s ease}
+#radialBackdrop[data-has-artwork=false] #radialBackdropArt{opacity:0}
 .radial-backdrop-scrim{position:absolute;inset:0;background:linear-gradient(145deg,#10121426,#101214b3 65%,#101214ed);pointer-events:none}
-.radial-backdrop-header{position:absolute;top:28px;left:40px;right:32px;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:20px}
-.radial-backdrop-brand{display:flex;align-items:center;min-width:0;font-size:11px;font-weight:600;letter-spacing:2px;color:color-mix(in srgb,var(--radial-primary) 75%,transparent);white-space:nowrap}
+.radial-backdrop-header{position:absolute;top:28px;left:40px;right:32px;z-index:3;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px}
+.radial-browse-group{display:flex;align-items:center;justify-self:start;gap:10px;min-width:0}
+.spotify-link{display:none;align-items:center;gap:5px;min-height:32px;color:#fff;text-decoration:none;opacity:.8;transition:opacity .16s ease}
+body[data-spotify-connected=true] .spotify-link{display:inline-flex}
+.spotify-link img{display:block;width:84px;height:auto}
+.spotify-link span{font-size:14px;line-height:1}
+body[data-spotify-installed=false] .spotify-link span{font-size:10px;font-weight:700;letter-spacing:.04em;white-space:nowrap}
+.spotify-link:hover,.spotify-link:focus-visible{opacity:1}
+.spotify-link:focus-visible{outline:2px solid var(--radial-accent,#a7eac8);outline-offset:5px;border-radius:3px}
+#widgetSpotifyLink{position:absolute;top:20px;right:24px;z-index:5;padding:3px 6px;border-radius:6px;background:#0d1112d9}
+body[data-edge=right] #widgetSpotifyLink{right:auto;left:24px}
+body[data-backdrop-active=true] #widgetSpotifyLink{display:none}
+.radial-backdrop-brand{display:flex;align-items:center;justify-self:center;min-width:0;font-size:11px;font-weight:600;letter-spacing:2px;color:color-mix(in srgb,var(--radial-primary) 75%,transparent);white-space:nowrap}
 .radial-backdrop-brand .brand-divider{flex:none;margin:0 10px;color:color-mix(in srgb,var(--radial-primary) 38%,transparent)}
+#windowDialPinned{display:inline-block;flex:none;width:15px;height:15px;background:var(--radial-accent);-webkit-mask:url('assets/menu-pin.svg') center/contain no-repeat;mask:url('assets/menu-pin.svg') center/contain no-repeat}
 #windowViewLabel{display:inline-block;min-width:0;max-width:40vw;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}
 #radialBackdrop button{font:inherit;cursor:pointer}
 #radialBackdrop button:disabled{opacity:.3;cursor:default}
 #radialBackdrop button:focus-visible,#radialBackdrop input:focus-visible{outline:2px solid var(--radial-accent);outline-offset:5px}
-#radialBackdropBrowse{display:flex;flex:none;align-items:center;gap:9px;padding:10px 15px;border:1px solid #ffffff25;border-radius:30px;color:var(--radial-primary);background:#ffffff08;font-size:12px!important;font-weight:600!important}
+#radialBackdropBrowse{display:flex;justify-self:start;align-items:center;gap:9px;padding:10px 15px;border:1px solid #ffffff25;border-radius:30px;color:var(--radial-primary);background:#ffffff08;font-size:12px!important;font-weight:600!important}
+#windowSpotifyLink{justify-self:end}
 #radialBackdropBrowse:hover{background:#ffffff15;border-color:#ffffff50}
 #radialBackdropBrowse svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
 #radialBackdropBrowse .return-symbol{display:none}
@@ -272,7 +296,7 @@ body[data-dial-overlay=true] #radialBackdropBrowse .return-symbol{display:block}
    translate alone: centred here, beside the divider in Split View. Both animate, so opening the menu
    glides the whole unit over instead of snapping it to a new alignment first. */
 .radial-backdrop-info{--art-gap:clamp(32px,3.5vw,72px);position:absolute;top:105px;bottom:32px;left:50%;translate:-50% 0;width:max-content;max-width:min(1300px,calc(100% - 2 * clamp(28px,6vw,84px)));display:grid;grid-template-columns:auto fit-content(560px);grid-template-rows:minmax(0,max-content) auto;align-content:safe center;gap:44px var(--art-gap);justify-content:center;align-items:center;opacity:1;visibility:visible;transition:opacity .26s ease .08s,visibility 0s,left .3s cubic-bezier(.2,.8,.2,1),translate .3s cubic-bezier(.2,.8,.2,1),scale .3s cubic-bezier(.2,.8,.2,1),max-width .3s cubic-bezier(.2,.8,.2,1)}
-.radial-backdrop-cover{position:relative;width:min(28vw,390px,calc(100vh - 340px));aspect-ratio:1;justify-self:center;overflow:hidden;border-radius:12px;background:radial-gradient(ellipse at 20% 10%,#a8c1b74d,transparent 65%),linear-gradient(145deg,#284c48,#181d2d 72%);box-shadow:0 24px 80px #0005;display:grid;place-items:center}
+.radial-backdrop-cover{position:relative;width:min(28vw,390px,calc(100vh - 340px));aspect-ratio:1;justify-self:center;overflow:hidden;border-radius:8px;background:radial-gradient(ellipse at 20% 10%,#a8c1b74d,transparent 65%),linear-gradient(145deg,#284c48,#181d2d 72%);box-shadow:0 24px 80px #0005;display:grid;place-items:center}
 .radial-backdrop-cover img{width:100%;height:100%;object-fit:cover;display:block;grid-area:1/1}
 .radial-backdrop-cover .radial-art-fallback{font:300 clamp(64px,10vw,130px) -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:color-mix(in srgb,var(--radial-primary) 44%,transparent);grid-area:1/1}
 .radial-backdrop-track{min-width:0;align-self:center}
@@ -296,6 +320,9 @@ body[data-dial-overlay=true] #radialBackdropBrowse .return-symbol{display:block}
 .radial-backdrop-transport button:hover,.radial-backdrop-actions [data-backdrop-command]:hover{color:var(--radial-primary);background:#ffffff14;box-shadow:inset 0 0 0 1px #ffffff12}
 .radial-backdrop-transport button:active,.radial-backdrop-actions [data-backdrop-command]:active{transform:scale(.9);transition-duration:.08s}
 .radial-backdrop-transport svg,.radial-backdrop-actions svg{width:100%;height:100%;overflow:visible;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.radial-backdrop-actions [data-backdrop-command=like] :is(.spotify-like-off,.spotify-like-on){display:block;width:100%;height:100%}
+.radial-backdrop-actions [data-backdrop-command=like] .spotify-like-on,.radial-backdrop-actions [data-backdrop-command=like][aria-pressed=true] .spotify-like-off{display:none}
+.radial-backdrop-actions [data-backdrop-command=like][aria-pressed=true] .spotify-like-on{display:block}
 .radial-backdrop-transport .transport-skip{width:58px;height:58px;padding:13px}
 .radial-backdrop-transport .transport-skip svg{fill:currentColor;stroke:none}
 .radial-backdrop-transport .transport-mode{width:42px;height:42px;padding:11px;color:color-mix(in srgb,var(--radial-primary) 55%,transparent)}
@@ -312,9 +339,6 @@ body[data-dial-overlay=true] #radialBackdropBrowse .return-symbol{display:block}
 /* Like sits with the song it saves, beside the device it plays on. */
 .radial-backdrop-actions{display:flex;align-items:center;gap:14px;margin-top:20px}
 .radial-backdrop-actions [data-backdrop-command=like]{width:38px;height:38px;padding:9px;margin-left:-9px;color:color-mix(in srgb,var(--radial-primary) 65%,transparent)}
-.radial-backdrop-actions [data-backdrop-command=like][aria-pressed=true]{color:var(--radial-accent)}
-.radial-backdrop-actions [data-backdrop-command=like][aria-pressed=true] svg{fill:currentColor}
-.radial-backdrop-actions #radialBackdropDevice{margin-top:0}
 /* Progress and volume: thick rounded tracks with no thumb until the pointer arrives, as on a phone. */
 .radial-backdrop-timeline input[type=range]{appearance:none;-webkit-appearance:none;display:block;width:100%;height:22px;padding:0;margin:0;background:transparent;cursor:pointer}
 .radial-backdrop-timeline input[type=range]::-webkit-slider-runnable-track{height:6px;border:0;border-radius:6px;background:linear-gradient(to right,color-mix(in srgb,var(--radial-primary) 85%,transparent) var(--fill),color-mix(in srgb,var(--radial-primary) 18%,transparent) var(--fill));transition:height .18s ease}
@@ -369,17 +393,20 @@ body[data-backdrop-active=true][data-backdrop-split=true][data-edge=right] #radi
 /* The playing row's artwork floats outside its label. In Split View that room only exists on the
    menu's own side of the seam, so a right-docked menu keeps it inboard. */
 body[data-backdrop-active=true][data-backdrop-split=true][data-edge=right] .radial-mini .mini-cover{left:auto;right:-72px}
-/* In the window player a notice is a frosted pill centred in the header row, scaled with the player,
-   that drops in and fades away. Narrow windows give it its own line below the header. */
-body[data-backdrop-active=true] #actionNotice:not([hidden]){zoom:var(--ui-scale,1);top:22px;bottom:auto;left:50%;right:auto;translate:-50% 0;z-index:4;max-width:min(520px,calc(100% - 440px));margin-top:9px;padding:9px 18px;border-radius:999px;background:#16191ccc;box-shadow:inset 0 0 0 1px #ffffff1a,0 8px 28px #0006;-webkit-backdrop-filter:blur(20px) saturate(1.4);backdrop-filter:blur(20px) saturate(1.4);color:var(--radial-primary,#eef7f5);font:500 13px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;text-align:center;text-shadow:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;animation:notice-in .32s cubic-bezier(.2,.8,.2,1)}
+/* Notices sit below the centered breadcrumb, scaled with the window player. */
+body[data-backdrop-active=true] #actionNotice:not([hidden]){zoom:var(--ui-scale,1);top:74px;bottom:auto;left:50%;right:auto;translate:-50% 0;z-index:4;max-width:min(520px,calc(100% - 48px));margin-top:9px;padding:9px 18px;border-radius:999px;background:#16191ccc;box-shadow:inset 0 0 0 1px #ffffff1a,0 8px 28px #0006;-webkit-backdrop-filter:blur(20px) saturate(1.4);backdrop-filter:blur(20px) saturate(1.4);color:var(--radial-primary,#eef7f5);font:500 13px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;text-align:center;text-shadow:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;animation:notice-in .32s cubic-bezier(.2,.8,.2,1)}
 @keyframes notice-in{from{opacity:0;translate:-50% -8px}to{opacity:1;translate:-50% 0}}
-@media(max-width:760px){body[data-backdrop-active=true] #actionNotice:not([hidden]){top:74px;max-width:calc(100% - 48px)}}
 @media(prefers-reduced-motion:reduce){body[data-backdrop-active=true] #actionNotice:not([hidden]){animation:none}}
 @media(max-width:640px){
   .radial-backdrop-header{top:20px;left:24px;right:20px}
   .radial-backdrop-brand{display:flex;align-items:center;min-width:0;font-size:9px;letter-spacing:1.2px}
   .radial-backdrop-brand .brand-divider{flex:none;margin:0 5px}
 }
+@media(max-width:720px){
+  .radial-backdrop-brand .brand-app,.radial-backdrop-brand .brand-divider{display:none}
+  #windowViewLabel{max-width:min(26vw,160px)}
+}
+@media(max-width:420px){body[data-dial-overlay=true] #radialBackdropBrowse{width:40px;height:40px;justify-content:center;padding:10px}body[data-dial-overlay=true] #radialBackdropBrowse span{display:none}}
 /* Artwork beside the text needs a wide column. data-player-column measures the player's own column:
    the window in Overlay, the half beside the menu in Split View. The height rules below carry the
    same attribute so the cascade between them stays in file order, as it was when both were media queries. */
@@ -397,7 +424,6 @@ body[data-player-column=narrow] .radial-backdrop-state{margin-bottom:9px;font-si
 body[data-player-column=narrow] .radial-backdrop-title{font-size:clamp(25px,5.5vw,35px);-webkit-line-clamp:2;line-height:1.1;margin-bottom:calc(7px - .16em)}
 body[data-player-column=narrow] .radial-backdrop-artist{font-size:17px;margin-bottom:5px}
 body[data-player-column=narrow] .radial-backdrop-album{font-size:12px}
-body[data-player-column=narrow] #radialBackdropDevice{margin-top:0}
 body[data-player-column=narrow] .radial-backdrop-transport{margin-bottom:12px;gap:12px}
 body[data-player-column=narrow] #radialBackdropPlay{width:64px;height:64px;padding:18px}
 body[data-player-column=narrow] .radial-backdrop-transport .transport-skip{width:50px;height:50px;padding:11px}
@@ -446,12 +472,9 @@ body[data-menu-background=black][data-edge=right] #radialMenuPanel{box-shadow:-2
 /* Glass: frosted over the artwork wash, a little lighter than the player, with a lit edge. */
 body[data-menu-background=glass] #radialMenuPanel{background:linear-gradient(to right,#ffffff17,#ffffff0a);-webkit-backdrop-filter:blur(30px) saturate(1.5);backdrop-filter:blur(30px) saturate(1.5);box-shadow:inset -1px 0 0 #ffffff26,20px 0 60px #0007}
 body[data-menu-background=glass][data-edge=right] #radialMenuPanel{background:linear-gradient(to left,#ffffff17,#ffffff0a);box-shadow:inset 1px 0 0 #ffffff26,-20px 0 60px #0007}
-/* Artwork: the playing song's cover, blurred to colour and dimmed under the labels. The blurred
-   layer overhangs the panel so its soft edges are clipped away. Without artwork it uses a deep
-   green wash. */
-body[data-menu-background=artwork] #radialMenuPanel{overflow:hidden;background:#0b0d10;box-shadow:20px 0 60px #0007}
+/* Cover Color uses the sampled color without displaying or modifying the cover image. */
+body[data-menu-background=artwork] #radialMenuPanel{background:linear-gradient(115deg,color-mix(in srgb,var(--artwork-color,#191414) 40%,#0b0d10),#0b0d10);box-shadow:20px 0 60px #0007}
 body[data-menu-background=artwork][data-edge=right] #radialMenuPanel{box-shadow:-20px 0 60px #0007}
-body[data-menu-background=artwork] #radialMenuPanel::before{content:'';position:absolute;inset:-180px;background:var(--menu-art,linear-gradient(160deg,#2f6b58,#173039 55%,#0b0d10)) center/cover;filter:blur(90px) saturate(1.6) brightness(.6)}
 @media(prefers-reduced-motion:reduce){#radialMenuPanel{transition:none!important;transform:none!important}}
 
 /* Large windows: the player's parts scale together by --ui-scale (radial-view.mjs), from 1 at the

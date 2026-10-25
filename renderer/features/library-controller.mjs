@@ -47,6 +47,7 @@ export function createLibraryController({
       /^spotify:(track|episode):[A-Za-z0-9]{22}$/.test(item.uri || '')
     );
   }
+  const PAGE_SIZE = 20;
   function moreRow(offset) {
     return {
       label: 'Load more',
@@ -135,11 +136,10 @@ export function createLibraryController({
     }
     if (page.loading) return;
     page.loading = true;
-    const baseRows = page.rows.filter(
-      (row) =>
-        row.action !== 'more' &&
-        row.action !== 'retry' &&
-        row.action !== 'placeholder',
+    const baseRows = page.rows.filter((row) =>
+      offset
+        ? !['more', 'retry', 'placeholder'].includes(row.action)
+        : ['nav-back', 'play-playlist'].includes(row.action),
     );
     if (!offset)
       page.rows = [
@@ -147,7 +147,9 @@ export function createLibraryController({
         { label: 'Loading…', action: 'placeholder', disabled: true },
       ];
     else {
-      const more = page.rows.find((row) => row.action === 'more');
+      const more = page.rows.find(
+        (row) => row.action === 'more' && row.offset === offset,
+      );
       if (more) more.label = 'Loading…';
     }
     if (nav.current === page) drawNavigation();
@@ -163,7 +165,8 @@ export function createLibraryController({
       const rows = libraryRows(page, data.items || [], offset);
       page.rows = [...baseRows, ...rows];
       if (data.next)
-        page.rows.push(moreRow(offset + (data.items?.length || 50)));
+        page.rows.push(moreRow(offset + (data.items?.length || PAGE_SIZE)));
+      if (offset && rows.length) page.selected = baseRows.length;
       // The Back row is not an item: an empty list still says so.
       if (!page.rows.some((row) => row.action !== 'nav-back'))
         page.rows = [...page.rows, { label: 'No items found', disabled: true }];

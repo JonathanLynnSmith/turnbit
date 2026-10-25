@@ -1,4 +1,5 @@
 // Retain the outgoing artwork and metadata while the new track becomes ready.
+// Album covers swap as static images; only metadata fades.
 class TrackTransition {
   constructor(panel, { reducedMotion = () => false, duration = 360 } = {}) {
     Object.assign(this, { panel, reducedMotion, duration });
@@ -8,11 +9,7 @@ class TrackTransition {
     this.snapshot = null;
   }
   visuals() {
-    return [
-      ...this.panel.querySelectorAll(
-        '.radial-art,.radial-track,.radial-timeline',
-      ),
-    ];
+    return [...this.panel.querySelectorAll('.radial-track,.radial-timeline')];
   }
   reset() {
     this.generation++;
@@ -20,6 +17,7 @@ class TrackTransition {
     this.animations = [];
     this.snapshot?.remove();
     this.snapshot = null;
+    this.panel.querySelector('.radial-art').style.visibility = '';
     this.visuals().forEach((element) => (element.style.opacity = ''));
     this.key = null;
   }
@@ -51,6 +49,8 @@ class TrackTransition {
       this.snapshot = snapshot;
     }
     this.snapshot.style.opacity = '1';
+    this.snapshot.querySelector('.radial-art').style.visibility = '';
+    this.panel.querySelector('.radial-art').style.visibility = 'hidden';
     this.visuals().forEach((element) => (element.style.opacity = '0'));
     queueMicrotask(async () => {
       const image = this.panel.querySelector('.radial-art img');
@@ -60,13 +60,19 @@ class TrackTransition {
           new Promise((resolve) => setTimeout(resolve, 600)),
         ]);
       if (generation !== this.generation) return;
+      this.snapshot.querySelector('.radial-art').style.visibility = 'hidden';
+      this.panel.querySelector('.radial-art').style.visibility = '';
       const options = {
         duration: this.duration,
         easing: 'cubic-bezier(.25,.1,.25,1)',
         fill: 'both',
       };
       this.animations = [
-        this.snapshot.animate([{ opacity: 1 }, { opacity: 0 }], options),
+        ...Array.from(
+          this.snapshot.querySelectorAll('.radial-track,.radial-timeline'),
+          (element) =>
+            element.animate([{ opacity: 1 }, { opacity: 0 }], options),
+        ),
         ...this.visuals().map((element) =>
           element.animate([{ opacity: 0 }, { opacity: 1 }], options),
         ),

@@ -46,6 +46,7 @@ contextBridge.exposeInMainWorld('turnbit', {
   pin: (value) => ipcRenderer.invoke('app:pin', value),
   windowMode: (value) => ipcRenderer.invoke('app:window-mode', value),
   openExternal: (url) => ipcRenderer.invoke('app:open-external', url),
+  spotifyDesktopInstalled: () => ipcRenderer.invoke('app:spotify-installed'),
   minimize: () => ipcRenderer.invoke('app:minimize'),
   close: () => ipcRenderer.invoke('app:close'),
   onVisibility: subscribe('app-visibility'),

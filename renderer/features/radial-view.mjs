@@ -106,26 +106,65 @@ export function createRadialView({
       total: time(duration()),
     };
   }
-  // Ambient glow behind the middle of the menu, tinted by whatever is playing: the artwork is reused as
-  // the source rather than sampled, so it needs no pixel access, and the CSS mask does the fading. It
-  // belongs to the window player's artwork atmosphere; the floating widget keeps its plain dark haze.
+  // Sample a small copy of the cover for ambient color. The displayed cover stays untouched.
+  const artworkColors = new Map();
+  function sampleArtworkColor(source) {
+    if (artworkColors.has(source)) return artworkColors.get(source);
+    const result = (async () => {
+      const image = new Image();
+      image.crossOrigin = 'anonymous';
+      image.src = source;
+      const decoded = await image.decode().then(
+        () => true,
+        () => false,
+      );
+      if (!decoded) return null;
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = 24;
+        const context = canvas.getContext('2d', { willReadFrequently: true });
+        if (!context) return null;
+        context.drawImage(image, 0, 0, 24, 24);
+        const pixels = context.getImageData(0, 0, 24, 24).data;
+        const totals = [0, 0, 0];
+        let weightSum = 0;
+        for (let i = 0; i < pixels.length; i += 4) {
+          if (pixels[i + 3] < 128) continue;
+          const high = Math.max(pixels[i], pixels[i + 1], pixels[i + 2]);
+          const low = Math.min(pixels[i], pixels[i + 1], pixels[i + 2]);
+          const weight = 1 + (high - low) / 255;
+          for (let channel = 0; channel < 3; channel++)
+            totals[channel] += pixels[i + channel] * weight;
+          weightSum += weight;
+        }
+        return weightSum
+          ? `rgb(${totals.map((total) => Math.round(total / weightSum)).join(' ')})`
+          : null;
+      } catch {
+        // Some artwork hosts do not permit canvas reads; retain the neutral wash.
+        return null;
+      }
+    })();
+    artworkColors.set(source, result);
+    if (artworkColors.size > 48)
+      artworkColors.delete(artworkColors.keys().next().value);
+    return result;
+  }
   const GLOW_STRENGTH = 0.3;
   function syncRadialGlow() {
-    const glow = $('#radialGlow'),
+    const backdrop = $('#radialBackdrop'),
+      glow = $('#radialGlow'),
       // The artwork the player is showing, which can briefly trail the song during a crossfade.
       source = backdropActive() ? shownArtwork : '';
     if (syncRadialGlow.source !== source) {
       syncRadialGlow.source = source;
-      glow.style.backgroundImage = source
-        ? `url(${JSON.stringify(source)})`
-        : 'none';
-      // The Artwork dial menu background (radial.css) paints the same image.
+      backdrop.dataset.hasArtwork = String(!!source);
       if (source)
-        $('#radialBackdrop').style.setProperty(
-          '--menu-art',
-          `url(${JSON.stringify(source)})`,
-        );
-      else $('#radialBackdrop').style.removeProperty('--menu-art');
+        sampleArtworkColor(source).then((color) => {
+          if (syncRadialGlow.source === source)
+            backdrop.style.setProperty('--artwork-color', color || '#191414');
+        });
+      else backdrop.style.setProperty('--artwork-color', '#191414');
     }
     glow.style.opacity = source ? GLOW_STRENGTH : 0;
   }
@@ -284,7 +323,7 @@ export function createRadialView({
       match: 'Matching',
       black: 'Black',
       glass: 'Glass',
-      artwork: 'Artwork',
+      artwork: 'Cover Color',
     }[preferences.menuBackground];
   }
   function backdropLayoutName() {
@@ -326,6 +365,7 @@ export function createRadialView({
     // Overlay covers the player with the menu; Split View sets it beside the menu instead.
     const covered = visible && !split;
     document.body.dataset.dialOverlay = String(visible);
+    $('#windowDialPinned').hidden = !visible || !preferences.idlePinned;
     document.body.dataset.backdropSplit = String(split);
     document.body.dataset.splitDivider = String(preferences.splitDivider);
     const radialHost = $('#radial');
@@ -354,6 +394,7 @@ export function createRadialView({
     $('#radialBackdropBrowse span').textContent = visible
       ? 'Now Playing'
       : 'Browse';
+    browseButton.setAttribute('aria-label', visible ? 'Now Playing' : 'Browse');
     $('#windowViewLabel').textContent = visible
       ? nav.current.title === 'turnbit'
         ? 'BROWSE'
@@ -365,6 +406,7 @@ export function createRadialView({
   }
   function revealDialOverlay() {
     if (!backdropActive()) return false;
+    cancelMenuRewind();
     const opened = dialOverlay.show();
     if (nav.current.kind === 'now') {
       nav.dismissIdle();
@@ -375,10 +417,57 @@ export function createRadialView({
     syncDialOverlay();
     return opened;
   }
+  // Dial Menu Returns to Playlist: the menu rewinds to the list the playing song was chosen from, so
+  // browsing elsewhere never costs you your place in the music. On the idle timeout the rewind is a
+  // step to watch: the list flows in while the menu is still up, and the menu goes once it has been
+  // seen. A close you asked for puts the player back at once and rewinds behind the fade instead,
+  // where catching the switch halfway out would only look like a glitch.
+  const MENU_FADE = 240;
+  let rewindTimer = null;
+  function cancelMenuRewind() {
+    if (rewindTimer) clearTimeout(rewindTimer);
+    rewindTimer = null;
+    delete $('#radialLabels').dataset.rewind;
+  }
+  // The path is only worth rewinding to while the menu is somewhere else.
+  function menuRewindPath() {
+    const path = nav.musicPath;
+    return preferences.menuReturnsToSource &&
+      path?.length &&
+      nav.current !== path[path.length - 1]
+      ? path
+      : null;
+  }
+  function rewindMenuToSource(animate = false) {
+    const path = menuRewindPath();
+    if (!path) return false;
+    cancelMenuRewind();
+    nav.stack = [...path];
+    nav.dismissIdle();
+    // A page change snaps the carousel onto its selected row, so the list arrives on the playing song.
+    selectPlayingSong();
+    drawNavigation();
+    if (animate) {
+      const labels = $('#radialLabels');
+      // Clearing and reading back restarts the entrance even if the last rewind's attribute is still on.
+      delete labels.dataset.rewind;
+      void labels.offsetWidth;
+      labels.dataset.rewind = 'true';
+      syncDialOverlay();
+    }
+    return true;
+  }
   function dismissDialOverlay() {
     dialOverlay.hide();
     cancelBackHold();
     syncDialOverlay();
+    if (!menuRewindPath()) return;
+    cancelMenuRewind();
+    rewindTimer = setTimeout(() => {
+      rewindTimer = null;
+      // Reopening inside the fade means browsing again: leave the page where it was.
+      if (!dialOverlay.visible) rewindMenuToSource();
+    }, MENU_FADE);
   }
   function browseFromPlayer() {
     noteActivity();
@@ -427,11 +516,38 @@ export function createRadialView({
       }
     }
   }
-  // A song change in the window player: the new cover is loaded and decoded first, then cover, song
-  // text, and the artwork wash behind them change together in one short crossfade, so text never
-  // runs ahead of a cover that pops in later. The Spotify desktop app can report a new song before
-  // the Web API supplies its cover; the outgoing song holds for up to HOLD_FOR_ART_MS rather than
-  // flashing the placeholder.
+  function syncSpotifyLinks(demo, playback) {
+    document.body.dataset.spotifyConnected = String(!demo);
+    const selected =
+      nav.current.kind === 'list' &&
+      (!backdropActive() || dialOverlay.visible)
+        ? nav.current.rows[nav.current.selected]
+        : null;
+    const selectedUri = selected?.item?.uri || selected?.playlist?.uri;
+    const match = /^spotify:(track|episode|playlist):([A-Za-z0-9]{22})$/.exec(
+      selectedUri || playback?.item?.uri || '',
+    );
+    const href = match
+      ? `https://open.spotify.com/${match[1]}/${match[2]}`
+      : 'https://open.spotify.com/';
+    const installed = document.body.dataset.spotifyInstalled !== 'false';
+    const label = !installed
+      ? 'GET SPOTIFY FREE'
+      : selectedUri && match
+        ? 'Open selected item in Spotify'
+        : match
+          ? 'Open current item in Spotify'
+          : 'Open Spotify';
+    for (const link of [$('#windowSpotifyLink'), $('#widgetSpotifyLink')]) {
+      link.href = href;
+      link.setAttribute('aria-label', label);
+      link.title = label;
+      link.querySelector('span').textContent = installed ? '↗' : 'GET SPOTIFY FREE';
+    }
+  }
+  // A song change in the window player: decode the next cover first, then replace it
+  // without animating the artwork. Text and ambient color may fade. Spotify can
+  // report a new song before its cover arrives; hold the old song briefly then.
   const HOLD_FOR_ART_MS = 1200;
   let shownTrackKey = null,
     shownArtwork = '',
@@ -460,9 +576,6 @@ export function createRadialView({
       $('#radialBackdropArtImg').src !== new URL(artwork, location.href).href
     )
       $('#radialBackdropArtImg').src = artwork;
-    $('#radialBackdropArt').style.backgroundImage = artwork
-      ? `url(${JSON.stringify(artwork)})`
-      : 'none';
     syncRadialGlow();
   }
   // Resolves with the decoded image, or null when there is none or it takes too long.
@@ -500,18 +613,12 @@ export function createRadialView({
     shownTrackKey = key;
     const generation = ++trackGeneration,
       sameSong = $('#radialBackdropTitle').textContent === track.title,
-      parts = [
-        $('.radial-backdrop-cover'),
-        $('.radial-backdrop-song'),
-        $('#radialBackdropArt'),
-        $('#radialGlow'),
-      ];
+      parts = [$('.radial-backdrop-song'), $('#radialBackdropArt'), $('#radialGlow')];
     decodeArtwork(track.artwork).then(async (decoded) => {
       if (generation !== trackGeneration) return;
       // Only the artwork changes when Spotify fills in the cover for the song already shown.
-      const moving = sameSong ? parts.filter((_, i) => i !== 1) : parts;
-      // Opacity only, and each layer fades from and back to its own resting value (the photo wash
-      // rests at .24, the glow at .3), so nothing flashes brighter or changes size.
+      const moving = sameSong ? parts.slice(1) : parts;
+      // The cover swaps as a static image; only metadata and ambient light animate.
       const out = moving.map((element) =>
         element.animate([{ opacity: 0 }], {
           duration: 200,
@@ -532,7 +639,7 @@ export function createRadialView({
         element.animate([{ offset: 0, opacity: 0 }], {
           duration: 560,
           // The song text follows the cover by a beat.
-          delay: element === parts[1] ? 60 : 0,
+          delay: element === parts[0] ? 60 : 0,
           easing: 'cubic-bezier(.25,.1,.25,1)',
           fill: 'backwards',
         }),
@@ -587,6 +694,7 @@ export function createRadialView({
   }
   function drawRadial() {
     const { demo, index, playback, playing, volume } = getState();
+    syncSpotifyLinks(demo, playback);
 
     // Selection changes do not require a round trip to native window management.
     // Picker previews still update immediately when the actual geometry changes.
@@ -653,13 +761,17 @@ export function createRadialView({
       );
     } else if (page.kind === 'list')
       radial.update(page, page.rows, page.selected, {
-        resolve: (row) => ({
+        resolve: (row, i) => ({
           label: row.label,
-          icon: row.icon,
+          icon: row.action === 'now' && playing ? 'playing' : row.icon,
           control: row.control,
           detail: radialRowDetail(row),
           disabled: row.disabled,
           mini: radialMiniPlayer(row),
+          playlistArt:
+            row.action === 'playlist' && i === page.selected
+              ? row.playlist?.artwork
+              : '',
         }),
         miniIndices: currentMiniIndices(page),
       });
@@ -678,9 +790,11 @@ export function createRadialView({
         );
       const track = getState().track;
       $('#radialNow .eq').dataset.playing = String(playing);
-      $('#radialTitle').textContent = track.title;
-      $('#radialArtist').textContent = track.artist;
-      $('#radialAlbum').textContent = track.album;
+      for (const key of ['Title', 'Artist', 'Album']) {
+        const node = $('#radial' + key);
+        node.textContent = track[key.toLowerCase()];
+        node.title = node.textContent;
+      }
       const artwork = track.artwork;
       $('#radialArt').hidden = !artwork;
       $('#radialArtFallback').hidden = !!artwork;
@@ -738,6 +852,7 @@ export function createRadialView({
     syncDialOverlay,
     revealDialOverlay,
     dismissDialOverlay,
+    rewindMenuToSource,
     browseFromPlayer,
     updateBackdropControls,
     updateBackdropInfo,

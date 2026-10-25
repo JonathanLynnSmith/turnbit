@@ -1,5 +1,16 @@
 const $ = (selector) => document.querySelector(selector);
 const api = window.createPlaybackClient(window.turnbit);
+if (api?.spotifyDesktopInstalled)
+  api.spotifyDesktopInstalled().then(
+    (installed) => {
+      document.body.dataset.spotifyInstalled = String(installed);
+      render();
+    },
+    () => {
+      document.body.dataset.spotifyInstalled = 'false';
+      render();
+    },
+  );
 const demos = [
   {
     name: 'Night Drive',
@@ -112,7 +123,7 @@ function clickSound() {
     };
   } catch {}
 }
-// Home: Now Playing shortcut on top, then Last Song List (if on), Liked Songs and Playlists directly (no Music menu), then Settings.
+// Home: playback, library, and Settings.
 function homeRows() {
   const last =
     preferences.lastSongList && preferences.homeLastSongList
@@ -121,9 +132,9 @@ function homeRows() {
   return [
     { label: 'Now Playing', action: 'now', icon: 'now', control: true },
     ...last,
-    { label: 'Liked Songs', action: 'songs', branch: true },
-    { label: 'Playlists', action: 'playlists', branch: true },
-    { label: 'Settings', action: 'settings', branch: true },
+    { label: 'Liked Songs', action: 'songs', icon: 'liked-songs', branch: true },
+    { label: 'Playlists', action: 'playlists', icon: 'playlists', branch: true },
+    { label: 'Settings', action: 'settings', icon: 'settings', branch: true },
   ];
 }
 const homeStart = () => 1;
@@ -317,7 +328,7 @@ function message(text = '') {
 // Lists below Home start with a Back row, so the dial alone can go back without a Menu button. Inserting it keeps
 // the same item highlighted, so entering a list still lands on its first real item.
 // A small inline icon drawn in the text color (see .row-icon in styles.css), e.g. the Back row's arrow.
-// Hover Shortcuts: resting on a shortcut row (Back in lists, Now Playing on Home) after turning onto it runs it after a
+// Hover Shortcuts: resting on a shortcut row after turning onto it runs it after a
 // short hold. Its icon turns into a ring that fills while it counts (driven by --back-hold, so it survives redraws).
 const BACK_HOLD_MS = 1000;
 let backHold = null;
@@ -485,6 +496,7 @@ const {
   syncDialOverlay,
   revealDialOverlay,
   dismissDialOverlay,
+  rewindMenuToSource,
   browseFromPlayer,
   updateBackdropControls,
   updateBackdropInfo,
@@ -555,8 +567,8 @@ function acceptPlayback(data) {
   )
     message(
       data.liked
-        ? 'Liked · confirmed by Spotify'
-        : 'Unliked · confirmed by Spotify',
+        ? 'Added to Liked Songs · confirmed by Spotify'
+        : 'Removed from Liked Songs · confirmed by Spotify',
     );
   if (
     !transportHold.direction &&
@@ -826,8 +838,8 @@ function showMusic() {
   push({
     title: 'Music',
     rows: [
-      { label: 'Playlists', action: 'playlists', branch: true },
-      { label: 'Liked Songs', action: 'songs', branch: true },
+      { label: 'Playlists', action: 'playlists', icon: 'playlists', branch: true },
+      { label: 'Liked Songs', action: 'songs', icon: 'liked-songs', branch: true },
     ],
     hint: demo
       ? 'Demo library · no audio'
@@ -1064,6 +1076,7 @@ function lastSongListRow() {
   return {
     label: 'Last Song List',
     action: 'last-song-list',
+    icon: 'playlists',
     detail: preferences.lastSongList?.name || '',
     branch: true,
     showDetail: true,
@@ -1555,6 +1568,19 @@ $('#dashboard').onclick = (e) => {
       .catch((error) => message(error.message));
   }
 };
+async function openSpotify(href) {
+  try {
+    await api.openExternal(href);
+  } catch (error) {
+    message(error.message);
+  }
+}
+for (const link of document.querySelectorAll('.spotify-link'))
+  link.addEventListener('click', (event) => {
+    if (!api) return;
+    event.preventDefault();
+    void openSpotify(link.href);
+  });
 $('#connectionForm').onsubmit = async (e) => {
   e.preventDefault();
   if (!api)
@@ -1713,7 +1739,7 @@ setInterval(() => {
         document.activeElement.matches('input'));
     // Dial Menu Timeout, read each tick so a new value takes effect straight away.
     dialOverlay.timeout = preferences.menuTimeout * 1000;
-    if (dialOverlay.tick(protectedView)) {
+    if (dialOverlay.tick(protectedView, () => rewindMenuToSource(true))) {
       cancelBackHold();
       syncDialOverlay();
     }

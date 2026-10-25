@@ -19,8 +19,8 @@ app.whenReady().then(async()=>{try{
     await turn(1);p=await page();assert.equal(p.highlighted,'Load more');assert.equal(p.hold,'true',`${style}: turning onto Load more starts the ring`);
     await turn(1);await turn(1);assert.equal((await page()).hold,'true','extra down-turns keep the ring');
     await wait(1150);p=await page();
-    assert.equal(p.count,before-1+3,`${style}: the next page was appended in place of Load more`);assert.notEqual(p.last,'Load more','no further pages');
-    assert.equal(p.selected,moreIndex,'highlight stays where Load more was');assert.equal(p.highlighted,'Night Drive','landing on the first new song');assert.notEqual(p.hold,'true');
+    assert.equal(p.count,before-1+3,`${style}: the next page was appended after the previous songs`);assert.notEqual(p.last,'Load more','no further pages');
+    assert.equal(p.selected,moreIndex,'highlight lands where Load more was');assert.equal(p.highlighted,'Night Drive','landing on the first new song');assert.notEqual(p.hold,'true');
   }
 
   await songs('radial');await turn(1);await wait(500);await turn(-1);await wait(900);
@@ -28,5 +28,5 @@ app.whenReady().then(async()=>{try{
 
   await songs('radial',',hoverBack:false');await turn(1);await wait(1300);p=await page();assert.equal(p.last,'Load more','Hover Shortcuts off: no auto load');
   await click();p=await page();assert.notEqual(p.last,'Load more','Pressing Load more still loads');assert.equal(p.highlighted,'Night Drive');
-  console.log('Load more: resting on it loads the next page with the ring in both interfaces, extra turns keep counting, turning away cancels, lands on the first new song, and Hover Shortcuts off falls back to pressing.');app.quit();
+  console.log('Load more: resting on it appends the next page, extra turns keep counting, turning away cancels, and pressing works when Hover Shortcuts is off.');app.quit();
 }catch(error){console.error(error);app.exit(1);}});

@@ -274,6 +274,7 @@ export function createSettingsController({
                   branch: true,
                   showDetail: true,
                 },
+                toggle('Dial Menu Returns to Playlist', 'menuReturnsToSource'),
               ]
             : []),
           toggle('Gaming Mode', 'gamingMode'),

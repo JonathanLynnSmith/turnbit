@@ -10,6 +10,14 @@ saved, so an existing install keeps the mode it was last switched to.
 With **Now Playing Backdrop** on (the default), the window opens on a large Now Playing screen:
 album art, the track, and play/pause, previous/next, like, shuffle, repeat, seek, and volume.
 Everything on it works with the mouse. Hardware playback buttons work whether or not the menu is up.
+The header keeps Browse on the left, the current view breadcrumb in the center, and the Spotify logo
+on the right. When connected, the logo opens the current song in Spotify. While browsing, it
+opens the selected song or playlist when available. The floating widget has the same link.
+An accent-colored pin beside Browse shows when the dial menu is pinned.
+These links use the installed Spotify desktop app on Windows or macOS when its URI handler is available;
+otherwise they open Spotify's download page.
+Browsing fetches songs and playlists in batches of 20. Rest on **Load more** or press it to append
+the next batch beneath the items already in the dial menu.
 
 Turn the dial, press it, click **Browse**, press Up/Down, or scroll to bring in the dial menu. An
 opening press only opens the menu; the next press selects. After **Dial Menu Timeout** (8 seconds by
@@ -17,6 +25,17 @@ default, 1 to 600) without navigation, the menu goes away again and Now Playing 
 page and selection for next time. Selecting a song, choosing **Now Playing**, or clicking the empty
 browsing area also returns to the player. **Pin Dial Menu** keeps the menu open; value and colour
 pickers stay open while you edit them.
+
+**Dial Menu Returns to Playlist** rewinds the menu to the list the playing song was chosen from and
+highlights that song, so wandering into Playlists or Settings does not cost you your place: the next
+press reopens the music you are listening to. On the timeout the rewind is something to watch. The same
+**Dial Menu Timeout** decides when it starts, so at 3 seconds nothing moves for 3 seconds; then the
+song list flows in while the menu is still up, and the menu goes once the switch has been seen.
+Turning the dial or pressing during that moment keeps the menu open on the list it rewound to.
+A close you ask for — **Now Playing**, the empty browsing area, or choosing a song — puts the player
+back at once and rewinds behind the fade, where there is nothing to watch. Turn the setting off to
+reopen the menu exactly where you left it. Until a song has been chosen from a list there is nothing to
+return to, and the menu keeps its page either way.
 
 ## Overlay and Split View
 
@@ -48,14 +67,13 @@ When the player's own column is narrower than 640 px it stacks the artwork above
 **Dial Menu Background** sets the look behind the menu. **Matching** (the default) shares the player's
 background, so both views read as one surface. The others give the menu its own panel on its side
 that comes and goes with it: **Black** is solid and casts a shadow across the player, **Glass** is a
-lighter frosted pane, and **Artwork** fills the panel with the playing song's cover, blurred to its
-colours. In Split View the panel's edge is the seam, so the divider is only offered with Matching.
+lighter frosted pane, and **Cover Color** tints the panel with a colour sampled from the playing
+song's cover. In Split View the panel's edge is the seam, so the divider is only offered with Matching.
 
 ## Look and feel
 
-- An ambient glow, tinted by the playing artwork, sits behind the middle of the menu and washes out
-  across the window, fading to nothing before any edge. It is the cover itself, blurred to little
-  more than its average colour, so it follows the song and disappears when nothing is playing.
+- An ambient glow uses a colour sampled from the playing cover and fades to nothing before any window
+  edge. The cover image itself stays unaltered and the glow disappears when nothing is playing.
 - **Transparency** applies to the window too, but never below 20%, so the title bar stays visible
   enough to grab. **Mouse Click Through** is a widget-only setting and is hidden here.
 - Reduced-motion settings switch between views without animation.

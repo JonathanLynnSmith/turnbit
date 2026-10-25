@@ -1,6 +1,47 @@
 // Desktop transport only: handlers delegate to application services or native
 // window operations. Registration returns cleanup for the host lifecycle.
+function spotifyDesktopInstalled(app, platform = process.platform) {
+  if (platform !== 'win32' && platform !== 'darwin') return false;
+  try {
+    return !!app.getApplicationNameForProtocol('spotify://');
+  } catch {
+    return false;
+  }
+}
+
+async function openSpotifyExternal(
+  url,
+  { app, shell, platform = process.platform },
+) {
+  const parsed = new URL(url);
+  if (parsed.origin === 'https://developer.spotify.com')
+    return shell.openExternal(parsed.href);
+
+  const content =
+    parsed.origin === 'https://open.spotify.com' &&
+    !parsed.search &&
+    !parsed.hash &&
+    (parsed.pathname === '/' ||
+      /^\/(track|episode|playlist)\/[A-Za-z0-9]{22}\/?$/.test(parsed.pathname));
+  if (!content) throw new Error('Unsupported external link.');
+
+  if (spotifyDesktopInstalled(app, platform)) {
+    const match = /^\/(track|episode|playlist)\/([A-Za-z0-9]{22})\/?$/.exec(
+      parsed.pathname,
+    );
+    const spotifyUri = match ? `spotify:${match[1]}:${match[2]}` : 'spotify:';
+    try {
+      await shell.openExternal(spotifyUri);
+      return;
+    } catch {
+      // A stale handler should still lead to the official desktop installer.
+    }
+  }
+  return shell.openExternal('https://www.spotify.com/download/');
+}
+
 function registerDesktopIpc({
+  app,
   ipcMain,
   desktop,
   spotify,
@@ -36,15 +77,8 @@ function registerDesktopIpc({
     'app:mouse-mode': (_, key) => mouseMode.setKey(key),
     'app:minimize': () => desktop.minimize(),
     'app:close': () => desktop.hide(),
-    'app:open-external': (_, url) => {
-      const parsed = new URL(url);
-      if (
-        parsed.protocol !== 'https:' ||
-        parsed.hostname !== 'developer.spotify.com'
-      )
-        throw new Error('Unsupported external link.');
-      return shell.openExternal(parsed.href);
-    },
+    'app:open-external': (_, url) => openSpotifyExternal(url, { app, shell }),
+    'app:spotify-installed': () => spotifyDesktopInstalled(app),
   };
   if (settings)
     Object.assign(handlers, {
@@ -78,4 +112,8 @@ function registerDesktopIpc({
     ipcMain.removeListener('input:context', onContext);
   };
 }
-module.exports = { registerDesktopIpc };
+module.exports = {
+  registerDesktopIpc,
+  openSpotifyExternal,
+  spotifyDesktopInstalled,
+};

@@ -33,7 +33,6 @@ export function createPlaybackView({
     const { liked, shuffle, repeat } = playbackModes();
     updateBackdropControls();
     const paths = {
-      like: '<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/>',
       shuffle:
         '<path d="M3 5h3c5 0 7 14 12 14h3m-4-4 4 4-4 4M3 19h3c2 0 4-3 6-7s4-7 6-7h3m-4-4 4 4-4 4"/>',
       repeat:
@@ -49,9 +48,11 @@ export function createPlaybackView({
           icon.dataset.mode = key;
           icon.setAttribute('role', 'img');
           icon.innerHTML =
-            '<svg viewBox="0 0 24 24" aria-hidden="true">' +
-            paths[key] +
-            '</svg>';
+            key === 'like'
+              ? '<span class="spotify-like-off" aria-hidden="true"></span><span class="spotify-like-on" aria-hidden="true"></span>'
+              : '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+                paths[key] +
+                '</svg>';
           bar.append(icon);
         }
         host.append(bar);
@@ -67,10 +68,10 @@ export function createPlaybackView({
         const label =
           key === 'like'
             ? liked === true
-              ? 'Liked song'
+              ? 'Saved to Liked Songs'
               : liked === false
-                ? 'Not liked'
-                : 'Like status unavailable'
+                ? 'Not saved to Liked Songs'
+                : 'Save status unavailable'
             : key === 'shuffle'
               ? 'Shuffle ' + (shuffle ? 'on' : 'off')
               : 'Repeat ' +

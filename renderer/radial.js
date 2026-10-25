@@ -10,6 +10,7 @@ class RadialCarousel {
     this.position = 0;
     this.target = 0;
     this.frame = 0;
+    this.playlistArtwork = new Map();
   }
   stop() {
     cancelAnimationFrame(this.frame);
@@ -54,6 +55,11 @@ class RadialCarousel {
       (this.element.clientHeight / 2 - 56) / this.rowStep(),
     );
     const extent = Math.ceil(this.reach) + 1;
+    if (page.libraryKind === 'playlists') {
+      this.playlistArtworkFor(rows[selected]?.playlist?.artwork, 'high');
+      for (const row of rows)
+        this.playlistArtworkFor(row.playlist?.artwork);
+    }
     const low = Math.max(
         0,
         Math.floor(Math.min(this.position, selected)) - extent,
@@ -69,7 +75,7 @@ class RadialCarousel {
         Math.abs(i - this.position) > extent
       )
         continue;
-      const row = resolve(rows[i]);
+      const row = resolve(rows[i], i);
       let node = this.nodes.get(i);
       if (!node) {
         node = document.createElement('button');
@@ -97,6 +103,16 @@ class RadialCarousel {
           copy = document.createElement('span');
         const icon = () => {
           if (!row.icon) return [];
+          if (row.icon === 'playing') {
+            const bars = document.createElement('span');
+            bars.className = 'eq row-icon-playing';
+            bars.dataset.playing = 'true';
+            bars.setAttribute('aria-hidden', 'true');
+            bars.append(
+              ...Array.from({ length: 3 }, () => document.createElement('i')),
+            );
+            return [bars];
+          }
           const el = document.createElement('span');
           el.className = `row-icon row-icon-${row.icon}`;
           el.setAttribute('aria-hidden', 'true');
@@ -112,6 +128,7 @@ class RadialCarousel {
       if (node.children[1].textContent !== (row.detail || ''))
         node.children[1].textContent = row.detail || '';
       this.renderMini(node, row.mini);
+      this.renderPlaylistCover(node, row.playlistArt);
       const textWidth = label.firstChild.firstChild.scrollWidth,
         overflow = Math.max(0, textWidth - label.clientWidth);
       label.classList.toggle(
@@ -158,14 +175,7 @@ class RadialCarousel {
       image.alt = '';
       const fallback = document.createElement('span');
       fallback.textContent = '♫';
-      // Bars on the artwork while the song is actually playing (radial.css).
-      const eq = document.createElement('div');
-      eq.className = 'eq';
-      eq.setAttribute('aria-hidden', 'true');
-      eq.append(
-        ...Array.from({ length: 3 }, () => document.createElement('i')),
-      );
-      cover.append(image, fallback, eq);
+      cover.append(image, fallback);
       const info = document.createElement('div');
       info.className = 'mini-info';
       const title = document.createElement('strong'),
@@ -181,7 +191,6 @@ class RadialCarousel {
       mini.append(cover, info);
       node.append(mini);
     }
-    mini.querySelector('.eq').dataset.playing = String(!!data.playing);
     const image = mini.querySelector('img');
     image.hidden = !data.art;
     image.nextElementSibling.hidden = !!data.art;
@@ -202,6 +211,65 @@ class RadialCarousel {
       'aria-label',
       `${data.title}, ${data.artist}, ${data.playing ? 'now playing' : 'paused'}, ${data.elapsed} of ${data.total}`,
     );
+  }
+  playlistArtworkFor(artwork, priority = 'low') {
+    if (!artwork) return null;
+    const cached = this.playlistArtwork.get(artwork);
+    if (cached) return cached;
+    const image = new Image();
+    image.className = 'playlist-cover';
+    image.alt = '';
+    image.setAttribute('aria-hidden', 'true');
+    image.decoding = 'async';
+    image.fetchPriority = priority;
+    const entry = { image, status: 'loading', waiters: new Set() };
+    this.playlistArtwork.set(artwork, entry);
+    image.onload = () => {
+      entry.status = 'ready';
+      for (const node of entry.waiters)
+        if (node.isConnected && node.dataset.playlistArt === artwork)
+          this.renderPlaylistCover(node, artwork);
+      entry.waiters.clear();
+    };
+    image.onerror = () => {
+      entry.status = 'failed';
+      for (const node of entry.waiters)
+        if (node.isConnected && node.dataset.playlistArt === artwork)
+          this.renderPlaylistCover(node, artwork);
+      entry.waiters.clear();
+    };
+    image.src = artwork;
+    if (this.playlistArtwork.size > 60)
+      this.playlistArtwork.delete(this.playlistArtwork.keys().next().value);
+    return entry;
+  }
+  renderPlaylistCover(node, artwork) {
+    const previous = node.dataset.playlistArt;
+    if (previous && previous !== artwork)
+      this.playlistArtwork.get(previous)?.waiters.delete(node);
+    node.dataset.playlistArt = artwork || '';
+    const shown = node.querySelector(':scope > .playlist-cover');
+    if (!artwork) {
+      node.classList.remove('has-playlist-cover');
+      shown?.remove();
+      return;
+    }
+    const entry = this.playlistArtworkFor(artwork, 'high');
+    if (entry.status === 'failed') {
+      node.classList.remove('has-playlist-cover');
+      shown?.remove();
+      return;
+    }
+    node.classList.add('has-playlist-cover');
+    if (entry.status === 'loading') {
+      shown?.remove();
+      entry.waiters.add(node);
+      return;
+    }
+    if (shown !== entry.image) {
+      shown?.remove();
+      node.append(entry.image);
+    }
   }
   tick(time) {
     this.frame = 0;

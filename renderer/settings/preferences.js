@@ -88,6 +88,7 @@
       backdropLayout: 'overlay',
       menuBackground: 'match',
       menuTimeout: 8,
+      menuReturnsToSource: true,
       splitDivider: true,
     };
     try {
@@ -114,6 +115,7 @@
         'playOpensNowPlaying',
         'windowMode',
         'nowPlayingBackdrop',
+        'menuReturnsToSource',
         'splitDivider',
       ])
         if (typeof saved[key] === 'boolean') preferences[key] = saved[key];

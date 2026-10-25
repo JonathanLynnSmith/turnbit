@@ -78,7 +78,12 @@
         return {
           items: page.items.map((entry) =>
             entry.kind === 'collection'
-              ? { id: entry.id, uri: entry.playbackId, name: entry.title }
+              ? {
+                  id: entry.id,
+                  uri: entry.playbackId,
+                  name: entry.title,
+                  artwork: entry.artwork,
+                }
               : {
                   item: {
                     ...legacyTrack(entry.track),

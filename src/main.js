@@ -177,6 +177,7 @@ else {
     });
     if (bridgePort) global.turnbitMouseMode = mouseMode;
     removeIpc = registerDesktopIpc({
+      app,
       ipcMain,
       desktop,
       spotify,

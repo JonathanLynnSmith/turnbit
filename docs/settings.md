@@ -63,7 +63,7 @@ To stay in the song list instead of switching to Now Playing, turn off **Idle to
 | Smoky Background | Strength of the dark backdrop behind the menu | 24% |
 | Now Playing Backdrop | Window Mode: the large Now Playing screen | On |
 | Dial Menu Layout | Window Mode: Overlay covers the player while you browse; Split View puts the menu beside it (overlay below 960 px wide) | Overlay |
-| Dial Menu Background | Window Mode: the look behind the dial menu. Matching shares the player's background; Black, Glass, and Artwork (the playing song's cover, blurred) give the menu its own panel | Matching |
+| Dial Menu Background | Window Mode: the look behind the dial menu. Matching shares the player's background; Black, Glass, and Cover Color (sampled from the playing cover) give the menu its own panel | Matching |
 | Dial Menu Divider | Window Mode: the hairline between the menu and the player in Split View, with the Matching background | On |
 
 ## Window
@@ -78,6 +78,7 @@ To stay in the song list instead of switching to Now Playing, turn off **Idle to
 | Pin Widget | Pauses idle fading and the switch to Now Playing | Off |
 | Pin Dial Menu | Keeps the dial menu open in the window player; replaces Pin Widget there | Off |
 | Dial Menu Timeout | Window Mode: seconds without navigation before the dial menu hides and the player returns | 8 sec |
+| Dial Menu Returns to Playlist | Window Mode: the dial menu rewinds to the list the playing song was chosen from, so the next press starts there. On the timeout the switch plays on screen before the menu goes. Off: the menu reopens wherever you left it | On |
 | Gaming Mode | Pauses decorative animations when you are not using turnbit | Off |
 
 When turnbit has faded out with Idle Fade, the first dial turn or press only wakes it. Play, Next, and

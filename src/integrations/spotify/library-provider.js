@@ -10,6 +10,10 @@ function createSpotifyLibraryProvider(client) {
             id: entry.id,
             playbackId: entry.uri,
             title: entry.name || 'Untitled playlist',
+            artwork:
+              entry.images?.findLast((image) => image.width >= 96)?.url ||
+              entry.images?.[0]?.url ||
+              '',
           };
         const item = entry.item || entry.track;
         return {
@@ -27,7 +31,7 @@ function createSpotifyLibraryProvider(client) {
       return {
         items,
         total: raw?.total ?? items.length,
-        nextOffset: raw?.next ? offset + (raw.items?.length || 50) : null,
+        nextOffset: raw?.next ? offset + (raw.items?.length || 20) : null,
       };
     },
   };

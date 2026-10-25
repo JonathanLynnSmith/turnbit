@@ -34,7 +34,7 @@ body[data-interface=radial] {
   text-decoration: none;
 }
 #radial .radial-label.radial-control>span {font-size:11px;letter-spacing:1.7px}
-#radial .radial-mini .mini-cover {border-radius:8px}
+#radial .radial-mini .mini-cover {border-radius:4px}
 #radial .radial-mini .mini-times b {font-size:10px;letter-spacing:.1px}
 #radial :is(#radialNow,.radial-now-snapshot) .radial-track,
 #radial :is(#radialNow,.radial-now-snapshot) .radial-timeline,
@@ -44,7 +44,7 @@ body[data-interface=radial] {
 #radial :is(#radialTitle,.radial-title) {font-weight:500;letter-spacing:-.65px;line-height:1.22}
 #radial :is(#radialArtist,.radial-artist) {line-height:1.5}
 #radial :is(#radialAlbum,.radial-album) {letter-spacing:.15px;line-height:1.5}
-#radial :is(#radialNow,.radial-now-snapshot) .radial-art {border-radius:12px}
+#radial :is(#radialNow,.radial-now-snapshot) .radial-art {border-radius:8px}
 #radial input[type=range] {touch-action:none}
 #radial :is(#radialNow,.radial-now-snapshot) input[type=range] {height:24px}
 #radial :is(#radialNow,.radial-now-snapshot) input[type=range]::-webkit-slider-thumb {
