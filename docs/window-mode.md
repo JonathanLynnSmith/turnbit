@@ -35,9 +35,12 @@ same, so the divider always sits midway between the menu and the player. **Dial 
 the hairline off. The player's artwork and song info move as one unit and stay centred over the
 playback controls whatever the title's length.
 
-On a large display the whole window, player and dial menu together, scales up with the window, from
-its normal size at about 1440 × 880 up to twice that, so a big or 4K screen is filled rather than left
-mostly empty.
+The player fits any window size. Cover, song info, and controls stay together as one group centred in
+the window. A window clearly taller than it is wide stacks the cover above the song. On a large display
+the player and dial menu scale up together with the window: normal size at about 1440 × 880 (720 × 1000
+when stacked), growing to at most three times that, so a big or 4K screen is filled rather than left
+mostly empty. Split View needs the window to be at least 960 px wide before that scaling, so a tall
+window keeps the overlay.
 
 Split View needs room for both, so a window narrower than 960 px uses the overlay until you widen it.
 When the player's own column is narrower than 640 px it stacks the artwork above the song info.

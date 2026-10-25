@@ -248,12 +248,30 @@ export function createRadialView({
   // Split View changes how the two views share the window while the menu is up: instead of covering the
   // player, the menu takes its docked half and the player keeps the other, both live. The menu still
   // comes and goes the same way, so the idle timeout collapses it and the player expands to fill the
-  // window. Two columns need room, so a window narrower than SPLIT_MIN_WIDTH uses the overlay instead.
+  // window. Two columns need room, so a window narrower than SPLIT_MIN_WIDTH at its design size (the
+  // window's width before the large-display scale) uses the overlay instead.
+  // A window clearly taller than it is wide stacks the artwork above the song, whatever its size.
+  function portraitWindow() {
+    return innerHeight > innerWidth * 1.2;
+  }
+  // Each arrangement has a design size: side by side about 1440×880, stacked about 720×1000.
+  // Bigger windows scale the whole player and menu up together, to at most three times, so a large
+  // or 4K display is filled rather than left mostly empty. The scale follows the window, not the
+  // space beside the menu, so opening Split View never resizes anything.
+  function uiScale() {
+    const [designWidth, designHeight] = portraitWindow()
+      ? [720, 1000]
+      : [1440, 880];
+    return Math.max(
+      1,
+      Math.min(3, innerWidth / designWidth, innerHeight / designHeight),
+    );
+  }
   function splitActive() {
     return (
       backdropActive() &&
       preferences.backdropLayout === 'split' &&
-      innerWidth >= SPLIT_MIN_WIDTH
+      innerWidth / uiScale() >= SPLIT_MIN_WIDTH
     );
   }
   // Overlay: the menu is alone on screen while browsing, so it reaches in from its docked edge to put
@@ -275,17 +293,21 @@ export function createRadialView({
   // The player stacks artwork above its text when its column is too narrow to hold both side by side:
   // the whole window, or the half left over while Split View has the menu up beside it.
   function syncPlayerColumn(sharing = false) {
-    // The window player is laid out for about 1440×880. Larger windows (a big or 4K display) scale it
-    // up as a whole, up to twice the size, so it fills the space instead of floating small in the middle.
-    document.body.style.setProperty(
-      '--ui-scale',
-      Math.max(1, Math.min(2, innerWidth / 1440, innerHeight / 880)).toFixed(3),
-    );
-    const column = sharing
-      ? Math.max(0, innerWidth - ($('#radial')?.clientWidth || 0))
-      : innerWidth;
+    const portrait = portraitWindow(),
+      scale = uiScale();
+    document.body.style.setProperty('--ui-scale', scale.toFixed(3));
+    // Split View leaves the player what the menu does not cover, measured on screen (the menu is scaled)
+    // and compared at design size.
+    const column =
+      (sharing
+        ? Math.max(
+            0,
+            innerWidth -
+              Math.round($('#radial')?.getBoundingClientRect().width || 0),
+          )
+        : innerWidth) / scale;
     document.body.dataset.playerColumn =
-      column <= PLAYER_STACK_WIDTH ? 'narrow' : 'wide';
+      portrait || column <= PLAYER_STACK_WIDTH ? 'narrow' : 'wide';
   }
   // The player is as wide as its artwork and the current song's text, so Split View's divider (radial.css)
   // reads that width to stay midway between the menu and the player. offsetWidth ignores the scale.

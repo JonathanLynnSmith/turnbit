@@ -271,7 +271,7 @@ body[data-dial-overlay=true] #radialBackdropBrowse .return-symbol{display:block}
    shrink to the half of the window on its right) and is placed by left and
    translate alone: centred here, beside the divider in Split View. Both animate, so opening the menu
    glides the whole unit over instead of snapping it to a new alignment first. */
-.radial-backdrop-info{--art-gap:clamp(32px,3.5vw,72px);position:absolute;top:105px;bottom:32px;left:50%;translate:-50% 0;width:max-content;max-width:min(1300px,calc(100% - 2 * clamp(28px,6vw,84px)));display:grid;grid-template-columns:auto fit-content(560px);grid-template-rows:minmax(0,1fr) auto;gap:30px var(--art-gap);justify-content:center;align-items:center;opacity:1;visibility:visible;transition:opacity .26s ease .08s,visibility 0s,left .3s cubic-bezier(.2,.8,.2,1),translate .3s cubic-bezier(.2,.8,.2,1),scale .3s cubic-bezier(.2,.8,.2,1),max-width .3s cubic-bezier(.2,.8,.2,1)}
+.radial-backdrop-info{--art-gap:clamp(32px,3.5vw,72px);position:absolute;top:105px;bottom:32px;left:50%;translate:-50% 0;width:max-content;max-width:min(1300px,calc(100% - 2 * clamp(28px,6vw,84px)));display:grid;grid-template-columns:auto fit-content(560px);grid-template-rows:minmax(0,max-content) auto;align-content:safe center;gap:44px var(--art-gap);justify-content:center;align-items:center;opacity:1;visibility:visible;transition:opacity .26s ease .08s,visibility 0s,left .3s cubic-bezier(.2,.8,.2,1),translate .3s cubic-bezier(.2,.8,.2,1),scale .3s cubic-bezier(.2,.8,.2,1),max-width .3s cubic-bezier(.2,.8,.2,1)}
 .radial-backdrop-cover{width:min(28vw,390px,calc(100vh - 340px));aspect-ratio:1;justify-self:center;overflow:hidden;border-radius:12px;background:radial-gradient(ellipse at 20% 10%,#a8c1b74d,transparent 65%),linear-gradient(145deg,#284c48,#181d2d 72%);box-shadow:0 24px 80px #0005;display:grid;place-items:center}
 .radial-backdrop-cover img{width:100%;height:100%;object-fit:cover;display:block;grid-area:1/1}
 .radial-backdrop-cover .radial-art-fallback{font:300 clamp(64px,10vw,130px) -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:color-mix(in srgb,var(--radial-primary) 44%,transparent);grid-area:1/1}
@@ -379,7 +379,7 @@ body[data-backdrop-active=true][data-edge=right] #actionNotice{left:auto;right:4
 /* Artwork beside the text needs a wide column. data-player-column measures the player's own column:
    the window in Overlay, the half beside the menu in Split View. The height rules below carry the
    same attribute so the cascade between them stays in file order, as it was when both were media queries. */
-body[data-player-column=narrow] .radial-backdrop-info{inset:86px 28px 22px;width:auto;max-width:none;translate:none;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(80px,1fr) auto auto;gap:20px;text-align:center}
+body[data-player-column=narrow] .radial-backdrop-info{inset:86px 28px 22px;width:auto;max-width:none;translate:none;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,max-content) auto auto;align-content:safe center;gap:28px;text-align:center}
 body[data-player-column=narrow] .radial-backdrop-cover{width:min(100%,280px,27vh)}
 /* Stacked beside the menu, the player fills from the divider's far side to the window edge, so its width
    follows the divider; the divider keeps to the widest player here rather than chase that width. */
@@ -387,6 +387,8 @@ body[data-player-column=narrow][data-backdrop-active=true][data-backdrop-split=t
 body[data-player-column=narrow][data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true] .radial-backdrop-info{left:var(--split-start);right:28px;max-width:none}
 body[data-player-column=narrow][data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true][data-edge=right] .radial-backdrop-info{left:28px;right:var(--split-start)}
 body[data-player-column=narrow] .radial-backdrop-track{grid-column:1;max-width:100%}
+/* Stacked, the controls stay about as wide as the artwork above them rather than spanning the window. */
+body[data-player-column=narrow] .radial-backdrop-controls{width:min(100%,520px)}
 body[data-player-column=narrow] .radial-backdrop-state{margin-bottom:9px;font-size:9px}
 body[data-player-column=narrow] .radial-backdrop-title{font-size:clamp(25px,5.5vw,35px);-webkit-line-clamp:2;line-height:1.1;margin-bottom:calc(7px - .16em)}
 body[data-player-column=narrow] .radial-backdrop-artist{font-size:17px;margin-bottom:5px}
@@ -404,7 +406,7 @@ body[data-player-column=narrow] .radial-backdrop-actions{justify-content:center;
   body[data-player-column] .radial-backdrop-actions{margin-top:12px}
   body[data-player-column] .radial-backdrop-transport{margin-bottom:8px}
   body[data-player-column] .radial-backdrop-volume{margin-top:8px}
-  body[data-player-column=narrow] .radial-backdrop-info{gap:12px;grid-template-rows:minmax(70px,1fr) auto auto}
+  body[data-player-column=narrow] .radial-backdrop-info{gap:12px}
   body[data-player-column=narrow] .radial-backdrop-cover{width:min(100%,120px,20vh)}
   body[data-player-column=narrow] .radial-backdrop-state{display:none}
   body[data-player-column=narrow] .radial-backdrop-title{font-size:26px}
