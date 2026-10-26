@@ -21,6 +21,7 @@ export function createSettingsController({
   savePreferences,
   togglePin,
   toggleWindowMode,
+  resetSettings,
   toggleIdlePin,
   toggleCurrentSongBehavior,
   syncMouseMode,
@@ -41,7 +42,12 @@ export function createSettingsController({
     },
     { id: 'controls', label: 'Controls', detail: 'Dial, mouse, and sounds' },
     { id: 'appearance', label: 'Appearance', detail: 'Layout and colors' },
-    { id: 'window', label: 'Window', detail: 'Mode, size, and visibility' },
+    { id: 'window', label: 'Window', detail: 'Dial menu and background' },
+    {
+      id: 'widget',
+      label: 'Widget',
+      detail: 'Desktop placement and background',
+    },
   ];
   function displayName(id) {
     if (id == null) return 'Automatic';
@@ -132,18 +138,40 @@ export function createSettingsController({
         detail: radialColorName(preferences.accentHue),
         branch: true,
       },
+    ];
+  }
+  function smokeRows(mode) {
+    const key = mode === 'widget' ? 'radialBackground' : 'windowBackground';
+    const colorKey = mode + 'SmokeHue';
+    return [
       {
         label: 'Smoky Background',
         action: 'radial-background',
-        detail: preferences.radialBackground
-          ? preferences.radialBackground + '%'
-          : 'Off',
+        key,
+        detail: preferences[key] ? preferences[key] + '%' : 'Off',
+        branch: true,
+        showDetail: true,
+      },
+      {
+        label: 'Background Color',
+        action: 'radial-color',
+        key: colorKey,
+        detail: radialColorName(preferences[colorKey]),
         branch: true,
         showDetail: true,
       },
     ];
   }
+  const resetRow = (group) => ({
+    label: 'Reset to Defaults',
+    action: 'reset-settings',
+    group,
+    branch: true,
+  });
   function settingsRows(group) {
+    return [...groupRows(group), resetRow(group)];
+  }
+  function groupRows(group) {
     const toggle = (label, key) => ({
       label,
       action: 'playback-preference',
@@ -237,47 +265,50 @@ export function createSettingsController({
       case 'window':
         return [
           {
-            label: 'Window Mode',
-            action: 'window-mode',
-            detail: preferences.windowMode ? 'On' : 'Off',
+            label: 'Keep on Top',
+            action: 'pin',
+            detail: getState().pinned ? 'On' : 'Off',
           },
-          ...(preferences.interfaceStyle === 'radial' && !preferences.windowMode
-            ? [
-                {
-                  label: 'Size & Position',
-                  action: 'radial-layout',
-                  branch: true,
-                },
-              ]
-            : []),
+          { label: 'Transparency', action: 'visibility', branch: true },
+          {
+            label: 'Pin Dial Menu',
+            action: 'idle-pin',
+            detail: preferences.idlePinned ? 'On' : 'Off',
+          },
+          {
+            label: 'Dial Menu Timeout',
+            action: 'menu-timeout',
+            key: 'menuTimeout',
+            detail: valueText('menuTimeout', preferences.menuTimeout),
+            branch: true,
+            showDetail: true,
+          },
+          toggle('Dial Menu Returns to Playlist', 'menuReturnsToSource'),
+          toggle('Gaming Mode', 'gamingMode'),
+          ...smokeRows('window'),
+        ];
+      case 'widget':
+        return [
+          {
+            label: 'Widget Mode',
+            action: 'window-mode',
+            detail: preferences.windowMode ? 'Off' : 'On',
+          },
+          { label: 'Size & Position', action: 'radial-layout', branch: true },
           {
             label: 'Keep on Top',
             action: 'pin',
             detail: getState().pinned ? 'On' : 'Off',
           },
           { label: 'Transparency', action: 'visibility', branch: true },
-          ...(preferences.windowMode
-            ? []
-            : [toggle('Mouse Click Through', 'mousePassthrough')]),
           {
-            label: backdropActive() ? 'Pin Dial Menu' : 'Pin Widget',
+            label: 'Pin Widget',
             action: 'idle-pin',
             detail: preferences.idlePinned ? 'On' : 'Off',
           },
-          ...(backdropActive()
-            ? [
-                {
-                  label: 'Dial Menu Timeout',
-                  action: 'menu-timeout',
-                  key: 'menuTimeout',
-                  detail: valueText('menuTimeout', preferences.menuTimeout),
-                  branch: true,
-                  showDetail: true,
-                },
-                toggle('Dial Menu Returns to Playlist', 'menuReturnsToSource'),
-              ]
-            : []),
+          toggle('Mouse Click Through', 'mousePassthrough'),
           toggle('Gaming Mode', 'gamingMode'),
+          ...smokeRows('widget'),
         ];
     }
     return [];
@@ -285,13 +316,16 @@ export function createSettingsController({
   function showSettings() {
     push({
       title: 'Settings',
-      rows: settingsGroups.map((group) => ({
-        label: group.label,
-        action: 'settings-group',
-        group: group.id,
-        detail: group.detail,
-        branch: true,
-      })),
+      rows: [
+        ...settingsGroups.map((group) => ({
+          label: group.label,
+          action: 'settings-group',
+          group: group.id,
+          detail: group.detail,
+          branch: true,
+        })),
+        resetRow('all'),
+      ],
       hint: 'Choose a category · Menu to return',
     });
   }
@@ -496,8 +530,52 @@ export function createSettingsController({
     }
     drawNavigation();
   }
+  let resetting = false;
   async function select(row) {
     switch (row.action) {
+      case 'reset-settings':
+        push({
+          title:
+            row.group === 'all'
+              ? 'Reset All Settings?'
+              : `Reset ${settingsGroups.find((group) => group.id === row.group)?.label}?`,
+          visibilitySettings: true,
+          rows: [
+            { label: 'Cancel', action: 'reset-cancel' },
+            {
+              label: 'Reset',
+              action: 'confirm-reset',
+              group: row.group,
+              detail: 'Restore default settings',
+            },
+          ],
+        });
+        break;
+      case 'reset-cancel':
+        menuBack();
+        break;
+      case 'confirm-reset':
+        if (resetting) break;
+        resetting = true;
+        try {
+          if (await resetSettings(row.group)) {
+            nav.back();
+            if (row.group === 'all') {
+              nav.back();
+              showSettings();
+            } else {
+              const page = nav.current;
+              page.rows = settingsRows(row.group);
+              page.selected = 0;
+            }
+            revealDialOverlay();
+            drawNavigation();
+            message('Defaults restored');
+          }
+        } finally {
+          resetting = false;
+        }
+        break;
       case 'visibility':
         showTransparency();
         break;
@@ -656,11 +734,11 @@ export function createSettingsController({
         break;
       case 'radial-background':
         push({
-          title: 'Smoky Background',
+          title: row.label,
           kind: 'visibility',
           visibilitySettings: true,
-          key: 'radialBackground',
-          value: preferences.radialBackground,
+          key: row.key,
+          value: preferences[row.key],
         });
         break;
       case 'radial-side':

@@ -132,8 +132,18 @@ function homeRows() {
   return [
     { label: 'Now Playing', action: 'now', icon: 'now', control: true },
     ...last,
-    { label: 'Liked Songs', action: 'songs', icon: 'liked-songs', branch: true },
-    { label: 'Playlists', action: 'playlists', icon: 'playlists', branch: true },
+    {
+      label: 'Liked Songs',
+      action: 'songs',
+      icon: 'liked-songs',
+      branch: true,
+    },
+    {
+      label: 'Playlists',
+      action: 'playlists',
+      icon: 'playlists',
+      branch: true,
+    },
     { label: 'Settings', action: 'settings', icon: 'settings', branch: true },
   ];
 }
@@ -773,9 +783,9 @@ function rotate(delta) {
     return;
   }
   if (nav.current.kind === 'color') {
-    const { stepThrough, COLOR_STOPS } = window.TurnbitValueSteps;
+    const { stepThrough, colorStops } = window.TurnbitValueSteps;
     nav.current.value = stepThrough(
-      COLOR_STOPS,
+      colorStops(nav.current.key),
       nav.current.value,
       delta,
       true,
@@ -838,8 +848,18 @@ function showMusic() {
   push({
     title: 'Music',
     rows: [
-      { label: 'Playlists', action: 'playlists', icon: 'playlists', branch: true },
-      { label: 'Liked Songs', action: 'songs', icon: 'liked-songs', branch: true },
+      {
+        label: 'Playlists',
+        action: 'playlists',
+        icon: 'playlists',
+        branch: true,
+      },
+      {
+        label: 'Liked Songs',
+        action: 'songs',
+        icon: 'liked-songs',
+        branch: true,
+      },
     ],
     hint: demo
       ? 'Demo library · no audio'
@@ -912,6 +932,7 @@ function textAlign() {
 // Open Settings at the category holding a matching row, with that row highlighted (used by tests and shortcuts).
 
 const settingsController = window.TurnbitFeatures.createSettingsController({
+  resetSettings,
   $,
   preferences,
   nav,
@@ -972,7 +993,6 @@ function savePreferences(patch) {
     Object.assign(preferences, next);
     applyTheme(document.body, preferences.appearance);
     document.body.dataset.windowMode = String(preferences.windowMode);
-    document.body.dataset.menuBackground = preferences.menuBackground;
     document.body.dataset.menuBackground = preferences.menuBackground;
     document.body.dataset.screen = preferences.screenTheme;
     document.body.dataset.interface = preferences.interfaceStyle;
@@ -1047,22 +1067,41 @@ async function performPinToggle() {
 }
 // Save the renderer's preference before requesting its replacement. Ignore duplicate input
 // while switching, and restore the preference if main cannot persist the mode.
+async function resetSettings(group) {
+  const patch = window.TurnbitSettings.resetPatch(group);
+  const mode = patch.windowMode;
+  delete patch.windowMode;
+  if (Object.hasOwn(patch, 'keepOnTop') && pinned !== patch.keepOnTop) {
+    await togglePin();
+    if (pinned !== patch.keepOnTop) return false;
+  }
+  if (!savePreferences(patch)) return false;
+  syncMouseMode();
+  if (applicationSettings && ['all', 'playback'].includes(group))
+    await applicationSettings.save(recoverySettingsNow());
+  if (typeof mode === 'boolean' && mode !== preferences.windowMode)
+    return toggleWindowMode();
+  return true;
+}
+
 let windowModeChanging = false;
 async function toggleWindowMode() {
-  if (!api || windowModeChanging) return;
+  if (!api || windowModeChanging) return false;
   const previous = preferences.windowMode;
   windowModeChanging = true;
   if (!savePreferences({ windowMode: !previous })) {
     windowModeChanging = false;
-    return;
+    return false;
   }
   try {
     await api.windowMode(!previous);
+    return true;
   } catch (error) {
     savePreferences({ windowMode: previous });
     windowModeChanging = false;
     drawNavigation();
     message(error.message);
+    return false;
   }
 }
 
@@ -1190,7 +1229,12 @@ async function selectItem(fromDial = false) {
   }
   if (nav.current.kind === 'color') {
     const page = nav.current;
-    if (savePreferences({ [page.key]: page.value })) {
+    if (
+      savePreferences({
+        [page.key]: page.value,
+        ...(page.key === 'windowSmokeHue' ? { menuBackground: 'match' } : {}),
+      })
+    ) {
       nav.back();
       const row = nav.current.rows.find((item) => item.key === page.key);
       if (row) row.detail = radialColorName(page.value);
@@ -1204,11 +1248,17 @@ async function selectItem(fromDial = false) {
       savePreferences(
         [
           'radialBackground',
+          'windowBackground',
           'radialWidthPct',
           'radialHeight',
           'menuTimeout',
         ].includes(page.key)
-          ? { [page.key]: page.value }
+          ? {
+              [page.key]: page.value,
+              ...(page.key === 'windowBackground'
+                ? { menuBackground: 'match' }
+                : {}),
+            }
           : {
               visibility: { ...preferences.visibility, [page.key]: page.value },
             },
@@ -1829,12 +1879,5 @@ $('#radialBackdropSeek').onchange = (event) => {
 };
 $('#radialSongList').onclick = returnToSongList;
 
-$('#radialHue').oninput = (event) => {
-  if (nav.current.kind === 'color') {
-    noteActivity();
-    nav.current.value = Number(event.target.value);
-    drawNavigation();
-  }
-};
 $('#radialColorSave').onclick = () => selectItem();
 $('#radialColorCancel').onclick = menuBack;

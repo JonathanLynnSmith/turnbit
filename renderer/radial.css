@@ -92,7 +92,7 @@ body[data-edge=right] :is(#radialNow,.radial-now-snapshot) .radial-track,body[da
 :is(#radialNow,.radial-now-snapshot) :is(#radialSongList,.radial-song-list){margin-left:28px}
 body[data-edge=right] :is(#radialNow,.radial-now-snapshot) :is(#radialSongList,.radial-song-list){margin-left:auto;margin-right:28px}
 #radial[data-page=now] #radialContext,#radial[data-page=now] #radialStatus{left:72px;right:72px}
-:is(#radialNow,.radial-now-snapshot)::before{display:block;inset:-48px -100px -48px -40px;border-radius:0;background:radial-gradient(ellipse at 25% 50%,#000 0%,#000b 40%,#0003 65%,transparent 85%);opacity:var(--smoke-opacity,.24)}
+:is(#radialNow,.radial-now-snapshot)::before{display:block;inset:-48px -100px -48px -40px;border-radius:0;background:radial-gradient(ellipse at 25% 50%,var(--smoke-color,#000) 0%,color-mix(in srgb,var(--smoke-color,#000) 73%,transparent) 40%,color-mix(in srgb,var(--smoke-color,#000) 20%,transparent) 65%,transparent 85%);opacity:var(--smoke-opacity,.24)}
 body[data-edge=right] :is(#radialNow,.radial-now-snapshot)::before{inset:-48px -40px -48px -100px;border-radius:0;background:radial-gradient(ellipse at 75% 50%,#000 0%,#000b 40%,#0003 65%,transparent 85%)}
 body[data-interface=radial]{overflow:hidden}
 
@@ -146,19 +146,24 @@ body[data-align=left] .radial-mini .mini-info{right:auto;left:0}
 #radial :is(#radialAlbum,.radial-album){opacity:.65}
 #radial :is(#radialNow,.radial-now-snapshot) input[type=range]::-webkit-slider-runnable-track{background:linear-gradient(to right,var(--radial-accent) var(--fill),color-mix(in srgb,var(--radial-primary) 18%,transparent) var(--fill))}
 #radial :is(#radialNow,.radial-now-snapshot) input[type=range]::-webkit-slider-thumb{background:var(--radial-accent)}
-#radialColor{position:absolute;top:50%;left:72px;width:min(340px,calc(100% - 102px));transform:translateY(-50%);text-align:left;color:var(--radial-primary);text-shadow:0 2px 7px #0008}
+#radialColor{position:absolute;top:50%;left:72px;width:min(300px,calc(100% - 102px));transform:translateY(-50%);text-align:left;color:#eef7f5;text-shadow:none;max-height:calc(100% - 140px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:#ffffff35 transparent;color-scheme:dark;padding:6px}
 body[data-edge=right] #radialColor{left:auto;right:72px}
-#radialColorLabel{font-size:11px;letter-spacing:1.5px;margin:0 0 24px;opacity:.75}
-#radialColorSwatch{width:54px;height:54px;border-radius:50%;box-shadow:0 0 0 1px #ffffff18,0 5px 20px #0003;margin-bottom:25px}
-#radialColor h2{font-size:26px;font-weight:300;margin:0 0 12px;letter-spacing:0}
-#radialColor .radial-primary-sample{color:var(--radial-primary)}#radialColor .radial-accent-sample{color:var(--radial-accent)}
-#radialHue{appearance:none;-webkit-appearance:none;width:100%;height:26px;background:transparent;margin:22px 0 10px;cursor:pointer}
-#radialHue::-webkit-slider-runnable-track{height:5px;border:0;border-radius:3px;background:linear-gradient(to right,#f77 0%,#ff7 16%,#7f7 33%,#7ff 50%,#77f 66%,#f7f 83%,#f77 97%,#eef7f5 100%);box-shadow:none}
-#radialHue::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:10px;height:15px;margin-top:-5px;border:2px solid #effcf5;border-radius:5px;background:#17221d;box-shadow:0 1px 6px #0009}
-#radialColorValue{font-size:12px;letter-spacing:.7px}
-.radial-color-help{font-size:10px;line-height:1.8;opacity:.6;margin-top:24px}
-.radial-color-actions{display:flex;gap:24px;margin-top:18px}.radial-color-actions button{border:0;background:none;color:inherit;font:400 11px 'Segoe UI',sans-serif;padding:8px 0;cursor:pointer}
-.radial-color-actions button:first-child{color:var(--radial-accent)}
+.color-preview{display:flex;align-items:center;gap:18px;min-height:64px;margin-bottom:24px}
+#radialColorSample{font:500 48px/1 'Segoe UI Variable Display','Segoe UI',sans-serif;letter-spacing:-2px}
+#radialColorValue{font:500 14px/1.4 'Segoe UI',sans-serif;color:#eef7f5;letter-spacing:0}
+#radialColorPalette{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px 7px;padding:4px;margin:0 0 28px}
+#radialColorPalette button{appearance:none;position:relative;min-width:0;aspect-ratio:1;border:4px solid transparent;border-radius:50%;background:var(--swatch);background-clip:padding-box;cursor:pointer;box-shadow:0 0 0 1px transparent;transition:box-shadow .12s ease}
+#radialColorPalette button:hover{box-shadow:0 0 0 1px #ffffff70}
+#radialColorPalette button[aria-pressed=true]{box-shadow:0 0 0 1.5px #eef7f5}
+#radialColorPalette button[aria-pressed=true]::after{content:'';position:absolute;inset:34%;border-radius:50%;background:#12201d}
+#radialColorPalette button:focus-visible{outline:2px solid #eef7f5;outline-offset:4px}
+.radial-color-actions{display:flex;justify-content:flex-end;gap:8px;padding-top:18px;border-top:1px solid #ffffff18}
+.radial-color-actions button{appearance:none;min-height:34px;padding:7px 16px;border:1px solid #ffffff25;border-radius:7px;background:transparent;color:#d5dbd9;font:500 12px/1.4 'Segoe UI',sans-serif;cursor:pointer;transition:background-color .12s ease,border-color .12s ease}
+.radial-color-actions button:hover{background:#ffffff0d;border-color:#ffffff55}
+#radialColorSave{background:#e9efec;border-color:#e9efec;color:#14201b}
+#radialColorSave:hover{background:#fff;border-color:#fff}
+.radial-color-actions button:focus-visible{outline:2px solid #eef7f5;outline-offset:3px}
+@media(max-height:480px){.color-preview{min-height:42px;margin-bottom:12px}#radialColorSample{font-size:36px}#radialColorPalette{margin-bottom:14px;gap:7px}.radial-color-actions{padding-top:12px}}
 
 /* Compact playback row: artwork beside a stable metadata and timeline column. */
 .radial-label.has-mini{width:250px;max-width:calc(100% - 145px);height:80px;text-align:left}
@@ -507,3 +512,11 @@ body .radial-backdrop-volume input{height:32px;margin-block:-6px}
 body #radial .radial-label>small{font-size:12px}
 body #radial .radial-label.radial-control>span{font-size:12px}
 body #radial .radial-mini .mini-times b{font-size:11.5px}
+
+/* Secondary credits stay with the title, at a quieter size in both players. */
+.song-title-detail{font-size:14px;line-height:1.4;font-weight:400;letter-spacing:0;color:color-mix(in srgb,var(--radial-primary) 65%,transparent);margin:-2px 0 12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.radial-backdrop-song .song-title-detail{font-size:clamp(14px,1.6vw,19px);margin:0 0 16px}
+body[data-player-column=narrow] .radial-backdrop-song .song-title-detail{font-size:13px;margin-bottom:8px}
+
+#radialColorPalette button[data-hue="-1"]{box-shadow:0 0 0 1px #ffffff40}
+#radialColorPalette button[data-hue="-1"][aria-pressed=true]{box-shadow:0 0 0 1.5px #eef7f5}

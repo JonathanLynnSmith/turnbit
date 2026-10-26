@@ -78,8 +78,11 @@
       radialDisplay: null,
       radialCurve: true,
       radialBackground: 24,
+      windowBackground: 24,
+      widgetSmokeHue: -1,
+      windowSmokeHue: -1,
       primaryHue: 360,
-      accentHue: 150,
+      accentHue: 141,
       visibility: { ...visibilityDefaults },
       clicker: false,
       mouseModeKey: 'ctrl-alt-z',
@@ -87,9 +90,9 @@
       nowPlayingBackdrop: true,
       backdropLayout: 'overlay',
       menuBackground: 'match',
-      menuTimeout: 8,
+      menuTimeout: 3,
       menuReturnsToSource: true,
-      splitDivider: true,
+      splitDivider: false,
     };
     try {
       const saved = JSON.parse(
@@ -191,11 +194,18 @@
         preferences.radialAlign = saved.radialAlign;
       if (['left', 'right'].includes(saved.radialSide))
         preferences.radialSide = saved.radialSide;
-      if (Number.isFinite(saved.radialBackground))
-        preferences.radialBackground = Math.max(
-          0,
-          Math.min(100, Math.round(saved.radialBackground)),
-        );
+      // Existing installations used one opacity in both modes. Seed each once, then keep them independent.
+      for (const key of ['radialBackground', 'windowBackground']) {
+        const value = saved[key] ?? saved.radialBackground;
+        if (Number.isFinite(value))
+          preferences[key] = Math.max(0, Math.min(100, Math.round(value)));
+      }
+      for (const key of ['widgetSmokeHue', 'windowSmokeHue'])
+        if (Number.isFinite(saved[key]))
+          preferences[key] = Math.max(
+            -1,
+            Math.min(360, Math.round(saved[key])),
+          );
       for (const key of ['primaryHue', 'accentHue'])
         if (Number.isFinite(saved[key]))
           preferences[key] = Math.max(0, Math.min(360, Math.round(saved[key])));
@@ -233,8 +243,81 @@
     return next;
   }
 
+  const RESET_KEYS = {
+    general: [
+      'backRow',
+      'homeLastSongList',
+      'playOpensNowPlaying',
+      'songOpensNowPlaying',
+      'idleNowPlaying',
+      'idleFollowSong',
+    ],
+    playback: [
+      'preferredDevice',
+      'coldStart',
+      'coldStartPlaylist',
+      'autoLaunchSpotify',
+      'keepCurrentSongPosition',
+    ],
+    controls: [
+      'reverseDial',
+      'doublePress',
+      'hoverBack',
+      'dialOnlyWake',
+      'mouseModeKey',
+      'clicker',
+    ],
+    appearance: [
+      'radialCurve',
+      'radialAlign',
+      'radialSide',
+      'primaryHue',
+      'accentHue',
+      'nowPlayingBackdrop',
+      'backdropLayout',
+      'menuBackground',
+      'splitDivider',
+    ],
+    window: [
+      'keepOnTop',
+      'visibility',
+      'idlePinned',
+      'menuTimeout',
+      'menuReturnsToSource',
+      'gamingMode',
+      'windowBackground',
+      'windowSmokeHue',
+    ],
+    widget: [
+      'windowMode',
+      'keepOnTop',
+      'visibility',
+      'idlePinned',
+      'gamingMode',
+      'radialDisplay',
+      'radialWidthPct',
+      'radialHeight',
+      'radialVertical',
+      'mousePassthrough',
+      'radialBackground',
+      'widgetSmokeHue',
+    ],
+  };
+  function resetPatch(group = 'all') {
+    const defaults = loadPreferences(
+      { getItem: () => null },
+      { themes: [], demoCount: 0 },
+    );
+    const keys =
+      group === 'all'
+        ? [...new Set(Object.values(RESET_KEYS).flat())]
+        : RESET_KEYS[group] || [];
+    return Object.fromEntries(keys.map((key) => [key, defaults[key]]));
+  }
+
   const settings = {
     loadPreferences,
+    resetPatch,
     persistPreferences,
     cleanVisibility,
     cleanLastSongList,

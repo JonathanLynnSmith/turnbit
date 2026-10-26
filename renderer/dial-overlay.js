@@ -1,6 +1,6 @@
 // Browsing is temporary; returning to the player keeps the navigation stack.
 class DialOverlay {
-  constructor({ now = () => Date.now(), timeout = 8000, hold = 420 } = {}) {
+  constructor({ now = () => Date.now(), timeout = 3000, hold = 420 } = {}) {
     Object.assign(this, { now, timeout, hold });
     this.visible = false;
     this.lastInput = 0;

@@ -1,3 +1,5 @@
+import { renderSongTitle } from './song-title.mjs';
+
 export function createRadialView({
   $,
   preferences,
@@ -26,25 +28,93 @@ export function createRadialView({
   SPLIT_HAZE_SPILL,
 }) {
   function radialColor(hue, accent = false) {
-    return hue === 360 ? '#eef7f5' : `hsl(${hue} 75% ${accent ? 68 : 79}%)`;
+    return hue === -1
+      ? '#000000'
+      : hue === 360
+        ? '#eef7f5'
+        : hue === 141 && accent
+          ? '#1db954'
+          : `hsl(${hue} 75% ${accent ? 68 : 79}%)`;
   }
   function radialColorName(hue) {
-    return hue === 360
-      ? 'White'
-      : [
-          'Red',
-          'Orange',
-          'Amber',
-          'Lime',
-          'Green',
-          'Mint',
-          'Cyan',
-          'Azure',
-          'Blue',
-          'Violet',
-          'Magenta',
-          'Rose',
-        ][Math.floor(((hue + 15) % 360) / 30)];
+    return hue === -1
+      ? 'Black'
+      : hue === 141
+        ? 'Spotify Green'
+        : hue === 360
+          ? 'White'
+          : [
+              'Red',
+              'Orange',
+              'Amber',
+              'Lime',
+              'Green',
+              'Mint',
+              'Cyan',
+              'Azure',
+              'Blue',
+              'Violet',
+              'Magenta',
+              'Rose',
+            ][Math.floor(((hue + 15) % 360) / 30)];
+  }
+  function syncColorPalette(page) {
+    const palette = $('#radialColorPalette');
+    const stops = window.TurnbitValueSteps.colorStops(page.key);
+    if (palette.dataset.key !== page.key) {
+      palette.replaceChildren();
+      palette.dataset.key = page.key;
+      palette.onkeydown = (event) => {
+        const delta = {
+          ArrowLeft: -1,
+          ArrowRight: 1,
+          ArrowUp: -7,
+          ArrowDown: 7,
+        }[event.key];
+        if (
+          !delta ||
+          !event.target.matches('button') ||
+          nav.current.kind !== 'color'
+        )
+          return;
+        event.preventDefault();
+        event.stopPropagation();
+        const buttons = [...palette.children];
+        const next =
+          buttons[
+            (buttons.indexOf(event.target) + delta + buttons.length) %
+              buttons.length
+          ];
+        next.click();
+        next.focus({ preventScroll: true });
+      };
+      for (const hue of stops) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.dataset.hue = hue;
+        button.title = radialColorName(hue);
+        button.setAttribute('aria-label', radialColorName(hue));
+        button.onclick = () => {
+          if (nav.current.kind !== 'color') return;
+          noteActivity();
+          nav.current.value = hue;
+          drawNavigation();
+        };
+        palette.append(button);
+      }
+    }
+    for (const button of palette.children) {
+      const hue = Number(button.dataset.hue);
+      button.style.setProperty(
+        '--swatch',
+        radialColor(hue, page.key !== 'primaryHue'),
+      );
+      button.setAttribute('aria-pressed', String(hue === page.value));
+      button.tabIndex =
+        hue === page.value || (hue === stops[0] && !stops.includes(page.value))
+          ? 0
+          : -1;
+    }
   }
   function applyRadialColors() {
     const page = nav.current;
@@ -175,10 +245,29 @@ export function createRadialView({
   const HAZE_DITHER = [
     0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5,
   ].map((v) => v / 16 - 0.47);
-  function updateSmokeShape(
-    opacity = updateSmokeShape.opacity ?? preferences.radialBackground / 100,
-  ) {
-    updateSmokeShape.opacity = opacity;
+  function smokeSettings() {
+    const page = nav.current;
+    const opacityKey = preferences.windowMode
+      ? 'windowBackground'
+      : 'radialBackground';
+    const colorKey = preferences.windowMode
+      ? 'windowSmokeHue'
+      : 'widgetSmokeHue';
+    return {
+      opacity:
+        (page.kind === 'visibility' && page.key === opacityKey
+          ? page.value
+          : preferences[opacityKey]) / 100,
+      color: radialColor(
+        page.kind === 'color' && page.key === colorKey
+          ? page.value
+          : preferences[colorKey],
+        true,
+      ),
+    };
+  }
+  function updateSmokeShape(opacity = smokeSettings().opacity) {
+    const smokeColor = smokeSettings().color;
     const host = $('#radial'),
       canvas = $('#radialHaze');
     if (!canvas) return;
@@ -202,6 +291,7 @@ export function createRadialView({
       fadeTop,
       fadeBottom,
       opacity,
+      smokeColor,
     ].join(':');
     if (!height || !width || updateSmokeShape.key === key) return;
     updateSmokeShape.key = key;
@@ -215,8 +305,10 @@ export function createRadialView({
       t <= 0 ? 0 : t >= 1 ? 1 : t * t * t * (t * (t * 6 - 15) + 10);
     canvas.width = w;
     canvas.height = h;
-    const context = canvas.getContext('2d'),
-      image = context.createImageData(w, h),
+    const context = canvas.getContext('2d');
+    context.fillStyle = smokeColor;
+    context.fillRect(0, 0, w, h);
+    const image = context.getImageData(0, 0, w, h),
       data = image.data;
     for (let j = 0; j < h; j++) {
       // The solid edge follows the label curve (bending less, so labels near the ends stay on solid).
@@ -395,11 +487,13 @@ export function createRadialView({
       ? 'Now Playing'
       : 'Browse';
     browseButton.setAttribute('aria-label', visible ? 'Now Playing' : 'Browse');
+    $('#windowViewLabel').hidden = !visible;
+    $('.brand-divider').hidden = !visible;
     $('#windowViewLabel').textContent = visible
       ? nav.current.title === 'turnbit'
         ? 'BROWSE'
         : nav.current.title.toUpperCase()
-      : 'NOW PLAYING';
+      : '';
     // The full-window dismiss target would sit on top of the player's own controls in Split View.
     $('#radialBackdropDismiss').hidden = !visible || split;
     syncPlayerColumn(visible && split);
@@ -519,8 +613,7 @@ export function createRadialView({
   function syncSpotifyLinks(demo, playback) {
     document.body.dataset.spotifyConnected = String(!demo);
     const selected =
-      nav.current.kind === 'list' &&
-      (!backdropActive() || dialOverlay.visible)
+      nav.current.kind === 'list' && (!backdropActive() || dialOverlay.visible)
         ? nav.current.rows[nav.current.selected]
         : null;
     const selectedUri = selected?.item?.uri || selected?.playlist?.uri;
@@ -542,7 +635,9 @@ export function createRadialView({
       link.href = href;
       link.setAttribute('aria-label', label);
       link.title = label;
-      link.querySelector('span').textContent = installed ? '↗' : 'GET SPOTIFY FREE';
+      link.querySelector('span').textContent = installed
+        ? '↗'
+        : 'GET SPOTIFY FREE';
     }
   }
   // A song change in the window player: decode the next cover first, then replace it
@@ -555,7 +650,12 @@ export function createRadialView({
     holdingTitle = null,
     holdingSince = 0;
   function applyBackdropTrack(track, decoded = null) {
-    for (const key of ['Title', 'Artist', 'Album']) {
+    renderSongTitle(
+      $('#radialBackdropTitle'),
+      $('#radialBackdropTitleDetail'),
+      track.title,
+    );
+    for (const key of ['Artist', 'Album']) {
       const node = $('#radialBackdrop' + key);
       node.textContent = track[key.toLowerCase()];
       node.title = node.textContent;
@@ -612,8 +712,12 @@ export function createRadialView({
     holdingTitle = null;
     shownTrackKey = key;
     const generation = ++trackGeneration,
-      sameSong = $('#radialBackdropTitle').textContent === track.title,
-      parts = [$('.radial-backdrop-song'), $('#radialBackdropArt'), $('#radialGlow')];
+      sameSong = $('#radialBackdropTitle').title === track.title,
+      parts = [
+        $('.radial-backdrop-song'),
+        $('#radialBackdropArt'),
+        $('#radialGlow'),
+      ];
     decodeArtwork(track.artwork).then(async (decoded) => {
       if (generation !== trackGeneration) return;
       // Only the artwork changes when Spotify fills in the cover for the song already shown.
@@ -711,6 +815,12 @@ export function createRadialView({
       return;
     }
     const page = nav.current;
+    const previewingSmoke =
+      ['windowBackground', 'windowSmokeHue'].includes(page.key) &&
+      ['color', 'visibility'].includes(page.kind);
+    document.body.dataset.menuBackground = previewingSmoke
+      ? 'match'
+      : preferences.menuBackground;
     if (page.kind !== 'now') trackTransition.reset();
     // The backdrop already shows everything the compact Now Playing panel would, so that panel stays hidden while it's active.
     // Settle this first: the smoke and the label path below are measured against the menu's column width.
@@ -722,12 +832,9 @@ export function createRadialView({
     $('#radial').dataset.page = page.kind;
     applyRadialColors();
     $('#radialColor').hidden = page.kind !== 'color';
-    const haze =
-      page.kind === 'visibility' && page.key === 'radialBackground'
-        ? page.value
-        : preferences.radialBackground;
-    const smoke = haze / 100;
+    const { opacity: smoke, color: smokeColor } = smokeSettings();
     $('#radial').style.setProperty('--smoke-opacity', smoke);
+    $('#radial').style.setProperty('--smoke-color', smokeColor);
     updateSmokeShape(smoke);
     syncRadialGlow();
     // Height under 100% leaves the window's top and/or bottom inside the screen: fade the backdrop there too.
@@ -738,6 +845,7 @@ export function createRadialView({
     $('#radialStatus').dataset.playing = String(page.kind === 'now' && playing);
     $('#radialNow').hidden = page.kind !== 'now' || backdrop;
     $('#radialLabels').hidden = ['now', 'color'].includes(page.kind);
+    $('#radialContext').hidden = page.kind === 'now';
     $('#radialContext').textContent =
       page.title === 'turnbit' ? 'SPOTIFY / TURNBIT' : page.title.toUpperCase();
     $('#radialStatus').textContent =
@@ -752,12 +860,14 @@ export function createRadialView({
       $('#radialStatus').textContent = $('#actionNotice')?.textContent || '';
     if (page.kind === 'color') {
       radial.stop();
-      $('#radialColorLabel').textContent = page.title;
-      $('#radialHue').value = page.value;
+      $('#radialColor').setAttribute('aria-label', page.title);
+      syncColorPalette(page);
       $('#radialColorValue').textContent = radialColorName(page.value);
-      $('#radialColorSwatch').style.background = radialColor(
+      $('#radialColorSample').style.webkitTextStroke =
+        page.value === -1 ? '1px #ffffff60' : '';
+      $('#radialColorSample').style.color = radialColor(
         page.value,
-        page.key === 'accentHue',
+        page.key !== 'primaryHue',
       );
     } else if (page.kind === 'list')
       radial.update(page, page.rows, page.selected, {
@@ -790,7 +900,8 @@ export function createRadialView({
         );
       const track = getState().track;
       $('#radialNow .eq').dataset.playing = String(playing);
-      for (const key of ['Title', 'Artist', 'Album']) {
+      renderSongTitle($('#radialTitle'), $('#radialTitleDetail'), track.title);
+      for (const key of ['Artist', 'Album']) {
         const node = $('#radial' + key);
         node.textContent = track[key.toLowerCase()];
         node.title = node.textContent;

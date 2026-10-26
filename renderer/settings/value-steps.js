@@ -33,7 +33,20 @@
     return stepThrough(stops, value, delta);
   }
 
-  const steps = { TIMEOUT_STOPS, COLOR_STOPS, stepThrough, stepEvenly };
+  function colorStops(key) {
+    return key === 'accentHue'
+      ? [...COLOR_STOPS, 141].sort((a, b) => a - b)
+      : key.endsWith('SmokeHue')
+        ? [-1, ...COLOR_STOPS]
+        : COLOR_STOPS;
+  }
+  const steps = {
+    TIMEOUT_STOPS,
+    COLOR_STOPS,
+    colorStops,
+    stepThrough,
+    stepEvenly,
+  };
   if (typeof module !== 'undefined') module.exports = steps;
   else window.TurnbitValueSteps = steps;
 })();

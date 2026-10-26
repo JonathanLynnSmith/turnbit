@@ -112,7 +112,7 @@ app.whenReady().then(async()=>{
     previous=window;window.webContents.executeJavaScript(`window.turnbit.windowMode(false)`).catch(()=>{});
     window=await waitForNewWindow(previous);await wait(800);
     assert.equal(window.isFocusable(),false,'click-through applies again once back in Widget Mode');
-    assert.equal(await window.webContents.executeJavaScript(`settingsRows('window').some(row=>row.key==='mousePassthrough')`),true,'Mouse Click Through returns in Widget Mode');
+    assert.equal(await window.webContents.executeJavaScript(`settingsRows('widget').some(row=>row.key==='mousePassthrough')`),true,'Mouse Click Through returns in Widget Mode');
     await window.webContents.executeJavaScript(`savePreferences({mousePassthrough:false,visibility:{mode:'off',opacity:100,idleOpacity:20,timeout:10}});`);await wait(150);
     console.log('Window Mode toggles the live OS window (frame + dock/taskbar), keeps the mouse in control, and survives recreation. Passed.');
     app.quit();

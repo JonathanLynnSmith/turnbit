@@ -48,7 +48,7 @@ async function main(){
   await mode(true);
   assert.equal(await run(`$('#radialBackdrop').hidden`),false,'Window Mode opens the large player by default');
   assert.equal(await hidden(),true,'the window starts with an unobstructed player');
-  assert.equal(await run(`preferences.menuTimeout`),8,'the browsing timeout starts at the original 8 seconds');
+  assert.equal(await run(`preferences.menuTimeout`),3,'the browsing timeout starts at 3 seconds');
   await run(`savePreferences({idleNowPlaying:false,hoverBack:false,mouseModeKey:'off'});demo=false;acceptPlayback({item:{uri:'spotify:track:AAAAAAAAAAAAAAAAAAAAAA',name:'Night Drive',artists:[{name:'turnbit sessions'}],album:{name:'After Hours',images:[{url:${JSON.stringify(ART)}}]},duration_ms:214000},is_playing:true,progress_ms:62000,liked:false,shuffle_state:false,repeat_state:'off',device:{id:'test',name:'Living Room',volume_percent:62}});drawNavigation();`);
   // Song text updates after cover decoding; the cover itself swaps without animation.
   await until(()=>run(`$('#radialBackdropTitle').textContent==='Night Drive'&&$('#radialBackdropArtist').textContent==='turnbit sessions'`),'the player shows the new song');
@@ -298,7 +298,9 @@ async function main(){
   assert.equal(await insideMenu(),true,'the playing row keeps its artwork inside the menu half');
   // The seam between the halves is a choice.
   const seam=()=>run(`Number(getComputedStyle($('#radialBackdrop'),'::after').opacity)`);
-  await until(async()=>await seam()===1,'the divider did not show by default');
+  assert.equal(await seam(),0,'the divider starts off');
+  await run(`savePreferences({splitDivider:true});drawNavigation();`);
+  await until(async()=>await seam()===1,'the enabled divider did not show');
   await shot('window-split.png');
   await run(`showSetting(row=>row.key==='splitDivider');selectItem();`);await wait(400);
   assert.deepEqual(await run(`[preferences.splitDivider,JSON.parse(localStorage.getItem('turnbit-preferences')).splitDivider,nav.current.rows[nav.current.selected].detail]`),[false,false,'Off'],'turning it off saves');

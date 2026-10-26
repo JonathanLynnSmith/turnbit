@@ -9,7 +9,7 @@ app.whenReady().then(async()=>{try{
   const send=event=>fetch('http://127.0.0.1:4802/device/event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(event)}).then(r=>assert.equal(r.status,204));
   const click=async()=>{await send({type:'command',command:'center-down'});await send({type:'command',command:'center-up'});await send({type:'command',command:'center-click'});await wait(500);};
   const menu=async()=>{await send({type:'command',command:'menu-down'});await send({type:'command',command:'menu-up'});await wait(300);};
-  const labels=()=>js(`nav.current.rows.filter(r=>r.action!=='nav-back').map(r=>r.label).join(', ')`);
+  const labels=()=>js(`nav.current.rows.filter(r=>!['nav-back','reset-settings'].includes(r.action)).map(r=>r.label).join(', ')`);
   const page=()=>js(`({title:nav.current.title,highlighted:nav.current.rows[nav.current.selected]?.label,depth:nav.stack.length})`);
   const open=async style=>{await js(`savePreferences({interfaceStyle:'${style}',gamingMode:false,idleNowPlaying:false,idlePinned:false,visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:10}});demo=true;nav.reset(root());nav.current.selected=nav.current.rows.findIndex(r=>r.action==='settings');drawNavigation();`);await click();};
 
@@ -19,15 +19,16 @@ app.whenReady().then(async()=>{try{
     await js(`savePreferences({interfaceStyle:'${style}'});`);
     assert.equal(await js(`preferences.interfaceStyle`),'radial',`${style} selection migrates to turnbit`);
   }
-  assert.equal(await labels(),'General, Playback, Controls, Appearance, Window','five categories in the usual app order');
+  assert.equal(await labels(),'General, Playback, Controls, Appearance, Window, Widget','six categories in the usual app order');
   assert.equal(await js(`nav.current.rows.find(r=>r.label==='Playback').detail`),'Spotify, devices, and volume','categories have subtitles');
   assert.equal((await page()).highlighted,'General','Settings opens on the first category');
   const expected={
     general:'Back in Lists, Last Song List on Home, Play Opens Now Playing, Open Song in Now Playing, Idle to Now Playing, Follow Playing Song',
     playback:'Volume, Playback Device, Preferred Device, When Nothing Is Playing, Keep Song Position, Open Spotify Automatically, Spotify Account',
     controls:'Reverse Dial Direction, Dial Double-Press, Hover Shortcuts, Dial Only Wake, Mouse Mode Key, Click Sounds',
-    appearance:'Curved Menu, Text Alignment, Screen Edge, Text Color, Accent Color, Smoky Background',
-    window:'Window Mode, Size & Position, Keep on Top, Transparency, Mouse Click Through, Pin Widget, Gaming Mode'};
+    appearance:'Curved Menu, Text Alignment, Screen Edge, Text Color, Accent Color',
+    window:'Keep on Top, Transparency, Pin Dial Menu, Dial Menu Timeout, Dial Menu Returns to Playlist, Gaming Mode, Smoky Background, Background Color',
+    widget:'Widget Mode, Size & Position, Keep on Top, Transparency, Pin Widget, Mouse Click Through, Gaming Mode, Smoky Background, Background Color'};
   for(const [id,want] of Object.entries(expected)){
     await js(`nav.reset(root());showSettings();nav.current.selected=nav.current.rows.findIndex(r=>r.group==='${id}');drawNavigation();`);await click();
     assert.equal(await labels(),want,`${id} contents`);assert.equal((await page()).depth,3,`${id}: settings are two levels below Home`);
@@ -57,5 +58,5 @@ app.whenReady().then(async()=>{try{
   assert.equal(await js(`JSON.parse(localStorage.getItem('turnbit-preferences')).radialAlign`),'auto','saved');await js(`savePreferences({radialSide:'left'});`);
   const all=await js(`settingsGroups.flatMap(g=>settingsRows(g.id).map(r=>r.label)).join('|')`);
   for(const old of ['Apperance','Clicker','Primary Color','Screen edge'])assert.ok(!all.split('|').includes(old),`old label "${old}" is gone`);
-  console.log('Settings: five categories with subtitles, two levels deep, Appearance contains only turnbit settings, toggles save, back lands on the category, clearer labels, Curved Menu straightens the list, Text Alignment cycles Auto/Left/Right.');app.quit();
+  console.log('Settings: six categories with subtitles, two levels deep, Appearance contains only turnbit settings, toggles save, back lands on the category, clearer labels, Curved Menu straightens the list, Text Alignment cycles Auto/Left/Right.');app.quit();
 }catch(error){console.error(error);app.exit(1);}});
