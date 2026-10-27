@@ -1,0 +1,59 @@
+/* Shared visual values. Geometry and user preferences remain with their features. */
+:root {
+  --tb-font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', sans-serif;
+  --tb-font-display: -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Display', 'Segoe UI', sans-serif;
+  --tb-type-caption: 12px;
+  --tb-type-body: 14px;
+  --tb-type-menu: 24px;
+  --tb-type-menu-compact: 22px;
+  --tb-type-title: 27px;
+  --tb-type-hero: clamp(30px, 4.7vw, 64px);
+  --tb-type-artist: clamp(17px, 2.4vw, 27px);
+  --tb-weight-regular: 400;
+  --tb-weight-medium: 500;
+  --tb-weight-selected: 600;
+  --tb-weight-title: 700;
+  --tb-space-1: 4px;
+  --tb-space-2: 8px;
+  --tb-space-3: 12px;
+  --tb-space-4: 16px;
+  --tb-space-5: 24px;
+  --tb-space-6: 32px;
+  --tb-space-7: 48px;
+  --tb-radius-small: 4px;
+  --tb-radius-control: 8px;
+  --tb-radius-cover: 8px;
+  --tb-radius-dialog: 16px;
+  --tb-radius-round: 999px;
+  --tb-icon-size: 16px;
+  --tb-icon-stroke: 1.8;
+  --tb-hit-min: 32px;
+  --tb-canvas: #101214;
+  --tb-surface: #1b1f21;
+  --tb-surface-raised: #22272a;
+  --tb-surface-hover: #2a3033;
+  --tb-ink: #eef7f5;
+  --tb-ink-muted: #a9b3b0;
+  --tb-accent-default: #1db954;
+  --tb-danger: #f08b8b;
+  --tb-border: #ffffff20;
+  --tb-border-strong: #ffffff40;
+  --tb-shadow-surface: 0 16px 48px #0005;
+  --tb-shadow-cover: 0 12px 32px #0004;
+  --tb-artwork-wash-opacity: .22;
+  --tb-text-protection: 0 1px 3px #0009;
+  --tb-duration-feedback: 120ms;
+  --tb-duration-state: 180ms;
+  --tb-duration-view: 260ms;
+  --tb-duration-track: 360ms;
+  --tb-duration-track-out: 200ms;
+  --tb-duration-track-in: 560ms;
+  --tb-ease: cubic-bezier(.2,.8,.2,1);
+}
+
+body, #radial, #radialBackdrop {
+  --tb-text: var(--radial-primary, var(--tb-ink));
+  --tb-accent: var(--radial-accent, var(--tb-accent-default));
+  --tb-text-secondary: color-mix(in srgb, var(--tb-text) 72%, transparent);
+  --tb-text-muted: color-mix(in srgb, var(--tb-text) 58%, transparent);
+}

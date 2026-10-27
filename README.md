@@ -157,7 +157,8 @@ For more, see [How turnbit works](docs/how-it-works.md), including how to log ev
 | `npm run demo:gif` | Rebuild the README GIF from a scripted demo-mode run |
 
 Tests simulate Spotify and the dial and use their own sessions and ports, so they can run while
-turnbit is open. See [Architecture](docs/architecture.md) for how the code is organised.
+turnbit is open. See [Architecture](docs/architecture.md) for how the code is organised, and
+[Visual system](docs/visual-system.md) for shared styling rules and visual checks.
 
 The iPod and Zune interfaces are archived on
 [archive/ipod-zune-interfaces](https://github.com/JonathanLynnSmith/turnbit/tree/archive/ipod-zune-interfaces).

@@ -9,13 +9,15 @@ Reference review:
 Polish decisions:
 - Use independent horizontal and vertical radii: a shallow inward bow and a tall path returning toward the edge at top and bottom.
 - Align context and status to the inward edge, matching the carousel and playback panel.
-- Interpolate label weight with its distance from the center; retain the circular motion and soft fade.
+- Keep label weight stable during motion. Selection applies semibold immediately; position and opacity follow the carousel.
 - Frame artwork with a fine edge and diffuse elevation; retain a transparent panel with a quiet wash.
 - Reset inherited slider borders so radial controls render as single thin tracks.
 - Use short directional entry and artwork reveal transitions, respecting reduced motion.
 - Preserve D100H mappings, Spotify behavior, menu structure and saved preferences.
 
 Reference images are in artifacts for local review only and are excluded from the packaged app.
+
+The shared tokens and current treatment are documented in [Visual system](visual-system.md).
 
 ## Broad smoky scrim
 

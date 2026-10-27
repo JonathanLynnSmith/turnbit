@@ -57,8 +57,7 @@ class RadialCarousel {
     const extent = Math.ceil(this.reach) + 1;
     if (page.libraryKind === 'playlists') {
       this.playlistArtworkFor(rows[selected]?.playlist?.artwork, 'high');
-      for (const row of rows)
-        this.playlistArtworkFor(row.playlist?.artwork);
+      for (const row of rows) this.playlistArtworkFor(row.playlist?.artwork);
     }
     const low = Math.max(
         0,
@@ -174,7 +173,8 @@ class RadialCarousel {
       const image = document.createElement('img');
       image.alt = '';
       const fallback = document.createElement('span');
-      fallback.textContent = '♫';
+      fallback.className = 'turnbit-artwork';
+      fallback.setAttribute('aria-hidden', 'true');
       cover.append(image, fallback);
       const info = document.createElement('div');
       info.className = 'mini-info';
@@ -192,9 +192,7 @@ class RadialCarousel {
       node.append(mini);
     }
     const image = mini.querySelector('img');
-    image.hidden = !data.art;
-    image.nextElementSibling.hidden = !!data.art;
-    if (data.art && image.src !== data.art) image.src = data.art;
+    window.TurnbitArtwork.setSource(image, data.art);
     const title = mini.querySelector('strong'),
       artist = mini.querySelector('small'),
       artistText = data.artist + (data.playing ? '' : ' · Paused');

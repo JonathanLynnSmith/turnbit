@@ -1,7 +1,17 @@
 // Retain the outgoing artwork and metadata while the new track becomes ready.
 // Album covers swap as static images; only metadata fades.
 class TrackTransition {
-  constructor(panel, { reducedMotion = () => false, duration = 360 } = {}) {
+  constructor(
+    panel,
+    {
+      reducedMotion = () => false,
+      duration = parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue(
+          '--tb-duration-track',
+        ),
+      ) || 360,
+    } = {},
+  ) {
     Object.assign(this, { panel, reducedMotion, duration });
     this.key = null;
     this.generation = 0;

@@ -1,17 +1,17 @@
 #radial{display:none}
-body[data-interface=radial]{padding:0;background:transparent!important;color:#eef7f5}
-body[data-interface=radial] #radial{display:block;position:relative;z-index:1;width:min(520px,calc(100% - 80px));height:100%;overflow:visible;font-family:'Segoe UI Variable Display','Segoe UI',sans-serif;font-weight:300;user-select:none}
+body[data-interface=radial]{padding:0;background:transparent!important;color:var(--tb-ink)}
+body[data-interface=radial] #radial{display:block;position:relative;z-index:1;width:min(520px,calc(100% - 80px));height:100%;overflow:visible;font-family:var(--tb-font-display);font-weight:300;user-select:none}
 #radialLabels{position:absolute;left:0;right:0;top:50%;height:100%;transform:translateY(-50%);overflow:visible}
-.radial-label{position:absolute;width:350px;max-width:calc(100% - 115px);padding:9px 2px;background:none;border:0;border-radius:0;color:#edf7f5;text-align:left;font:300 25px/1.3 'Segoe UI Variable Display','Segoe UI',sans-serif;letter-spacing:.2px;transform-origin:left center;cursor:pointer;box-shadow:none;will-change:transform,opacity;white-space:nowrap;text-shadow:0 1px 2px #000b,0 3px 12px #0006,0 0 calc(var(--light)*13px) #d7fff329}
+.radial-label{position:absolute;width:350px;max-width:calc(100% - 115px);padding:9px 2px;background:none;border:0;border-radius:0;color:var(--tb-text);text-align:left;font:300 25px/1.3 var(--tb-font-display);letter-spacing:.2px;transform-origin:left center;cursor:pointer;box-shadow:none;will-change:transform,opacity;white-space:nowrap;text-shadow:var(--tb-text-protection)}
 .radial-label>span{display:block;overflow:hidden;text-overflow:ellipsis;padding:2px 0}
-.radial-label>small{display:block;font-size:10px;font-weight:400;letter-spacing:1.25px;line-height:1.6;color:#d1e5dc;opacity:.7;overflow:hidden;text-overflow:ellipsis}
+.radial-label>small{display:block;font-size:10px;font-weight:400;letter-spacing:1.25px;line-height:1.6;color:var(--tb-text-secondary);opacity:.7;overflow:hidden;text-overflow:ellipsis}
 .radial-label>small:empty{display:none}
-.radial-label[aria-selected=true]{font-weight:400;color:#f6fffc}
+.radial-label[aria-selected=true]{font-weight:400;color:var(--tb-text)}
 .radial-label:focus-visible{outline:0;text-decoration:underline;text-underline-offset:8px;text-decoration-thickness:1px}
 .radial-label:disabled{cursor:default}
 .radial-label.has-playlist-cover{padding-left:56px}
-.radial-label.has-playlist-cover::before{content:'';position:absolute;left:2px;top:50%;width:44px;height:44px;transform:translateY(-50%);border-radius:4px;background:#191414;box-shadow:0 4px 14px #0006;pointer-events:none}
-.radial-label .playlist-cover{position:absolute;left:2px;top:50%;width:44px;height:44px;transform:translateY(-50%);border-radius:4px;background:#191414;object-fit:contain;box-shadow:0 4px 14px #0006;pointer-events:none}
+.radial-label.has-playlist-cover::before{content:'';position:absolute;left:2px;top:50%;width:44px;height:44px;transform:translateY(-50%);border-radius:var(--tb-radius-small);background:#191414;box-shadow:0 4px 14px #0006;pointer-events:none}
+.radial-label .playlist-cover{position:absolute;left:2px;top:50%;width:44px;height:44px;transform:translateY(-50%);border-radius:var(--tb-radius-small);background:#191414;object-fit:contain;box-shadow:0 4px 14px #0006;pointer-events:none}
 #radialContext,#radialStatus{text-align:left;position:absolute;left:32px;right:32px;pointer-events:none;font-size:9px;letter-spacing:2.5px;color:#d1e9df;opacity:.45;text-shadow:0 1px 4px #000;z-index:1}
 #radialContext{top:28px}#radialStatus{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;bottom:28px;font-variant-numeric:tabular-nums;letter-spacing:1.8px}
 /* List text alignment follows Text Alignment (data-align); panel placement follows the docked edge (data-edge). */
@@ -20,35 +20,33 @@ body[data-align=right] .radial-label.has-playlist-cover{padding-left:2px;padding
 body[data-align=right] .radial-label.has-playlist-cover::before{left:auto;right:2px}
 body[data-align=right] .radial-label .playlist-cover{left:auto;right:2px}
 body[data-align=right] #radialContext,body[data-align=right] #radialStatus{text-align:right}
-body[data-interface=radial] dialog{color:#29343c}
 @media(prefers-reduced-motion:reduce){.radial-label{will-change:auto}}
 
 /* Playback floats in the inward belly of the same arc. */
-:is(#radialNow,.radial-now-snapshot){position:absolute;left:30px;top:50%;width:min(300px,calc(100% - 60px));transform:translateY(-50%);color:#eff8f5;text-shadow:0 2px 8px #0009}
+:is(#radialNow,.radial-now-snapshot){position:absolute;left:30px;top:50%;width:min(300px,calc(100% - 60px));transform:translateY(-50%);color:var(--tb-text);text-shadow:0 2px 8px #0009}
 body[data-edge=left] :is(#radialNow,.radial-now-snapshot){left:auto;right:30px}
 :is(#radialNow,.radial-now-snapshot)::before{content:'';position:absolute;inset:-30px -20px;z-index:-1;border-radius:48% 12% 12% 48%;background:radial-gradient(ellipse at 75% 45%,#182a2580,transparent 73%);pointer-events:none}
 body[data-edge=right] :is(#radialNow,.radial-now-snapshot)::before{border-radius:12% 48% 48% 12%;background:radial-gradient(ellipse at 25% 45%,#182a2580,transparent 73%)}
-.radial-art{width:min(244px,82%);aspect-ratio:1;margin:0 0 26px;overflow:hidden;position:relative;border-radius:8px;background:linear-gradient(145deg,#263b3a,#122321);box-shadow:0 16px 40px -8px #0006,0 0 40px #bed9ce0a;display:grid;place-items:center}
+.radial-art{width:min(244px,82%);aspect-ratio:1;margin:0 0 26px;overflow:hidden;position:relative;border-radius:var(--tb-radius-cover);background:var(--tb-surface);box-shadow:var(--tb-shadow-cover);display:grid;place-items:center}
 body[data-edge=left] .radial-art{margin-left:auto}
 .radial-art img{width:100%;height:100%;object-fit:cover;display:block}
-:is(#radialArtFallback,.radial-art-fallback){font-size:65px;font-weight:200;color:#d3eee57a;text-shadow:none}
 .radial-track{text-align:left}body[data-edge=left] .radial-track{text-align:right}
-:is(#radialTitle,.radial-title){font:400 27px/1.2 'Segoe UI Variable Display','Segoe UI',sans-serif;letter-spacing:-.4px;margin:0 0 9px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
-:is(#radialArtist,.radial-artist){font-size:14px;font-weight:400;color:#d2e5df;margin:0 0 5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-:is(#radialAlbum,.radial-album){font-size:11px;font-weight:400;letter-spacing:.6px;color:#b4ccc2;margin:0 0 23px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+:is(#radialTitle,.radial-title){font:var(--tb-weight-regular) var(--tb-type-title)/1.2 var(--tb-font-display);letter-spacing:-.4px;margin:0 0 9px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+:is(#radialArtist,.radial-artist){font-size:var(--tb-type-body);font-weight:400;color:var(--tb-text-secondary);margin:0 0 5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+:is(#radialAlbum,.radial-album){font-size:11px;font-weight:400;letter-spacing:.6px;color:var(--tb-text-muted);margin:0 0 23px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 :is(#radialNow,.radial-now-snapshot) input[type=range]{appearance:none;-webkit-appearance:none;display:block;width:100%;height:18px;padding:0;margin:0;background:transparent;cursor:pointer;accent-color:#e1f5ed}
 :is(#radialNow,.radial-now-snapshot) input[type=range]::-webkit-slider-runnable-track{height:2px;border:0;border-radius:2px;background:linear-gradient(to right,#d8f5e9 var(--fill),#d8f5e933 var(--fill));box-shadow:0 1px 5px #0005}
 :is(#radialNow,.radial-now-snapshot) input[type=range]::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:7px;height:7px;border:0;border-radius:50%;margin-top:-2.5px;background:#f0fff8;box-shadow:0 0 9px #e5fff04d}
-.radial-timeline>div{display:flex;justify-content:space-between;font-size:10px;letter-spacing:1px;font-variant-numeric:tabular-nums;color:#c2d8cf;margin-top:3px}
-.radial-volume{display:flex;align-items:center;gap:13px;margin-top:21px;font-size:10px;letter-spacing:.5px;color:#c2d8cf}
+.radial-timeline>div{display:flex;justify-content:space-between;font-size:10px;letter-spacing:1px;font-variant-numeric:tabular-nums;color:var(--tb-text-secondary);margin-top:3px}
+.radial-volume{display:flex;align-items:center;gap:13px;margin-top:21px;font-size:10px;letter-spacing:.5px;color:var(--tb-text-secondary)}
 .radial-volume input{min-width:0;flex:1}.radial-volume output{min-width:32px;text-align:right;font-variant-numeric:tabular-nums}
-:is(#radialSongList,.radial-song-list){display:block;background:none;border:0;color:#bad5c8;font:300 10px 'Segoe UI',sans-serif;letter-spacing:1px;padding:10px 0;margin-top:14px;cursor:pointer;text-shadow:0 2px 5px #0008}
+:is(#radialSongList,.radial-song-list){display:block;background:none;border:0;color:#bad5c8;font:300 10px var(--tb-font-ui);letter-spacing:1px;padding:10px 0;margin-top:14px;cursor:pointer;text-shadow:0 2px 5px #0008}
 body[data-edge=left] :is(#radialSongList,.radial-song-list){margin-left:auto}
 :is(#radialSongList,.radial-song-list):hover{color:#f1fff8}
 @media(max-height:580px){.radial-art{width:145px;margin-bottom:15px}:is(#radialTitle,.radial-title){font-size:23px}:is(#radialAlbum,.radial-album){margin-bottom:12px}.radial-volume{margin-top:12px}}
 
 #radial{--flow-enter:14px}body[data-edge=left] #radial{--flow-enter:-14px}
-#radialLabels{animation:radial-list-in .18s ease-out}
+#radialLabels{animation:radial-list-in var(--tb-duration-state) ease-out}
 .radial-art::after{content:'';position:absolute;inset:0;border:1px solid #edf9f314;border-radius:inherit;box-shadow:inset 0 1px 0 #ffffff0a;pointer-events:none}
 :is(#radialNow,.radial-now-snapshot) input[type=range]:hover::-webkit-slider-thumb{box-shadow:0 0 0 3px #d8f5e916,0 0 12px #e5fff04d}
 :is(#radialNow,.radial-now-snapshot) input:focus-visible,:is(#radialSongList,.radial-song-list):focus-visible{outline:1px solid #cceadd;outline-offset:5px;border-radius:2px}
@@ -58,7 +56,7 @@ body[data-edge=left] :is(#radialSongList,.radial-song-list){margin-left:auto}
 @keyframes radial-list-in{from{opacity:0;transform:translate(var(--flow-enter),-50%)}to{opacity:1;transform:translate(0,-50%)}}
 /* Dial Menu Returns to Playlist: its own name so setting the attribute starts the entrance again, and
    a longer travel than an ordinary page change, since this one is a switch the user is meant to catch. */
-#radialLabels[data-rewind=true]{animation:radial-rewind-in .34s cubic-bezier(.2,.8,.2,1)}
+#radialLabels[data-rewind=true]{animation:radial-rewind-in .34s var(--tb-ease)}
 @keyframes radial-rewind-in{from{opacity:0;transform:translate(calc(var(--flow-enter) * 2.4),-50%)}to{opacity:1;transform:translate(0,-50%)}}
 @media(prefers-reduced-motion:reduce){#radialLabels,#radialLabels[data-rewind=true]{animation:none}:is(#radialSongList,.radial-song-list){transition:none}}
 
@@ -93,7 +91,7 @@ body[data-edge=right] :is(#radialNow,.radial-now-snapshot) .radial-track,body[da
 body[data-edge=right] :is(#radialNow,.radial-now-snapshot) :is(#radialSongList,.radial-song-list){margin-left:auto;margin-right:28px}
 #radial[data-page=now] #radialContext,#radial[data-page=now] #radialStatus{left:72px;right:72px}
 :is(#radialNow,.radial-now-snapshot)::before{display:block;inset:-48px -100px -48px -40px;border-radius:0;background:radial-gradient(ellipse at 25% 50%,var(--smoke-color,#000) 0%,color-mix(in srgb,var(--smoke-color,#000) 73%,transparent) 40%,color-mix(in srgb,var(--smoke-color,#000) 20%,transparent) 65%,transparent 85%);opacity:var(--smoke-opacity,.24)}
-body[data-edge=right] :is(#radialNow,.radial-now-snapshot)::before{inset:-48px -40px -48px -100px;border-radius:0;background:radial-gradient(ellipse at 75% 50%,#000 0%,#000b 40%,#0003 65%,transparent 85%)}
+body[data-edge=right] :is(#radialNow,.radial-now-snapshot)::before{inset:-48px -40px -48px -100px;border-radius:0;background:radial-gradient(ellipse at 75% 50%,var(--smoke-color,#000) 0%,color-mix(in srgb,var(--smoke-color,#000) 73%,transparent) 40%,color-mix(in srgb,var(--smoke-color,#000) 20%,transparent) 65%,transparent 85%)}
 body[data-interface=radial]{overflow:hidden}
 
 /* Playback uses the shared widget scrim only. */
@@ -120,14 +118,13 @@ body[data-edge=right] :is(#radialNow,.radial-now-snapshot) .radial-art{margin-le
 .radial-label.has-mini{width:max-content;max-width:350px;padding-top:4px;padding-bottom:4px}
 .radial-label.has-mini>span,.radial-label.has-mini>small{display:block}
 .radial-mini{position:absolute;inset:0;pointer-events:none;text-align:inherit}
-.radial-mini .mini-cover{position:absolute;left:-72px;top:6px;width:62px;height:62px;display:grid;place-items:center;overflow:hidden;border-radius:4px;background:linear-gradient(145deg,#263b3a,#122321);box-shadow:0 4px 12px #0004}
+.radial-mini .mini-cover{position:absolute;left:-72px;top:6px;width:62px;height:62px;display:grid;place-items:center;overflow:hidden;border-radius:var(--tb-radius-small);background:var(--tb-surface);box-shadow:0 4px 12px #0004}
 .radial-mini img{width:100%;height:100%;object-fit:cover}
-.radial-mini .mini-cover span{padding:0;font-size:26px;color:#d3eee5a0}
 .radial-mini .mini-info{position:absolute;left:0;right:auto;bottom:-10px;width:100%;display:flex;align-items:center;gap:10px}
 .radial-mini strong,.radial-mini small{display:none}
 .radial-mini .mini-progress{height:2px;flex:1;min-width:32px;background:#d8f5e91c;border-radius:2px;overflow:hidden;opacity:.75}
 .radial-mini .mini-progress i{display:block;width:100%;height:100%;border-radius:inherit;background:#d8f5e9;transform-origin:left center;transition:transform .25s linear;will-change:transform}
-.radial-mini .mini-times{display:flex;align-items:center;flex:none;color:#c2d8cf;white-space:nowrap;font-variant-numeric:tabular-nums}
+.radial-mini .mini-times{display:flex;align-items:center;flex:none;color:var(--tb-text-secondary);white-space:nowrap;font-variant-numeric:tabular-nums}
 .radial-mini .mini-times b{font-size:9px;line-height:1;font-weight:400;letter-spacing:.15px}.radial-mini .mini-times b:first-child{color:#dfede6}.radial-mini .mini-times b:last-child{color:#a9bfb5}
 .radial-mini .mini-times b+b::before{content:' / ';white-space:pre;color:#a8c3b6}
 body[data-align=left] .radial-mini .mini-info{right:auto;left:0}
@@ -136,33 +133,33 @@ body[data-align=left] .radial-mini .mini-info{right:auto;left:0}
 @media(prefers-reduced-motion:reduce){.radial-mini .mini-progress i{transition:none;will-change:auto}}
 
 /* Independent text and playback accents for the radial interface. */
-#radial,#radialBackdrop{--radial-primary:#eef7f5;--radial-accent:hsl(150 75% 68%)}
-#radial .radial-label,#radial .radial-label[aria-selected=true]{color:var(--radial-primary)}
-#radial .radial-label>small{color:var(--radial-primary);opacity:.65}
-#radial .radial-label.has-mini>span{color:var(--radial-accent);text-shadow:0 1px 3px #0009,0 0 15px color-mix(in srgb,var(--radial-accent) 18%,transparent)}
-#radial .mini-progress i{background:var(--radial-accent)}
-#radial :is(#radialTitle,.radial-title){color:var(--radial-accent)}
-#radial :is(#radialArtist,.radial-artist),#radial :is(#radialAlbum,.radial-album){color:var(--radial-primary)}
+#radial,#radialBackdrop{--radial-primary:var(--tb-ink);--radial-accent:hsl(150 75% 68%)}
+#radial .radial-label,#radial .radial-label[aria-selected=true]{color:var(--tb-text)}
+#radial .radial-label>small{color:var(--tb-text);opacity:.65}
+#radial .radial-label.has-mini>span{color:var(--tb-accent);text-shadow:var(--tb-text-protection)}
+#radial .mini-progress i{background:var(--tb-accent)}
+#radial :is(#radialTitle,.radial-title){color:var(--tb-accent)}
+#radial :is(#radialArtist,.radial-artist),#radial :is(#radialAlbum,.radial-album){color:var(--tb-text)}
 #radial :is(#radialAlbum,.radial-album){opacity:.65}
-#radial :is(#radialNow,.radial-now-snapshot) input[type=range]::-webkit-slider-runnable-track{background:linear-gradient(to right,var(--radial-accent) var(--fill),color-mix(in srgb,var(--radial-primary) 18%,transparent) var(--fill))}
-#radial :is(#radialNow,.radial-now-snapshot) input[type=range]::-webkit-slider-thumb{background:var(--radial-accent)}
-#radialColor{position:absolute;top:50%;left:72px;width:min(300px,calc(100% - 102px));transform:translateY(-50%);text-align:left;color:#eef7f5;text-shadow:none;max-height:calc(100% - 140px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:#ffffff35 transparent;color-scheme:dark;padding:6px}
+#radial :is(#radialNow,.radial-now-snapshot) input[type=range]::-webkit-slider-runnable-track{background:linear-gradient(to right,var(--tb-accent) var(--fill),color-mix(in srgb,var(--tb-text) 18%,transparent) var(--fill))}
+#radial :is(#radialNow,.radial-now-snapshot) input[type=range]::-webkit-slider-thumb{background:var(--tb-accent)}
+#radialColor{position:absolute;top:50%;left:72px;width:min(300px,calc(100% - 102px));transform:translateY(-50%);text-align:left;color:var(--tb-ink);text-shadow:none;max-height:calc(100% - 140px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:#ffffff35 transparent;color-scheme:dark;padding:6px}
 body[data-edge=right] #radialColor{left:auto;right:72px}
-.color-preview{display:flex;align-items:center;gap:18px;min-height:64px;margin-bottom:24px}
-#radialColorSample{font:500 48px/1 'Segoe UI Variable Display','Segoe UI',sans-serif;letter-spacing:-2px}
-#radialColorValue{font:500 14px/1.4 'Segoe UI',sans-serif;color:#eef7f5;letter-spacing:0}
+.color-preview{display:flex;align-items:center;gap:18px;min-height:64px;margin-bottom:var(--tb-space-5)}
+#radialColorSample{font:500 48px/1 var(--tb-font-display);letter-spacing:-2px}
+#radialColorValue{font:500 14px/1.4 var(--tb-font-ui);color:var(--tb-ink);letter-spacing:0}
 #radialColorPalette{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px 7px;padding:4px;margin:0 0 28px}
-#radialColorPalette button{appearance:none;position:relative;min-width:0;aspect-ratio:1;border:4px solid transparent;border-radius:50%;background:var(--swatch);background-clip:padding-box;cursor:pointer;box-shadow:0 0 0 1px transparent;transition:box-shadow .12s ease}
+#radialColorPalette button{appearance:none;position:relative;min-width:0;aspect-ratio:1;border:4px solid transparent;border-radius:50%;background:var(--swatch);background-clip:padding-box;cursor:pointer;box-shadow:0 0 0 1px transparent;transition:box-shadow var(--tb-duration-feedback) ease}
 #radialColorPalette button:hover{box-shadow:0 0 0 1px #ffffff70}
-#radialColorPalette button[aria-pressed=true]{box-shadow:0 0 0 1.5px #eef7f5}
+#radialColorPalette button[aria-pressed=true]{box-shadow:0 0 0 1.5px var(--tb-ink)}
 #radialColorPalette button[aria-pressed=true]::after{content:'';position:absolute;inset:34%;border-radius:50%;background:#12201d}
-#radialColorPalette button:focus-visible{outline:2px solid #eef7f5;outline-offset:4px}
-.radial-color-actions{display:flex;justify-content:flex-end;gap:8px;padding-top:18px;border-top:1px solid #ffffff18}
-.radial-color-actions button{appearance:none;min-height:34px;padding:7px 16px;border:1px solid #ffffff25;border-radius:7px;background:transparent;color:#d5dbd9;font:500 12px/1.4 'Segoe UI',sans-serif;cursor:pointer;transition:background-color .12s ease,border-color .12s ease}
+#radialColorPalette button:focus-visible{outline:2px solid var(--tb-ink);outline-offset:4px}
+.radial-color-actions{display:flex;justify-content:flex-end;gap:var(--tb-space-2);padding-top:18px;border-top:1px solid #ffffff18}
+.radial-color-actions button{appearance:none;min-height:34px;padding:7px var(--tb-space-4);border:1px solid #ffffff25;border-radius:7px;background:transparent;color:#d5dbd9;font:500 12px/1.4 var(--tb-font-ui);cursor:pointer;transition:background-color var(--tb-duration-feedback) ease,border-color var(--tb-duration-feedback) ease}
 .radial-color-actions button:hover{background:#ffffff0d;border-color:#ffffff55}
 #radialColorSave{background:#e9efec;border-color:#e9efec;color:#14201b}
 #radialColorSave:hover{background:#fff;border-color:#fff}
-.radial-color-actions button:focus-visible{outline:2px solid #eef7f5;outline-offset:3px}
+.radial-color-actions button:focus-visible{outline:2px solid var(--tb-ink);outline-offset:3px}
 @media(max-height:480px){.color-preview{min-height:42px;margin-bottom:12px}#radialColorSample{font-size:36px}#radialColorPalette{margin-bottom:14px;gap:7px}.radial-color-actions{padding-top:12px}}
 
 /* Compact playback row: artwork beside a stable metadata and timeline column. */
@@ -196,19 +193,19 @@ body[data-align=right] .radial-mini .mini-times{justify-content:flex-end}
 body[data-align=right] .radial-label.has-mini>span.scrolling-title{text-align:left}
 /* Brief hardware-action feedback; hidden between commands. */
 #actionNotice{display:none}
-body[data-interface=radial] #actionNotice:not([hidden]){display:block;position:fixed;bottom:44px;left:72px;max-width:360px;color:#e0eee8;font:400 12px/1.6 'Segoe UI',sans-serif;text-shadow:0 2px 8px #000;pointer-events:none;animation:mini-reveal .2s ease-out}
+body[data-interface=radial] #actionNotice:not([hidden]){display:block;position:fixed;bottom:44px;left:72px;max-width:360px;color:#e0eee8;font:400 12px/1.6 var(--tb-font-ui);text-shadow:0 2px 8px #000;pointer-events:none;animation:mini-reveal .2s ease-out}
 body[data-interface=radial][data-edge=right] #actionNotice{left:auto;right:72px;text-align:right}
 
 .playback-indicators{display:flex;align-items:center;gap:14px;margin-top:12px;margin-bottom:6px}
-.playback-indicators>span{display:inline-flex;width:16px;height:16px;color:currentColor;opacity:.28;transition:color .2s,opacity .2s}
-.playback-indicators>span[data-active=true]{opacity:1;color:var(--radial-accent,#1db954)}
+.playback-indicators>span{display:inline-flex;width:var(--tb-icon-size);height:var(--tb-icon-size);color:currentColor;opacity:.28;transition:color .2s,opacity .2s}
+.playback-indicators>span[data-active=true]{opacity:1;color:var(--tb-accent,#1db954)}
 .playback-indicators svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
-.spotify-like-off{display:block;background:var(--radial-accent,#1db954);-webkit-mask:url('assets/spotify-like.svg') center/contain no-repeat;mask:url('assets/spotify-like.svg') center/contain no-repeat}
-.spotify-like-on{display:block;background:var(--radial-accent,#1db954);-webkit-mask:url('assets/spotify-liked.svg') center/contain no-repeat;mask:url('assets/spotify-liked.svg') center/contain no-repeat}
+.spotify-like-off{display:block;background:var(--tb-accent,#1db954);-webkit-mask:url('assets/spotify-like.svg') center/contain no-repeat;mask:url('assets/spotify-like.svg') center/contain no-repeat}
+.spotify-like-on{display:block;background:var(--tb-accent,#1db954);-webkit-mask:url('assets/spotify-liked.svg') center/contain no-repeat;mask:url('assets/spotify-liked.svg') center/contain no-repeat}
 .playback-indicators [data-mode=like] :is(.spotify-like-off,.spotify-like-on){width:100%;height:100%}
 .playback-indicators [data-mode=like] .spotify-like-on,.playback-indicators [data-mode=like][data-active=true] .spotify-like-off{display:none}
 .playback-indicators [data-mode=like][data-active=true] .spotify-like-on{display:block}
-.repeat-one{display:none;fill:currentColor;stroke:none;font:600 10px 'Segoe UI',sans-serif}
+.repeat-one{display:none;fill:currentColor;stroke:none;font:600 10px var(--tb-font-ui)}
 [data-repeat=track] .repeat-one{display:block}
 body[data-edge=right] #radialNow .playback-indicators,body[data-edge=right] .radial-now-snapshot .playback-indicators{justify-content:flex-end}
 
@@ -217,7 +214,7 @@ body[data-edge=right] #radialNow .playback-indicators,body[data-edge=right] .rad
 @media(prefers-reduced-motion:reduce){.playback-indicators [data-pending=true]{animation:none;opacity:.6}}
 
 /* Playing indicator beside metadata; album artwork stays unobstructed. */
-.eq{box-sizing:content-box;display:inline-flex;align-items:flex-end;gap:2px;height:12px;flex:none;color:var(--radial-accent);pointer-events:none}
+.eq{box-sizing:content-box;display:inline-flex;align-items:flex-end;gap:2px;height:12px;flex:none;color:var(--tb-accent);pointer-events:none}
 .eq i{display:block;width:3px;height:100%;border-radius:1px;background:currentColor;transform-origin:bottom;transform:scaleY(.3)}
 .eq[data-playing=true] i{animation:eq-bounce .9s ease-in-out infinite alternate}
 .eq[data-playing=true] i:nth-child(2){animation-duration:.7s;animation-delay:-.35s}
@@ -239,15 +236,15 @@ body[data-gaming-idle=true] .playback-indicators [data-pending=true]{animation-p
 body[data-render-suspended=true] *{animation-play-state:paused!important}
 /* Control rows (Back) use the header's small spaced capitals so they read as navigation, not music; full brightness when highlighted. */
 #radial .radial-label.radial-control>span{font-size:13px;font-weight:500;letter-spacing:2.5px;text-transform:uppercase;opacity:calc(.6 + .4*var(--light,0))}
-#radial .radial-label.radial-control .row-icon{width:1.1em;height:1.1em;margin-right:.55em;vertical-align:-.18em;background:var(--radial-accent)}
+#radial .radial-label.radial-control .row-icon{width:1.1em;height:1.1em;margin-right:.55em;vertical-align:-.18em;background:var(--tb-accent)}
 .row-icon-settings{--icon:url('assets/menu-settings.svg')}
 .row-icon-playlists{--icon:url('assets/menu-playlists.svg')}
 .row-icon-liked-songs{--icon:url('assets/menu-liked-songs.svg')}
 #radial .radial-label.radial-control .row-icon-playing{width:1.1em;height:1.1em;margin-right:.55em;vertical-align:-.18em}
-body[data-back-hold=true] #radial .radial-label.radial-control[aria-selected=true] .row-icon-playing{background:conic-gradient(var(--radial-accent) calc(var(--back-hold,0)*1turn),color-mix(in srgb,var(--radial-accent) 28%,transparent) 0);-webkit-mask:radial-gradient(farthest-side,#0000 calc(100% - 2.4px),#000 calc(100% - 2px),#000 calc(100% - .6px),#0000 100%);mask:radial-gradient(farthest-side,#0000 calc(100% - 2.4px),#000 calc(100% - 2px),#000 calc(100% - .6px),#0000 100%)}
+body[data-back-hold=true] #radial .radial-label.radial-control[aria-selected=true] .row-icon-playing{background:conic-gradient(var(--tb-accent) calc(var(--back-hold,0)*1turn),color-mix(in srgb,var(--tb-accent) 28%,transparent) 0);-webkit-mask:radial-gradient(farthest-side,#0000 calc(100% - 2.4px),#000 calc(100% - 2px),#000 calc(100% - .6px),#0000 100%);mask:radial-gradient(farthest-side,#0000 calc(100% - 2.4px),#000 calc(100% - 2px),#000 calc(100% - .6px),#0000 100%)}
 body[data-back-hold=true] #radial .radial-label.radial-control[aria-selected=true] .row-icon-playing i{visibility:hidden}
 /* Hover to Go Back: the accent ring fills while the hold counts down. */
-body[data-back-hold=true] #radial .radial-label.radial-control :is(.row-icon-back,.row-icon-now,.row-icon-more){background:conic-gradient(var(--radial-accent) calc(var(--back-hold,0)*1turn),color-mix(in srgb,var(--radial-accent) 28%,transparent) 0)}
+body[data-back-hold=true] #radial .radial-label.radial-control :is(.row-icon-back,.row-icon-now,.row-icon-more){background:conic-gradient(var(--tb-accent) calc(var(--back-hold,0)*1turn),color-mix(in srgb,var(--tb-accent) 28%,transparent) 0)}
 
 /* The artwork remains intact in its cover frame. A sampled color supplies the ambient light. */
 #radialGlow{position:absolute;inset:-12%;background:var(--artwork-color,#191414);opacity:0;pointer-events:none;transition:opacity .5s ease;-webkit-mask-image:var(--glow-mask);mask-image:var(--glow-mask)}
@@ -264,33 +261,33 @@ body[data-window-mode=true][data-interface=radial] .window-handle{display:none}
 
 /* Two window views share the frame. The player leaves before browsing takes focus. */
 @property --artwork-color{syntax:'<color>';inherits:true;initial-value:#191414}
-#radialBackdrop{position:fixed;inset:0;z-index:0;overflow:hidden;background:#101214;color:var(--radial-primary);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;transition:--artwork-color .5s ease}
-#radialBackdropArt{position:absolute;inset:0;background:radial-gradient(ellipse 58% 70% at 38% 42%,color-mix(in srgb,var(--artwork-color,#191414) 42%,transparent),transparent 100%);opacity:1;pointer-events:none;transition:opacity .28s ease}
+#radialBackdrop{position:fixed;inset:0;z-index:0;overflow:hidden;background:var(--tb-canvas);color:var(--tb-text);font-family:var(--tb-font-ui);transition:--artwork-color .5s ease}
+#radialBackdropArt{position:absolute;inset:0;background:none;opacity:1;pointer-events:none;transition:opacity .28s ease}
 #radialBackdrop[data-has-artwork=false] #radialBackdropArt{opacity:0}
-.radial-backdrop-scrim{position:absolute;inset:0;background:linear-gradient(145deg,#10121426,#101214b3 65%,#101214ed);pointer-events:none}
-.radial-backdrop-header{position:absolute;top:28px;left:40px;right:32px;z-index:3;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px}
+.radial-backdrop-scrim{position:absolute;inset:0;background:linear-gradient(145deg,color-mix(in srgb,var(--tb-canvas) 15%,transparent),color-mix(in srgb,var(--tb-canvas) 70%,transparent) 65%,color-mix(in srgb,var(--tb-canvas) 93%,transparent));pointer-events:none}
+.radial-backdrop-header{position:absolute;top:28px;left:40px;right:32px;z-index:3;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:var(--tb-space-3)}
 .radial-browse-group{display:flex;align-items:center;justify-self:start;gap:10px;min-width:0}
 .spotify-link{display:none;align-items:center;gap:5px;min-height:32px;color:#fff;text-decoration:none;opacity:.8;transition:opacity .16s ease}
 body[data-spotify-connected=true] .spotify-link{display:inline-flex}
 .spotify-link img{display:block;width:84px;height:auto}
-.spotify-link span{font-size:14px;line-height:1}
+.spotify-link span{font-size:var(--tb-type-body);line-height:1}
 body[data-spotify-installed=false] .spotify-link span{font-size:10px;font-weight:700;letter-spacing:.04em;white-space:nowrap}
 .spotify-link:hover,.spotify-link:focus-visible{opacity:1}
-.spotify-link:focus-visible{outline:2px solid var(--radial-accent,#a7eac8);outline-offset:5px;border-radius:3px}
+.spotify-link:focus-visible{outline:2px solid var(--tb-accent,#a7eac8);outline-offset:5px;border-radius:3px}
 #widgetSpotifyLink{position:absolute;top:20px;right:24px;z-index:5;padding:3px 6px;border-radius:6px;background:#0d1112d9}
 body[data-edge=right] #widgetSpotifyLink{right:auto;left:24px}
 body[data-backdrop-active=true] #widgetSpotifyLink{display:none}
-.radial-backdrop-brand{display:flex;align-items:center;justify-self:center;min-width:0;font-size:11px;font-weight:600;letter-spacing:2px;color:color-mix(in srgb,var(--radial-primary) 75%,transparent);white-space:nowrap}
-.radial-backdrop-brand .brand-divider{flex:none;margin:0 10px;color:color-mix(in srgb,var(--radial-primary) 38%,transparent)}
-#windowDialPinned{display:inline-block;flex:none;width:15px;height:15px;background:var(--radial-accent);-webkit-mask:url('assets/menu-pin.svg') center/contain no-repeat;mask:url('assets/menu-pin.svg') center/contain no-repeat}
+.radial-backdrop-brand{display:flex;align-items:center;justify-self:center;min-width:0;font-size:11px;font-weight:600;letter-spacing:2px;color:color-mix(in srgb,var(--tb-text) 75%,transparent);white-space:nowrap}
+.radial-backdrop-brand .brand-divider{flex:none;margin:0 10px;color:color-mix(in srgb,var(--tb-text) 38%,transparent)}
+#windowDialPinned{display:inline-block;flex:none;width:15px;height:15px;background:var(--tb-accent);-webkit-mask:url('assets/menu-pin.svg') center/contain no-repeat;mask:url('assets/menu-pin.svg') center/contain no-repeat}
 #windowViewLabel{display:inline-block;min-width:0;max-width:40vw;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}
 #radialBackdrop button{font:inherit;cursor:pointer}
 #radialBackdrop button:disabled{opacity:.3;cursor:default}
-#radialBackdrop button:focus-visible,#radialBackdrop input:focus-visible{outline:2px solid var(--radial-accent);outline-offset:5px}
-#radialBackdropBrowse{display:flex;justify-self:start;align-items:center;gap:9px;padding:10px 15px;border:1px solid #ffffff25;border-radius:30px;color:var(--radial-primary);background:#ffffff08;font-size:12px!important;font-weight:600!important}
+#radialBackdrop button:focus-visible,#radialBackdrop input:focus-visible{outline:2px solid var(--tb-accent);outline-offset:5px}
+#radialBackdropBrowse{display:flex;justify-self:start;align-items:center;gap:9px;padding:10px 15px;border:1px solid #ffffff25;border-radius:30px;color:var(--tb-text);background:#ffffff08;font-size:var(--tb-type-caption)!important;font-weight:600!important}
 #windowSpotifyLink{justify-self:end}
 #radialBackdropBrowse:hover{background:#ffffff15;border-color:#ffffff50}
-#radialBackdropBrowse svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+#radialBackdropBrowse svg{width:var(--tb-icon-size);height:var(--tb-icon-size);fill:none;stroke:currentColor;stroke-width:var(--tb-icon-stroke);stroke-linecap:round}
 #radialBackdropBrowse .return-symbol{display:none}
 body[data-dial-overlay=true] #radialBackdropBrowse .browse-symbol{display:none}
 body[data-dial-overlay=true] #radialBackdropBrowse .return-symbol{display:block}
@@ -300,29 +297,25 @@ body[data-dial-overlay=true] #radialBackdropBrowse .return-symbol{display:block}
    shrink to the half of the window on its right) and is placed by left and
    translate alone: centred here, beside the divider in Split View. Both animate, so opening the menu
    glides the whole unit over instead of snapping it to a new alignment first. */
-.radial-backdrop-info{--art-gap:clamp(32px,3.5vw,72px);position:absolute;top:105px;bottom:32px;left:50%;translate:-50% 0;width:max-content;max-width:min(1300px,calc(100% - 2 * clamp(28px,6vw,84px)));display:grid;grid-template-columns:auto fit-content(560px);grid-template-rows:minmax(0,max-content) auto;align-content:safe center;gap:44px var(--art-gap);justify-content:center;align-items:center;opacity:1;visibility:visible;transition:opacity .26s ease .08s,visibility 0s,left .3s cubic-bezier(.2,.8,.2,1),translate .3s cubic-bezier(.2,.8,.2,1),scale .3s cubic-bezier(.2,.8,.2,1),max-width .3s cubic-bezier(.2,.8,.2,1)}
-.radial-backdrop-cover{position:relative;width:min(28vw,390px,calc(100vh - 340px));aspect-ratio:1;justify-self:center;overflow:hidden;border-radius:8px;background:radial-gradient(ellipse at 20% 10%,#a8c1b74d,transparent 65%),linear-gradient(145deg,#284c48,#181d2d 72%);box-shadow:0 24px 80px #0005;display:grid;place-items:center}
+.radial-backdrop-info{--art-gap:clamp(32px,3.5vw,72px);position:absolute;top:105px;bottom:32px;left:50%;translate:-50% 0;width:max-content;max-width:min(1300px,calc(100% - 2 * clamp(28px,6vw,84px)));display:grid;grid-template-columns:auto fit-content(560px);grid-template-rows:minmax(0,max-content) auto;align-content:safe center;gap:44px var(--art-gap);justify-content:center;align-items:center;opacity:1;visibility:visible;transition:opacity var(--tb-duration-view) ease .08s,visibility 0s,left .3s var(--tb-ease),translate .3s var(--tb-ease),scale .3s var(--tb-ease),max-width .3s var(--tb-ease)}
+.radial-backdrop-cover{position:relative;width:min(28vw,390px,calc(100vh - 340px));aspect-ratio:1;justify-self:center;overflow:hidden;border-radius:var(--tb-radius-cover);background:var(--tb-surface);box-shadow:var(--tb-shadow-cover);display:grid;place-items:center}
 .radial-backdrop-cover img{width:100%;height:100%;object-fit:cover;display:block;grid-area:1/1}
-.radial-backdrop-cover .radial-art-fallback{font:300 clamp(64px,10vw,130px) -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:color-mix(in srgb,var(--radial-primary) 44%,transparent);grid-area:1/1}
 .radial-backdrop-track{min-width:0;align-self:center}
-.radial-backdrop-state{font-size:10px;letter-spacing:2px;font-weight:600;color:color-mix(in srgb,var(--radial-primary) 68%,transparent);margin:0 0 18px}
+.radial-backdrop-state{font-size:10px;letter-spacing:2px;font-weight:600;color:color-mix(in srgb,var(--tb-text) 68%,transparent);margin:0 0 18px}
 /* The tight line height crops descenders inside the clamp's overflow box, so the title keeps
    room for them below its last line. */
-.radial-backdrop-title{font-size:clamp(30px,4.7vw,64px);font-weight:750;line-height:1.05;letter-spacing:-.045em;margin:0 0 calc(16px - .16em);padding-bottom:.16em;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
-.radial-backdrop-artist{font-size:clamp(17px,2.4vw,27px);line-height:1.35;font-weight:450;color:color-mix(in srgb,var(--radial-primary) 90%,transparent);margin:0 0 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.radial-backdrop-album{font-size:14px;line-height:1.4;color:color-mix(in srgb,var(--radial-primary) 62%,transparent);margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#radialBackdropDevice{display:inline-flex;align-items:center;gap:8px;max-width:100%;padding:0;margin-top:24px;border:0;background:none;color:color-mix(in srgb,var(--radial-primary) 66%,transparent);font-size:11px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#radialBackdropDevice::before{content:'';width:5px;height:5px;flex:none;border-radius:50%;background:var(--radial-accent)}
-#radialBackdropDevice:hover{color:var(--radial-primary)}
+.radial-backdrop-title{font-size:var(--tb-type-hero);font-weight:var(--tb-weight-title);line-height:1.05;letter-spacing:-.045em;margin:0 0 calc(16px - .16em);padding-bottom:.16em;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.radial-backdrop-artist{font-size:var(--tb-type-artist);line-height:1.35;font-weight:450;color:color-mix(in srgb,var(--tb-text) 90%,transparent);margin:0 0 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.radial-backdrop-album{font-size:var(--tb-type-body);line-height:1.4;color:color-mix(in srgb,var(--tb-text) 62%,transparent);margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#radialBackdropDevice{display:inline-flex;align-items:center;gap:var(--tb-space-2);max-width:100%;padding:0;margin-top:var(--tb-space-5);border:0;background:none;color:color-mix(in srgb,var(--tb-text) 66%,transparent);font-size:11px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#radialBackdropDevice::before{content:'';width:5px;height:5px;flex:none;border-radius:50%;background:var(--tb-accent)}
+#radialBackdropDevice:hover{color:var(--tb-text)}
 /* contain keeps the wide controls from stretching the artwork's column; they fit under the pair instead. */
 .radial-backdrop-controls{grid-column:1/-1;width:min(100%,680px);justify-self:center;contain:inline-size}
-/* Transport: filled, rounded glyphs on frosted glass, in the spirit of current car and phone players
-   rather than a copy of one. Play is the one solid surface; skip buttons bloom a glass circle on
-   hover; shuffle and repeat sit back until they are on, then hold a tinted pill. Every button springs
-   down a touch when pressed. */
+/* Transport uses one solid primary action; secondary actions gain a surface on hover. */
 .radial-backdrop-transport{display:flex;align-items:center;justify-content:center;gap:clamp(14px,2.6vw,34px);margin-bottom:22px}
-.radial-backdrop-transport button,.radial-backdrop-actions [data-backdrop-command]{display:grid;place-items:center;flex:none;width:48px;height:48px;padding:12px;border:0;border-radius:50%;background:transparent;color:color-mix(in srgb,var(--radial-primary) 92%,transparent);transition:color .18s ease,background-color .18s ease,box-shadow .18s ease,transform .32s cubic-bezier(.3,1.6,.5,1)}
-.radial-backdrop-transport button:hover,.radial-backdrop-actions [data-backdrop-command]:hover{color:var(--radial-primary);background:#ffffff14;box-shadow:inset 0 0 0 1px #ffffff12}
+.radial-backdrop-transport button,.radial-backdrop-actions [data-backdrop-command]{display:grid;place-items:center;flex:none;width:48px;height:48px;padding:var(--tb-space-3);border:0;border-radius:50%;background:transparent;color:color-mix(in srgb,var(--tb-text) 92%,transparent);transition:color var(--tb-duration-state) ease,background-color var(--tb-duration-state) ease,box-shadow var(--tb-duration-state) ease,transform var(--tb-duration-feedback) ease}
+.radial-backdrop-transport button:hover,.radial-backdrop-actions [data-backdrop-command]:hover{color:var(--tb-text);background:#ffffff14;box-shadow:inset 0 0 0 1px #ffffff12}
 .radial-backdrop-transport button:active,.radial-backdrop-actions [data-backdrop-command]:active{transform:scale(.9);transition-duration:.08s}
 .radial-backdrop-transport svg,.radial-backdrop-actions svg{width:100%;height:100%;overflow:visible;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .radial-backdrop-actions [data-backdrop-command=like] :is(.spotify-like-off,.spotify-like-on){display:block;width:100%;height:100%}
@@ -330,10 +323,10 @@ body[data-dial-overlay=true] #radialBackdropBrowse .return-symbol{display:block}
 .radial-backdrop-actions [data-backdrop-command=like][aria-pressed=true] .spotify-like-on{display:block}
 .radial-backdrop-transport .transport-skip{width:58px;height:58px;padding:13px}
 .radial-backdrop-transport .transport-skip svg{fill:currentColor;stroke:none}
-.radial-backdrop-transport .transport-mode{width:42px;height:42px;padding:11px;color:color-mix(in srgb,var(--radial-primary) 55%,transparent)}
-.radial-backdrop-transport .transport-mode[aria-pressed=true]{color:var(--radial-accent);background:color-mix(in srgb,var(--radial-accent) 14%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--radial-accent) 22%,transparent)}
-#radialBackdropPlay{width:76px;height:76px;padding:22px;color:var(--radial-primary);background:linear-gradient(160deg,#ffffff38,#ffffff17);box-shadow:inset 0 1px 0 #ffffff40,inset 0 0 0 1px #ffffff1f,0 10px 30px #0000004d;-webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6)}
-#radialBackdropPlay:hover{background:linear-gradient(160deg,#ffffff47,#ffffff1f);transform:scale(1.04)}
+.radial-backdrop-transport .transport-mode{width:42px;height:42px;padding:11px;color:color-mix(in srgb,var(--tb-text) 55%,transparent)}
+.radial-backdrop-transport .transport-mode[aria-pressed=true]{color:var(--tb-accent);background:color-mix(in srgb,var(--tb-accent) 14%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--tb-accent) 22%,transparent)}
+#radialBackdropPlay{width:76px;height:76px;padding:22px;color:var(--tb-text);background:var(--tb-surface-raised);box-shadow:inset 0 0 0 1px var(--tb-border)}
+#radialBackdropPlay:hover{background:var(--tb-surface-hover);transform:scale(1.02)}
 #radialBackdropPlay:active{transform:scale(.92)}
 #radialBackdropPlay svg{fill:currentColor;stroke:none}
 #radialBackdropPlay .play-symbol{transform:translateX(1px)}
@@ -343,25 +336,25 @@ body[data-dial-overlay=true] #radialBackdropBrowse .return-symbol{display:block}
 .radial-backdrop-transport [aria-busy=true],.radial-backdrop-actions [aria-busy=true]{opacity:.5}
 /* Like sits with the song it saves, beside the device it plays on. */
 .radial-backdrop-actions{display:flex;align-items:center;gap:14px;margin-top:20px}
-.radial-backdrop-actions [data-backdrop-command=like]{width:38px;height:38px;padding:9px;margin-left:-9px;color:color-mix(in srgb,var(--radial-primary) 65%,transparent)}
+.radial-backdrop-actions [data-backdrop-command=like]{width:38px;height:38px;padding:9px;margin-left:-9px;color:color-mix(in srgb,var(--tb-text) 65%,transparent)}
 /* Progress and volume: thick rounded tracks with no thumb until the pointer arrives, as on a phone. */
 .radial-backdrop-timeline input[type=range]{appearance:none;-webkit-appearance:none;display:block;width:100%;height:22px;padding:0;margin:0;background:transparent;cursor:pointer}
-.radial-backdrop-timeline input[type=range]::-webkit-slider-runnable-track{height:6px;border:0;border-radius:6px;background:linear-gradient(to right,color-mix(in srgb,var(--radial-primary) 85%,transparent) var(--fill),color-mix(in srgb,var(--radial-primary) 18%,transparent) var(--fill));transition:height .18s ease}
+.radial-backdrop-timeline input[type=range]::-webkit-slider-runnable-track{height:6px;border:0;border-radius:6px;background:linear-gradient(to right,color-mix(in srgb,var(--tb-text) 85%,transparent) var(--fill),color-mix(in srgb,var(--tb-text) 18%,transparent) var(--fill));transition:height var(--tb-duration-state) ease}
 .radial-backdrop-timeline input[type=range]::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:0;height:0;border:0;margin-top:3px;background:transparent}
 .radial-backdrop-timeline input[type=range]:is(:hover,:active,:focus-visible)::-webkit-slider-runnable-track{height:10px;border-radius:10px}
-.radial-backdrop-timeline>div{display:flex;justify-content:space-between;font-size:11.5px;font-weight:500;font-variant-numeric:tabular-nums;color:color-mix(in srgb,var(--radial-primary) 55%,transparent);margin-top:4px}
-.radial-backdrop-volume{display:flex;align-items:center;justify-content:center;gap:12px;width:min(300px,100%);margin:18px auto 0;font-size:10px;color:color-mix(in srgb,var(--radial-primary) 50%,transparent)}
+.radial-backdrop-timeline>div{display:flex;justify-content:space-between;font-size:11.5px;font-weight:500;font-variant-numeric:tabular-nums;color:color-mix(in srgb,var(--tb-text) 55%,transparent);margin-top:4px}
+.radial-backdrop-volume{display:flex;align-items:center;justify-content:center;gap:var(--tb-space-3);width:min(300px,100%);margin:18px auto 0;font-size:10px;color:color-mix(in srgb,var(--tb-text) 50%,transparent)}
 .radial-backdrop-volume svg{width:18px;height:18px;flex:none;fill:currentColor;stroke:none}
-.radial-backdrop-volume svg .wave{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.radial-backdrop-volume svg .wave{fill:none;stroke:currentColor;stroke-width:var(--tb-icon-stroke);stroke-linecap:round}
 .radial-backdrop-volume input{appearance:none;-webkit-appearance:none;min-width:0;flex:1;height:20px;margin:0;background:transparent;cursor:pointer}
-.radial-backdrop-volume input::-webkit-slider-runnable-track{height:6px;border-radius:6px;background:linear-gradient(to right,color-mix(in srgb,var(--radial-primary) 70%,transparent) var(--fill),color-mix(in srgb,var(--radial-primary) 16%,transparent) var(--fill));transition:height .18s ease}
+.radial-backdrop-volume input::-webkit-slider-runnable-track{height:6px;border-radius:6px;background:linear-gradient(to right,color-mix(in srgb,var(--tb-text) 70%,transparent) var(--fill),color-mix(in srgb,var(--tb-text) 16%,transparent) var(--fill));transition:height var(--tb-duration-state) ease}
 .radial-backdrop-volume input::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:0;height:0;border:0;margin-top:3px;background:transparent}
 .radial-backdrop-volume input:is(:hover,:active,:focus-visible)::-webkit-slider-runnable-track{height:9px;border-radius:9px}
 .radial-backdrop-volume output{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 #radialBackdropDismiss{position:absolute;inset:0;z-index:2;width:100%;height:100%;border:0;padding:0;background:transparent;cursor:default!important}
-body[data-backdrop-active=true] #radial{pointer-events:none;opacity:0;visibility:hidden;transform:translateX(-12px);transition:opacity .18s ease,transform .22s ease,visibility 0s .22s}
+body[data-backdrop-active=true] #radial{pointer-events:none;opacity:0;visibility:hidden;transform:translateX(-12px);transition:opacity var(--tb-duration-state) ease,transform .22s ease,visibility 0s .22s}
 body[data-backdrop-active=true][data-edge=right] #radial{transform:translateX(12px)}
-body[data-backdrop-active=true][data-dial-overlay=true] #radial{opacity:1;visibility:visible;transform:translateX(0);transition:opacity .26s ease .10s,transform .32s cubic-bezier(.2,.8,.2,1) .10s,visibility 0s}
+body[data-backdrop-active=true][data-dial-overlay=true] #radial{opacity:1;visibility:visible;transform:translateX(0);transition:opacity var(--tb-duration-view) ease .10s,transform .32s var(--tb-ease) .10s,visibility 0s}
 body[data-backdrop-active=true] #radialLabels{top:50%;height:100%;transform:translateY(-50%);pointer-events:none}
 body[data-backdrop-active=true] #radialColor{pointer-events:auto}
 body[data-backdrop-active=true]:not([data-backdrop-split=true])[data-dial-overlay=true] .radial-backdrop-info{opacity:0;visibility:hidden;pointer-events:none;transition:opacity .20s ease,visibility 0s .20s}
@@ -392,14 +385,14 @@ body[data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true
    change reads clearly even when it only moves a short way. The stacked layout is already compact. */
 body[data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true]:not([data-player-column=narrow]) .radial-backdrop-info{scale:var(--player-scale)}
 /* A hairline marks the seam, and fades with the menu that makes it. It glides when a new song's width moves it. */
-body[data-backdrop-active=true][data-backdrop-split=true] #radialBackdrop::after{content:'';position:absolute;top:9%;bottom:9%;left:var(--split-line);width:1px;background:linear-gradient(to bottom,#ffffff00,#ffffff1f 22%,#ffffff1f 78%,#ffffff00);z-index:1;pointer-events:none;opacity:0;transition:opacity .22s ease,left .3s cubic-bezier(.2,.8,.2,1),right .3s cubic-bezier(.2,.8,.2,1)}
-body[data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true][data-split-divider=true] #radialBackdrop::after{opacity:1;transition:opacity .26s ease .10s,left .3s cubic-bezier(.2,.8,.2,1),right .3s cubic-bezier(.2,.8,.2,1)}
+body[data-backdrop-active=true][data-backdrop-split=true] #radialBackdrop::after{content:'';position:absolute;top:9%;bottom:9%;left:var(--split-line);width:1px;background:linear-gradient(to bottom,#ffffff00,#ffffff1f 22%,#ffffff1f 78%,#ffffff00);z-index:1;pointer-events:none;opacity:0;transition:opacity .22s ease,left .3s var(--tb-ease),right .3s var(--tb-ease)}
+body[data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true][data-split-divider=true] #radialBackdrop::after{opacity:1;transition:opacity var(--tb-duration-view) ease .10s,left .3s var(--tb-ease),right .3s var(--tb-ease)}
 body[data-backdrop-active=true][data-backdrop-split=true][data-edge=right] #radialBackdrop::after{left:auto;right:var(--split-line)}
 /* The playing row's artwork floats outside its label. In Split View that room only exists on the
    menu's own side of the seam, so a right-docked menu keeps it inboard. */
 body[data-backdrop-active=true][data-backdrop-split=true][data-edge=right] .radial-mini .mini-cover{left:auto;right:-72px}
 /* Notices sit below the centered breadcrumb, scaled with the window player. */
-body[data-backdrop-active=true] #actionNotice:not([hidden]){zoom:var(--ui-scale,1);top:74px;bottom:auto;left:50%;right:auto;translate:-50% 0;z-index:4;max-width:min(520px,calc(100% - 48px));margin-top:9px;padding:9px 18px;border-radius:999px;background:#16191ccc;box-shadow:inset 0 0 0 1px #ffffff1a,0 8px 28px #0006;-webkit-backdrop-filter:blur(20px) saturate(1.4);backdrop-filter:blur(20px) saturate(1.4);color:var(--radial-primary,#eef7f5);font:500 13px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;text-align:center;text-shadow:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;animation:notice-in .32s cubic-bezier(.2,.8,.2,1)}
+body[data-backdrop-active=true] #actionNotice:not([hidden]){zoom:var(--ui-scale,1);top:74px;bottom:auto;left:50%;right:auto;translate:-50% 0;z-index:4;max-width:min(520px,calc(100% - 48px));margin-top:9px;padding:var(--tb-space-2) var(--tb-space-4);border-radius:var(--tb-radius-round);background:var(--tb-surface);box-shadow:inset 0 0 0 1px var(--tb-border),var(--tb-shadow-surface);color:var(--tb-text,var(--tb-ink));font:500 13px/1.4 var(--tb-font-ui);text-align:center;text-shadow:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;animation:notice-in .32s var(--tb-ease)}
 @keyframes notice-in{from{opacity:0;translate:-50% -8px}to{opacity:1;translate:-50% 0}}
 @media(prefers-reduced-motion:reduce){body[data-backdrop-active=true] #actionNotice:not([hidden]){animation:none}}
 @media(max-width:640px){
@@ -428,8 +421,8 @@ body[data-player-column=narrow] .radial-backdrop-controls{width:min(100%,520px)}
 body[data-player-column=narrow] .radial-backdrop-state{margin-bottom:9px;font-size:9px}
 body[data-player-column=narrow] .radial-backdrop-title{font-size:clamp(25px,5.5vw,35px);-webkit-line-clamp:2;line-height:1.1;margin-bottom:calc(7px - .16em)}
 body[data-player-column=narrow] .radial-backdrop-artist{font-size:17px;margin-bottom:5px}
-body[data-player-column=narrow] .radial-backdrop-album{font-size:12px}
-body[data-player-column=narrow] .radial-backdrop-transport{margin-bottom:12px;gap:12px}
+body[data-player-column=narrow] .radial-backdrop-album{font-size:var(--tb-type-caption)}
+body[data-player-column=narrow] .radial-backdrop-transport{margin-bottom:12px;gap:var(--tb-space-3)}
 body[data-player-column=narrow] #radialBackdropPlay{width:64px;height:64px;padding:18px}
 body[data-player-column=narrow] .radial-backdrop-transport .transport-skip{width:50px;height:50px;padding:11px}
 body[data-player-column=narrow] .radial-backdrop-actions{justify-content:center;margin-top:10px}
@@ -441,12 +434,12 @@ body[data-player-column=narrow] .radial-backdrop-actions{justify-content:center;
   body[data-player-column] .radial-backdrop-actions{margin-top:12px}
   body[data-player-column] .radial-backdrop-transport{margin-bottom:8px}
   body[data-player-column] .radial-backdrop-volume{margin-top:8px}
-  body[data-player-column=narrow] .radial-backdrop-info{gap:12px}
+  body[data-player-column=narrow] .radial-backdrop-info{gap:var(--tb-space-3)}
   body[data-player-column=narrow] .radial-backdrop-cover{width:min(100%,120px,20vh)}
   body[data-player-column=narrow] .radial-backdrop-state{display:none}
   body[data-player-column=narrow] .radial-backdrop-title{font-size:26px}
   body[data-player-column=narrow] .radial-backdrop-artist{font-size:15px}
-  body[data-player-column=narrow] .radial-backdrop-transport{gap:8px}
+  body[data-player-column=narrow] .radial-backdrop-transport{gap:var(--tb-space-2)}
   body[data-player-column=narrow] .radial-backdrop-volume{margin-top:6px;font-size:9px}
 }
 @media(prefers-reduced-motion:reduce){
@@ -465,20 +458,20 @@ body[data-player-column=narrow] .radial-backdrop-actions{justify-content:center;
    hairline divider and the menu's smoke step aside. */
 /* Overlay: as wide as the menu plus the playing row's artwork, which hangs outside its label. */
 #radialMenuPanel{display:none}
-body[data-backdrop-active=true]:not([data-menu-background=match]) #radialMenuPanel{display:block;position:absolute;top:0;bottom:0;left:0;width:min(100%,calc(50% + 250px));z-index:1;pointer-events:none;opacity:0;transform:translateX(-14px);transition:opacity .18s ease,transform .22s ease,width .3s cubic-bezier(.2,.8,.2,1)}
+body[data-backdrop-active=true]:not([data-menu-background=match]) #radialMenuPanel{display:block;position:absolute;top:0;bottom:0;left:0;width:min(100%,calc(50% + 250px));z-index:1;pointer-events:none;opacity:0;transform:translateX(-14px);transition:opacity var(--tb-duration-state) ease,transform .22s ease,width .3s var(--tb-ease)}
 body[data-backdrop-active=true][data-backdrop-split=true] #radialMenuPanel{width:var(--split-line)}
 body[data-backdrop-active=true][data-edge=right] #radialMenuPanel{left:auto;right:0;transform:translateX(14px)}
-body[data-backdrop-active=true][data-dial-overlay=true] #radialMenuPanel{opacity:1;transform:none;transition:opacity .26s ease .06s,transform .32s cubic-bezier(.2,.8,.2,1) .06s,width .3s cubic-bezier(.2,.8,.2,1)}
+body[data-backdrop-active=true][data-dial-overlay=true] #radialMenuPanel{opacity:1;transform:none;transition:opacity var(--tb-duration-view) ease .06s,transform .32s var(--tb-ease) .06s,width .3s var(--tb-ease)}
 body[data-backdrop-active=true]:not([data-menu-background=match]) #radialHaze{visibility:hidden}
 body[data-backdrop-active=true][data-backdrop-split=true]:not([data-menu-background=match]) #radialBackdrop::after{display:none}
 /* Black: a solid panel that casts a shadow across the player. */
 body[data-menu-background=black] #radialMenuPanel{background:#050607;box-shadow:24px 0 70px #000d,1px 0 0 #ffffff0f}
 body[data-menu-background=black][data-edge=right] #radialMenuPanel{box-shadow:-24px 0 70px #000d,-1px 0 0 #ffffff0f}
 /* Glass: frosted over the artwork wash, a little lighter than the player, with a lit edge. */
-body[data-menu-background=glass] #radialMenuPanel{background:linear-gradient(to right,#ffffff17,#ffffff0a);-webkit-backdrop-filter:blur(30px) saturate(1.5);backdrop-filter:blur(30px) saturate(1.5);box-shadow:inset -1px 0 0 #ffffff26,20px 0 60px #0007}
-body[data-menu-background=glass][data-edge=right] #radialMenuPanel{background:linear-gradient(to left,#ffffff17,#ffffff0a);box-shadow:inset 1px 0 0 #ffffff26,-20px 0 60px #0007}
+body[data-menu-background=glass] #radialMenuPanel{background:#22272a99;-webkit-backdrop-filter:blur(30px) saturate(1.5);backdrop-filter:blur(30px) saturate(1.5);box-shadow:inset -1px 0 0 #ffffff26,20px 0 60px #0007}
+body[data-menu-background=glass][data-edge=right] #radialMenuPanel{background:#22272a99;box-shadow:inset 1px 0 0 #ffffff26,-20px 0 60px #0007}
 /* Cover Color uses the sampled color without displaying or modifying the cover image. */
-body[data-menu-background=artwork] #radialMenuPanel{background:linear-gradient(115deg,color-mix(in srgb,var(--artwork-color,#191414) 40%,#0b0d10),#0b0d10);box-shadow:20px 0 60px #0007}
+body[data-menu-background=artwork] #radialMenuPanel{background:color-mix(in srgb,var(--artwork-color,#191414) 28%,var(--tb-canvas));box-shadow:20px 0 60px #0007}
 body[data-menu-background=artwork][data-edge=right] #radialMenuPanel{box-shadow:-20px 0 60px #0007}
 @media(prefers-reduced-motion:reduce){#radialMenuPanel{transition:none!important;transform:none!important}}
 
@@ -495,7 +488,7 @@ body[data-player-empty=true] :is(.radial-backdrop-timeline,[data-backdrop-comman
 
 /* Hovering the progress bar previews the time a click would seek to. */
 .radial-backdrop-timeline{position:relative}
-.seek-preview{position:absolute;bottom:calc(100% - 2px);left:0;translate:-50% 0;padding:4px 9px;border-radius:7px;background:#16191ce6;box-shadow:inset 0 0 0 1px #ffffff1a,0 4px 14px #0005;color:var(--radial-primary,#eef7f5);font:600 11px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-variant-numeric:tabular-nums;pointer-events:none;opacity:0;transition:opacity .12s ease}
+.seek-preview{position:absolute;bottom:calc(100% - 2px);left:0;translate:-50% 0;padding:4px 9px;border-radius:7px;background:var(--tb-surface);box-shadow:inset 0 0 0 1px var(--tb-border),var(--tb-shadow-cover);color:var(--tb-text,var(--tb-ink));font:600 11px/1.3 var(--tb-font-ui);font-variant-numeric:tabular-nums;pointer-events:none;opacity:0;transition:opacity var(--tb-duration-feedback) ease}
 .radial-backdrop-timeline:hover .seek-preview:not(:empty){opacity:1}
 
 /* Readable minimums. Text never drops below 12px at the player's normal size (small tracked capitals
@@ -503,20 +496,29 @@ body[data-player-empty=true] :is(.radial-backdrop-timeline,[data-backdrop-comman
    24px hit area (WCAG 2.2 target size), even shown at Split View's 82%. Hit areas grow with padding
    and matching negative margins, so nothing moves on screen. The large-display scale multiplies all
    of it. */
-body .radial-backdrop-brand,body[data-player-column] .radial-backdrop-brand{font-size:12px}
+body .radial-backdrop-brand,body[data-player-column] .radial-backdrop-brand{font-size:var(--tb-type-caption)}
 body .radial-backdrop-state,body[data-player-column=narrow] .radial-backdrop-state{font-size:11.5px}
 body #radialBackdropDevice{font-size:13px!important;padding-block:9px;margin-block:-9px}
 body .radial-backdrop-timeline>div{font-size:12.5px}
 body .radial-backdrop-timeline input[type=range]{height:32px;margin-block:-5px}
 body .radial-backdrop-volume input{height:32px;margin-block:-6px}
-body #radial .radial-label>small{font-size:12px}
-body #radial .radial-label.radial-control>span{font-size:12px}
+body #radial .radial-label>small{font-size:var(--tb-type-caption)}
+body #radial .radial-label.radial-control>span{font-size:var(--tb-type-caption)}
 body #radial .radial-mini .mini-times b{font-size:11.5px}
 
 /* Secondary credits stay with the title, at a quieter size in both players. */
-.song-title-detail{font-size:14px;line-height:1.4;font-weight:400;letter-spacing:0;color:color-mix(in srgb,var(--radial-primary) 65%,transparent);margin:-2px 0 12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.song-title-detail{font-size:var(--tb-type-body);line-height:1.4;font-weight:400;letter-spacing:0;color:color-mix(in srgb,var(--tb-text) 65%,transparent);margin:-2px 0 12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
 .radial-backdrop-song .song-title-detail{font-size:clamp(14px,1.6vw,19px);margin:0 0 16px}
 body[data-player-column=narrow] .radial-backdrop-song .song-title-detail{font-size:13px;margin-bottom:8px}
 
 #radialColorPalette button[data-hue="-1"]{box-shadow:0 0 0 1px #ffffff40}
-#radialColorPalette button[data-hue="-1"][aria-pressed=true]{box-shadow:0 0 0 1.5px #eef7f5}
+#radialColorPalette button[data-hue="-1"][aria-pressed=true]{box-shadow:0 0 0 1.5px var(--tb-ink)}
+
+/* A flat, branded sleeve replaces missing artwork in the player and the browsing row. */
+.turnbit-artwork{position:absolute;inset:0;display:grid;place-items:center;background:var(--tb-surface);pointer-events:none;text-shadow:none}
+.turnbit-artwork::before{content:'';display:block;width:36%;aspect-ratio:1;background:var(--tb-ink);opacity:.32;-webkit-mask:url('assets/turnbit-mark.svg') center/contain no-repeat;mask:url('assets/turnbit-mark.svg') center/contain no-repeat}
+.turnbit-artwork::after{content:'turnbit';position:absolute;bottom:12%;left:0;right:0;text-align:center;color:var(--tb-ink-muted);font:var(--tb-weight-medium) var(--tb-type-caption)/1 var(--tb-font-ui);letter-spacing:.04em}
+.mini-cover .turnbit-artwork::before{width:48%}
+.mini-cover .turnbit-artwork::after{content:none}
+
+@media(prefers-reduced-transparency:reduce){body[data-menu-background=glass] #radialMenuPanel{background:var(--tb-surface);-webkit-backdrop-filter:none;backdrop-filter:none}}

@@ -27,13 +27,22 @@ export function createRadialView({
   PLAYER_STACK_WIDTH,
   SPLIT_HAZE_SPILL,
 }) {
+  const visualTokens = getComputedStyle(document.documentElement);
+  const defaultInk = visualTokens.getPropertyValue('--tb-ink').trim();
+  const defaultAccent = visualTokens
+    .getPropertyValue('--tb-accent-default')
+    .trim();
+  const trackOutDuration =
+    parseFloat(visualTokens.getPropertyValue('--tb-duration-track-out')) || 200;
+  const trackInDuration =
+    parseFloat(visualTokens.getPropertyValue('--tb-duration-track-in')) || 560;
   function radialColor(hue, accent = false) {
     return hue === -1
       ? '#000000'
       : hue === 360
-        ? '#eef7f5'
+        ? defaultInk
         : hue === 141 && accent
-          ? '#1db954'
+          ? defaultAccent
           : `hsl(${hue} 75% ${accent ? 68 : 79}%)`;
   }
   function radialColorName(hue) {
@@ -124,7 +133,7 @@ export function createRadialView({
           ? page.value
           : preferences[key];
       // The menu and the window player share Text Color and Accent Color.
-      for (const host of [$('#radial'), $('#radialBackdrop')])
+      for (const host of [document.body, $('#radial'), $('#radialBackdrop')])
         host.style.setProperty(
           key === 'primaryHue' ? '--radial-primary' : '--radial-accent',
           radialColor(hue, key === 'accentHue'),
@@ -220,7 +229,9 @@ export function createRadialView({
       artworkColors.delete(artworkColors.keys().next().value);
     return result;
   }
-  const GLOW_STRENGTH = 0.3;
+  const GLOW_STRENGTH =
+    parseFloat(visualTokens.getPropertyValue('--tb-artwork-wash-opacity')) ||
+    0.22;
   function syncRadialGlow() {
     const backdrop = $('#radialBackdrop'),
       glow = $('#radialGlow'),
@@ -669,13 +680,7 @@ export function createRadialView({
       decoded.alt = current.alt;
       current.replaceWith(decoded);
     }
-    $('#radialBackdropArtImg').hidden = !artwork;
-    $('#radialBackdropArtImg').nextElementSibling.hidden = !!artwork;
-    if (
-      artwork &&
-      $('#radialBackdropArtImg').src !== new URL(artwork, location.href).href
-    )
-      $('#radialBackdropArtImg').src = artwork;
+    window.TurnbitArtwork.setSource($('#radialBackdropArtImg'), artwork);
     syncRadialGlow();
   }
   // Resolves with the decoded image, or null when there is none or it takes too long.
@@ -725,7 +730,7 @@ export function createRadialView({
       // The cover swaps as a static image; only metadata and ambient light animate.
       const out = moving.map((element) =>
         element.animate([{ opacity: 0 }], {
-          duration: 200,
+          duration: trackOutDuration,
           easing: 'cubic-bezier(.4,0,.6,1)',
           fill: 'forwards',
         }),
@@ -741,7 +746,7 @@ export function createRadialView({
       out.forEach((animation) => animation.cancel());
       moving.forEach((element) =>
         element.animate([{ offset: 0, opacity: 0 }], {
-          duration: 560,
+          duration: trackInDuration,
           // The song text follows the cover by a beat.
           delay: element === parts[0] ? 60 : 0,
           easing: 'cubic-bezier(.25,.1,.25,1)',
@@ -907,10 +912,7 @@ export function createRadialView({
         node.title = node.textContent;
       }
       const artwork = track.artwork;
-      $('#radialArt').hidden = !artwork;
-      $('#radialArtFallback').hidden = !!artwork;
-      if (artwork && $('#radialArt').src !== artwork)
-        $('#radialArt').src = artwork;
+      window.TurnbitArtwork.setSource($('#radialArt'), artwork);
       $('#radialElapsed').textContent = time(currentProgress());
       $('#radialDuration').textContent = time(duration());
       const seekInput = $('#radialSeek');

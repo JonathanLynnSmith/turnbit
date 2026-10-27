@@ -11,3 +11,7 @@ states from https://developer.spotify.com/documentation/design.
 
 Spotify's logos and icons remain the property of Spotify. The white logo links
 back to Spotify when connected; the save icons show Liked Songs state.
+
+`turnbit-mark.svg` is the unchanged symbol path from the project's existing
+`assets/branding/turnbit-logo-white-tm.svg`. It identifies a missing cover; it is
+not replacement album artwork. The same flat sleeve is used at all player sizes.
