@@ -272,7 +272,7 @@ function createDesktopWindow({
         contextIsolation: true,
         nodeIntegration: false,
         sandbox: true,
-        backgroundThrottling: false,
+        backgroundThrottling: true,
       },
     });
     syncDockVisibility();

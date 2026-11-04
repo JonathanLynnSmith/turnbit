@@ -18,12 +18,14 @@ import { createRadialView } from './features/radial-view.mjs';
 import { createPlaybackView } from './features/playback-view.mjs';
 import { createLibraryController } from './features/library-controller.mjs';
 import { createSettingsController } from './features/settings-controller.mjs';
+import { createPartyAudio } from './features/party-audio.mjs';
 
 window.TurnbitFeatures = {
   createRadialView,
   createPlaybackView,
   createLibraryController,
   createSettingsController,
+  createPartyAudio,
 };
 await new Promise((resolve, reject) => {
   const entry = document.createElement('script');

@@ -83,6 +83,10 @@
       windowSmokeHue: -1,
       primaryHue: 360,
       accentHue: 141,
+      partyMode: false,
+      partyAudio: false,
+      partyIntensity: 50,
+      partySource: 'spotify',
       visibility: { ...visibilityDefaults },
       clicker: false,
       mouseModeKey: 'ctrl-alt-z',
@@ -120,6 +124,8 @@
         'nowPlayingBackdrop',
         'menuReturnsToSource',
         'splitDivider',
+        'partyMode',
+        'partyAudio',
       ])
         if (typeof saved[key] === 'boolean') preferences[key] = saved[key];
       preferences.lastSongList = cleanLastSongList(
@@ -209,6 +215,13 @@
       for (const key of ['primaryHue', 'accentHue'])
         if (Number.isFinite(saved[key]))
           preferences[key] = Math.max(0, Math.min(360, Math.round(saved[key])));
+      if (Number.isFinite(saved.partyIntensity))
+        preferences.partyIntensity = Math.max(
+          0,
+          Math.min(100, Math.round(saved.partyIntensity)),
+        );
+      if (['spotify', 'default'].includes(saved.partySource))
+        preferences.partySource = saved.partySource;
       if (saved.visibility && typeof saved.visibility === 'object')
         preferences.visibility = cleanVisibility(saved.visibility);
       if (typeof saved.clicker === 'boolean')
@@ -278,6 +291,7 @@
       'menuBackground',
       'splitDivider',
     ],
+    extras: ['partyMode', 'partyAudio', 'partyIntensity', 'partySource'],
     window: [
       'keepOnTop',
       'visibility',

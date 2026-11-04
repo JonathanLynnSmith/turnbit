@@ -5,6 +5,15 @@ const subscribe = (channel) => (callback) => {
   return () => ipcRenderer.removeListener(channel, handler);
 };
 contextBridge.exposeInMainWorld('turnbit', {
+  partyAudio: {
+    supported: process.platform === 'win32',
+    native: process.platform === 'win32',
+    start: (source) => ipcRenderer.invoke('app:party-audio-start', source),
+    pause: (value) => ipcRenderer.invoke('app:party-audio-pause', value),
+    onData: subscribe('party-audio-data'),
+    prepare: () => ipcRenderer.invoke('app:party-audio-prepare'),
+    release: () => ipcRenderer.invoke('app:party-audio-release'),
+  },
   configure: (id) => ipcRenderer.invoke('spotify:configure', id),
   login: () => ipcRenderer.invoke('spotify:login'),
   logout: () => ipcRenderer.invoke('spotify:logout'),

@@ -174,3 +174,43 @@ test('category resets only change their own preferences, and all reset keeps his
   all.visibility.opacity = 0;
   assert.equal(resetPatch('all').visibility.opacity, 70);
 });
+
+test('party settings persist, intensity clamps, and resets preserve the saved normal colors', () => {
+  const { resetPatch } = require('../renderer/settings/preferences');
+  const store = storage();
+  const defaults = loadPreferences(store, options);
+  assert.deepEqual(
+    [
+      defaults.partyMode,
+      defaults.partyAudio,
+      defaults.partyIntensity,
+      defaults.partySource,
+    ],
+    [false, false, 50, 'spotify'],
+  );
+  const saved = persistPreferences(store, defaults, {
+    partyMode: true,
+    partyAudio: true,
+    partyIntensity: 75,
+    partySource: 'default',
+    primaryHue: 210,
+    accentHue: 330,
+  });
+  const loaded = loadPreferences(store, options);
+  assert.equal(loaded.partyIntensity, 75);
+  assert.equal(loaded.partySource, 'default');
+  persistPreferences(store, saved, { partyIntensity: 999 });
+  assert.equal(loadPreferences(store, options).partyIntensity, 100);
+  assert.equal(Object.hasOwn(resetPatch('appearance'), 'partyMode'), false);
+  const restored = { ...loaded, ...resetPatch('extras') };
+  assert.deepEqual(
+    [
+      restored.partyMode,
+      restored.partyAudio,
+      restored.partyIntensity,
+      restored.partySource,
+    ],
+    [false, false, 50, 'spotify'],
+  );
+  assert.deepEqual([loaded.primaryHue, loaded.accentHue], [210, 330]);
+});

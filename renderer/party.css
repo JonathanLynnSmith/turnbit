@@ -1,0 +1,94 @@
+/* Party effects stay local to the player. Glow colors are painted once;
+   only the opacity of adjacent palette layers changes during playback. */
+.party-halo { display: none; }
+body[data-party-mode=true][data-party-ready=true] .party-art-glow {
+  overflow: visible;
+  isolation: isolate;
+}
+body[data-party-mode=true][data-party-ready=true] .party-art-glow > :is(img, .radial-art-fallback) {
+  border-radius: inherit;
+}
+body[data-party-mode=true][data-party-ready=true] .party-halo {
+  display: block;
+  position: absolute;
+  inset: -48px;
+  z-index: -1;
+  pointer-events: none;
+}
+.party-halo > i {
+  position: absolute;
+  inset: 0;
+  contain: strict;
+  background: radial-gradient(ellipse at center, var(--halo-ink) 25%, transparent 72%);
+  opacity: 0;
+  animation: turnbit-party-halo calc(12s * var(--party-speed, 1)) linear infinite;
+  animation-delay: calc(var(--halo-offset) * var(--party-speed, 1));
+  animation-play-state: paused;
+  will-change: opacity;
+}
+.party-halo > i:nth-child(1) { --halo-ink: hsl(315 92% 64%); --halo-offset: 0s; --halo-weight: var(--party-glow-0, 1); }
+.party-halo > i:nth-child(2) { --halo-ink: hsl(15 92% 64%); --halo-offset: -10s; --halo-weight: var(--party-glow-1, 0); }
+.party-halo > i:nth-child(3) { --halo-ink: hsl(75 92% 64%); --halo-offset: -8s; --halo-weight: var(--party-glow-2, 0); }
+.party-halo > i:nth-child(4) { --halo-ink: hsl(135 92% 64%); --halo-offset: -6s; --halo-weight: var(--party-glow-3, 0); }
+.party-halo > i:nth-child(5) { --halo-ink: hsl(195 92% 64%); --halo-offset: -4s; --halo-weight: var(--party-glow-4, 0); }
+.party-halo > i:nth-child(6) { --halo-ink: hsl(255 92% 64%); --halo-offset: -2s; --halo-weight: var(--party-glow-5, 0); }
+body[data-party-mode=true][data-party-ready=true][data-party-playing=true] .party-halo > i { animation-play-state: running; }
+@keyframes turnbit-party-halo {
+  0%, 100% { opacity: var(--party-glow-strength, .55); }
+  16.667%, 83.333% { opacity: 0; }
+}
+body[data-party-audio=true] .party-halo > i {
+  animation: none !important;
+  opacity: calc(var(--halo-weight) * var(--party-glow-strength, .55));
+}
+body[data-party-mode=true][data-party-ready=true][data-party-audio=true]:not([data-party-audio-live=true]) .party-halo { display: none; }
+
+body[data-party-mode=true][data-party-ready=true] :is(#radialBackdrop, #radialNow, .radial-now-snapshot) .party-text {
+  animation: turnbit-party-colors calc(var(--party-duration, 12s) * var(--party-speed, 1)) steps(8, end) var(--party-offset, 0s) infinite;
+  animation-play-state: paused;
+}
+
+body[data-party-mode=true][data-party-ready=true][data-party-playing=true] :is(#radialBackdrop, #radialNow, .radial-now-snapshot) .party-text {
+  animation-play-state: running;
+}
+
+.party-title { --party-duration: 12s; --party-offset: 0s; }
+.party-credit { --party-duration: 14s; --party-offset: -2s; }
+.party-artist { --party-duration: 15s; --party-offset: -5s; }
+.party-album { --party-duration: 18s; --party-offset: -9s; }
+.party-state { --party-duration: 16s; --party-offset: -12s; }
+.party-device { --party-duration: 20s; --party-offset: -4s; }
+.party-elapsed { --party-duration: 14s; --party-offset: -8s; }
+.party-duration { --party-duration: 17s; --party-offset: -3s; }
+
+@keyframes turnbit-party-colors {
+  0%, 100% { color: var(--tb-party-rose); }
+  16.667% { color: var(--tb-party-amber); }
+  33.333% { color: var(--tb-party-lime); }
+  50% { color: var(--tb-party-mint); }
+  66.667% { color: var(--tb-party-cyan); }
+  83.333% { color: var(--tb-party-violet); }
+}
+
+/* Audio mode never substitutes a timed show while capture is stopped/unavailable. */
+body[data-party-audio=true] .party-text { animation: none !important; }
+body[data-party-mode=true][data-party-ready=true][data-party-audio-live=true] :is(#radialBackdrop, #radialNow, .radial-now-snapshot) .party-text {
+  color: var(--party-audio-color, var(--tb-text)) !important;
+}
+.party-title { --party-audio-color: var(--party-audio-bass, var(--tb-text)); }
+.party-credit, .party-artist { --party-audio-color: var(--party-audio-mid, var(--tb-text)); }
+.party-album, .party-duration { --party-audio-color: var(--party-audio-treble, var(--tb-text)); }
+.party-state, .party-device, .party-elapsed { --party-audio-color: var(--party-audio-mix, var(--tb-text)); }
+
+/* Covered/hidden players do not need a running color animation. */
+body[data-dial-overlay=true]:not([data-backdrop-split=true]) #radialBackdrop :is(.party-text, .party-halo > i),
+body:not([data-backdrop-active=true]) #radial:not([data-page=now]) :is(.party-text, .party-halo > i),
+body[data-gaming-idle=true] :is(.party-text, .party-halo > i) {
+  animation-play-state: paused !important;
+}
+body[data-party-intensity-zero=true] :is(.party-text, .party-halo > i) { animation-play-state: paused !important; }
+
+/* Keep the separate colors, without cycling when Reduced Motion is enabled. */
+@media (prefers-reduced-motion: reduce) {
+  body[data-party-mode=true] :is(.party-text, .party-halo > i) { animation-play-state: paused !important; }
+}

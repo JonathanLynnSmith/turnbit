@@ -178,6 +178,9 @@ export function createPlaybackView({
       preferences.interfaceStyle,
       preferences.primaryHue,
       preferences.accentHue,
+      preferences.partyMode,
+      preferences.partyAudio,
+      preferences.partyIntensity,
       innerWidth,
       innerHeight,
     ];
