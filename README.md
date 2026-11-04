@@ -4,10 +4,11 @@
   <img src="assets/branding/turnbit-logo-black-tm.svg" alt="turnbit" width="360">
 </picture>
 
-**A Spotify controller for your desktop, driven by a rotary dial.**
+**A better Now Playing for Spotify, as a window, widget, or mini player.**
 
-Turn the Ulanzi D100H dial to browse your playlists and songs, press to play, and keep album art and
-playback controls one turn away. Your music keeps playing in Spotify; turnbit is the remote.
+turnbit puts your album art and playback controls on your desktop and keeps them a glance away. It feels
+best with a rotary dial like the Ulanzi D100H: turn to browse your playlists and songs, press to play.
+No dial? The keyboard and mouse work too. Your music keeps playing in Spotify.
 
 <img src="assets/demo/turnbit-demo.gif" alt="turnbit in Window Mode: turning the dial slides the curved menu in beside Now Playing, picking a song plays it, and the large player returns with the new artwork" width="720">
 
@@ -29,7 +30,7 @@ playback controls one turn away. Your music keeps playing in Spotify; turnbit is
 - [Node.js](https://nodejs.org/) 20 or newer
 - Spotify Premium and the Spotify app (desktop, phone, or any Spotify Connect device)
 - A free [Spotify developer app](https://developer.spotify.com/dashboard) (setup below)
-- Optional: an Ulanzi D100H with [Ulanzi Studio](https://www.ulanzi.com/pages/ulanzi-app)
+- Optional: a dial. The Ulanzi D100H with [Ulanzi Studio](https://www.ulanzi.com/pages/ulanzi-app) is supported today
 
 Without Spotify connected, turnbit runs in a silent demo mode.
 

@@ -4,7 +4,7 @@
   "author": "turnbit contributors",
   "license": "MIT",
   "private": true,
-  "description": "Desktop Spotify controller for Electron + Ulanzi D100H",
+  "description": "A better Now Playing for Spotify, as a window, widget, or mini player, with dial support",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",

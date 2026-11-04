@@ -1,6 +1,12 @@
 # turnbit
 
-Electron + Spotify controller for the Ulanzi D100H dial. The main process composes application services, desktop adapters, and provider
+A better Now Playing for Spotify, as a window, widget, or mini player, that
+feels best with a dial but works with any input. Keep features input-agnostic:
+the Ulanzi D100H is one supported dial alongside other dials, keyboard, and
+mouse. New features should make Now Playing nicer to look at or easier to
+control from any input.
+
+Built with Electron. The main process composes application services, desktop adapters, and provider
 integrations in `src/`. The renderer uses an ES module bootstrap and feature
 factories, with a classic coordinator retained for the existing interfaces and
 verification harnesses. The Ulanzi Studio plugin lives in `ulanzi-plugin/`.
