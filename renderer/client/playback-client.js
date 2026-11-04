@@ -50,6 +50,9 @@
       trackId: value?.uri,
       contextId: value?.contextUri,
       position: value?.position,
+      ...(value?.startPositionMs !== undefined
+        ? { startPositionMs: value.startPositionMs }
+        : {}),
       track: item
         ? {
             id: item.uri,
@@ -83,6 +86,9 @@
                   uri: entry.playbackId,
                   name: entry.title,
                   artwork: entry.artwork,
+                  ...(kind === 'radio-playlists'
+                    ? { radioEligible: entry.radioEligible === true }
+                    : {}),
                 }
               : {
                   item: {
@@ -93,6 +99,7 @@
           ),
           total: page.total,
           next: page.nextOffset !== null,
+          nextOffset: page.nextOffset,
         };
       },
       command: (command, value) =>

@@ -6,7 +6,7 @@ function createLibraryService(provider) {
   return {
     page(request = {}) {
       const { kind, id, offset = 0 } = request;
-      if (!['playlists', 'songs', 'playlist'].includes(kind))
+      if (!['playlists', 'radio-playlists', 'songs', 'playlist'].includes(kind))
         return Promise.reject(new Error('Invalid library request.'));
       if (!Number.isInteger(offset) || offset < 0 || offset > 100000)
         return Promise.reject(new Error('Invalid library page.'));

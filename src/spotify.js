@@ -383,6 +383,23 @@ class SpotifyClient {
     if (!Number.isInteger(offset) || offset < 0 || offset > 100000)
       throw new Error('Invalid library page.');
     const paging = `limit=20&offset=${offset}`;
+    if (kind === 'radio-playlists')
+      return Promise.all([
+        this.api('/me'),
+        this.api(`/me/playlists?${paging}`),
+      ]).then(([user, page]) => ({
+        ...page,
+        items: (page.items || []).map(
+          (entry) =>
+            entry && {
+              ...entry,
+              radioEligible:
+                !!user.id &&
+                entry.owner?.id === user.id &&
+                (entry.items?.total ?? entry.tracks?.total) !== 0,
+            },
+        ),
+      }));
     if (kind === 'playlists') return this.api(`/me/playlists?${paging}`);
     if (kind === 'songs') return this.api(`/me/tracks?${paging}`);
     if (
@@ -482,8 +499,22 @@ class SpotifyClient {
         }
       } else if (valid(value?.uri)) body = { uris: [value.uri] };
       else throw new Error('This item cannot be played through Spotify.');
+      if (value?.startPositionMs !== undefined) {
+        if (
+          !Number.isSafeInteger(value.startPositionMs) ||
+          value.startPositionMs < 0 ||
+          (value.item?.duration_ms > 0 &&
+            value.startPositionMs >= value.item.duration_ms)
+        )
+          throw new Error('Invalid playback start position.');
+        body.position_ms = value.startPositionMs;
+      }
       const pending = valid(value?.item?.uri)
-        ? { item: value.item, until: Date.now() + 8000 }
+        ? {
+            item: value.item,
+            startPositionMs: value.startPositionMs || 0,
+            until: Date.now() + 8000,
+          }
         : null;
       if (pending) {
         this.pendingPlay = pending;

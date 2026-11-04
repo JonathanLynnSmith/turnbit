@@ -82,6 +82,7 @@ function createSpotifyPlaybackProvider(client, { now = Date.now } = {}) {
           uri: value?.trackId,
           contextUri: value?.contextId,
           position: value?.position,
+          startPositionMs: value?.startPositionMs,
           item: spotifyTrack(value?.track),
         };
       }

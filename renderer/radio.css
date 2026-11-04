@@ -1,0 +1,53 @@
+#radio {
+  box-sizing: border-box;
+  width: min(620px, calc(100vw - 28px));
+  max-width: 620px;
+  max-height: calc(100dvh - 28px);
+  padding: clamp(16px, 4vw, 28px);
+  overflow: auto;
+  border: 1px solid #5e5142;
+  border-radius: 18px;
+  color: #eee6d9;
+  background: linear-gradient(145deg, #36312b, #191816 70%);
+  box-shadow: 0 24px 90px #0009, inset 0 1px #ffffff18;
+  font-family: inherit;
+}
+#radio::backdrop { background: #080706b8; }
+#radio header, #radio footer, .radio-band, .radio-transport, .radio-options { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+#radio h2 { margin: 3px 0 18px; font-size: 25px; font-weight: 600; }
+.radio-brand, .radio-band, #radio footer { font-size: 11px; letter-spacing: .08em; color: #baad9a; }
+#radio button { width: auto; margin: 0; min-height: 36px; padding: 8px 12px; border: 1px solid #6c6050; border-radius: 6px; background: #ffffff08; color: #eee6d9; font: inherit; font-size: 12px; cursor: pointer; }
+#radio button:hover { background: #ffffff16; }
+#radio button:focus-visible, #radio input:focus-visible, #radio a:focus-visible { outline: 2px solid #f2b85f; outline-offset: 3px; }
+#radio button:disabled { opacity: .4; cursor: default; }
+#radio button[aria-pressed="true"] { border-color: #dda65a; color: #ffd291; background: #dda65a18; }
+.radio-glass { padding: 22px; border: 1px solid #0c0a08; border-radius: 8px; background: linear-gradient(160deg, #322615, #130f0a); box-shadow: inset 0 3px 14px #000b, 0 1px #ffffff14; color: #efb76b; }
+.radio-band { color: #c99550; }
+.radio-frequency { display: flex; align-items: baseline; gap: 10px; margin: 12px 0; font-family: Consolas, monospace; }
+.radio-frequency output { font-size: clamp(40px, 10vw, 68px); letter-spacing: -.06em; text-shadow: 0 0 20px #ee9a3540; }
+.radio-frequency span { font-size: 13px; }
+.radio-scale { position: relative; display: flex; justify-content: space-between; padding-top: 24px; background: repeating-linear-gradient(90deg, #bc8f4c88 0 1px, transparent 1px 2%) left top / 100% 14px no-repeat; font: 11px Consolas, monospace; }
+.radio-scale i { position: absolute; top: -5px; height: 25px; width: 2px; background: #ffce89; box-shadow: 0 0 9px #ffb647; }
+.radio-tuning { display: block; margin: 16px 0; font-size: 11px; text-transform: uppercase; letter-spacing: .12em; }
+#radio input[type="range"] { display: block; width: 100%; margin: 10px 0 0; accent-color: #e8b367; cursor: ew-resize; }
+.radio-glass h3 { margin: 18px 0 6px; font-size: 20px; overflow-wrap: anywhere; }
+.radio-glass p { font-size: 12px; line-height: 1.6; min-height: 20px; margin: 0; color: #d6b586; overflow-wrap: anywhere; }
+.radio-track { display: flex; align-items: center; gap: 12px; min-height: 44px; }
+.radio-track img { width: 44px; height: 44px; border-radius: 3px; object-fit: cover; }
+.radio-track a { font-size: 12px; line-height: 1.6; color: #d6b586; overflow-wrap: anywhere; text-decoration: none; }
+.radio-track a:hover { text-decoration: underline; }
+.radio-transport { margin: 16px 0; }
+.radio-transport button { flex: 1; }
+.radio-presets { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.radio-presets button { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+.radio-options { flex-wrap: wrap; justify-content: flex-start; margin-top: 18px; }
+.radio-options label { display: flex; align-items: center; gap: 6px; font-size: 12px; margin: 0; }
+.radio-options input { width: auto; margin: 0; padding: 0; accent-color: #e8b367; }
+.radio-library { margin-top: 20px; }
+.radio-library h3 { font-size: 14px; }
+[data-playlists] { display: grid; gap: 6px; max-height: 180px; overflow: auto; margin-bottom: 8px; }
+[data-playlists] button { text-align: left; }
+.radio-status { min-height: 18px; font-size: 12px; line-height: 1.5; color: #e1bd87; }
+#radio footer { border-top: 1px solid #ffffff14; padding-top: 16px; letter-spacing: 0; line-height: 1.5; }
+#radio footer img { width: 65px; display: block; }
+@media (max-width: 420px) { .radio-presets { grid-template-columns: repeat(2, minmax(0, 1fr)); } .radio-glass { padding: 16px; } }

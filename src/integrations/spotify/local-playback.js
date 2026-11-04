@@ -56,7 +56,10 @@ function createLocalPlayback({
         ...(merged || {}),
         item,
         is_playing: started ? !!local.playing : true,
-        progress_ms: started && local.durationMs > 0 ? local.positionMs : 0,
+        progress_ms:
+          started && local.durationMs > 0
+            ? local.positionMs
+            : getPending().startPositionMs || 0,
         liked: null,
         likedPending: false,
         provisional: true,

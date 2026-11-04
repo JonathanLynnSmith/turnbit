@@ -145,6 +145,7 @@ function homeRows() {
       branch: true,
     },
     { label: 'Settings', action: 'settings', icon: 'settings', branch: true },
+    { label: 'Radio', action: 'radio', icon: 'music', branch: true },
   ];
 }
 const homeStart = () => 1;
@@ -179,7 +180,8 @@ function visibilityProtected() {
   return (
     (preferences.idlePinned && preferences.visibility.mode === 'idle') ||
     !!nav.current.visibilitySettings ||
-    $('#settings').open
+    $('#settings').open ||
+    !!document.querySelector('#radio[open]')
   );
 }
 let visibilitySyncKey;
@@ -461,6 +463,43 @@ const trackTransition = new window.TrackTransition($('#radialNow'), {
   reducedMotion: () => reducedMotion.matches,
 });
 const visibilityState = { invisible: false, minimized: false };
+const playRadioStation = window.TurnbitFeatures.createRadioStationPlayer({
+  library: (...args) => api.library(...args),
+  command,
+});
+const radio = window.TurnbitFeatures.createRadio({
+  getState: getPlaybackView,
+  library: (offset, ownedOnly = false) =>
+    demo
+      ? Promise.resolve(libraryController.demoLibrary('playlists'))
+      : api.library(
+          ownedOnly ? 'radio-playlists' : 'playlists',
+          undefined,
+          offset,
+        ),
+  play: async (playlist, options) => {
+    if (demo) {
+      demoQueue = playlist.demoIndexes || demos.map((_, i) => i);
+      index = demoQueue[0];
+      progress = window.TurnbitFeatures.radioStartPosition(
+        demos[index].duration,
+      );
+      updated = Date.now();
+      playing = true;
+      render();
+      return true;
+    }
+    return playRadioStation(playlist, options);
+  },
+  transport: () => command('toggle'),
+  setVolume: (value) =>
+    demo ? Promise.resolve() : api.command('volume', value),
+  noteActivity,
+});
+$('#radio').addEventListener('toggle', () => {
+  syncVisibility();
+  syncInputContext();
+});
 const radialView = window.TurnbitFeatures.createRadialView({
   $,
   preferences,
@@ -545,7 +584,9 @@ function isCurrentSong(...args) {
 
 function render(...args) {
   syncInputContext();
-  return playbackView.render(...args);
+  const result = playbackView.render(...args);
+  radio.sync();
+  return result;
 }
 function acceptPlayback(data) {
   if (data?.recoveredDevice) {
@@ -637,6 +678,7 @@ async function command(cmd, value) {
   }
   if (
     cmd === 'toggle' &&
+    !radio.open &&
     !backdropActive() &&
     !quietPlay &&
     preferences.playOpensNowPlaying &&
@@ -745,6 +787,7 @@ function dialHome() {
 }
 function menuBack() {
   noteActivity();
+  if (radio.open) return radio.close();
   if (backdropActive() && !$('#settings').open) {
     if (revealDialOverlay()) {
       drawNavigation();
@@ -773,6 +816,7 @@ function dialogControls() {
   ];
 }
 function rotate(delta) {
+  if (radio.open) return radio.rotate(delta);
   revealDialOverlay();
 
   noteActivity();
@@ -1214,6 +1258,7 @@ async function playRow(row) {
   }
 }
 async function selectItem(fromDial = false) {
+  if (radio.open) return radio.select();
   if (backdropActive() && revealDialOverlay()) {
     noteActivity();
     drawNavigation();
@@ -1309,6 +1354,10 @@ async function selectItem(fromDial = false) {
     case 'now':
       showNow();
       break;
+    case 'radio':
+      cancelBackHold();
+      radio.show();
+      break;
     case 'playlists':
       showLibrary('playlists');
       break;
@@ -1344,6 +1393,7 @@ const GESTURE_ROWS = new Set([
   'now',
 ]);
 function gestureArmed() {
+  if (radio.open) return false;
   if ($('#settings').open) return false;
   if (nav.current.kind !== 'list') return true;
   const row = nav.select();
@@ -1371,6 +1421,7 @@ function syncInputContext() {
     demo,
     dialOnlyWake: preferences.dialOnlyWake,
     openPlayerOnToggle:
+      !radio.open &&
       !backdropActive() &&
       preferences.playOpensNowPlaying &&
       (nav.current.kind !== 'now' || $('#settings').open),
@@ -1515,6 +1566,7 @@ function handleHardwareEvent(event) {
   if (cmd === 'select') return selectItem(true);
   if (cmd === 'menu') return menuBack();
   if (cmd === 'back') {
+    if (radio.open) return radio.close();
     noteActivity();
 
     clickSound();
@@ -1779,6 +1831,7 @@ setInterval(() => {
   if (backdropActive()) {
     const protectedView =
       preferences.idlePinned ||
+      radio.open ||
       $('#settings').open ||
       nav.current.loading ||
       nav.current.visibilitySettings ||
@@ -1798,6 +1851,7 @@ setInterval(() => {
       !preferences.idlePinned &&
         preferences.idleNowPlaying &&
         !$('#settings').open &&
+        !radio.open &&
         !nav.current.loading &&
         !nav.current.visibilitySettings,
     )
