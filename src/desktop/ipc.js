@@ -54,7 +54,6 @@ function registerDesktopIpc({
   presentation,
   activity,
   input,
-  partyAudio,
 }) {
   const handlers = {
     'spotify:configure': (_, id) => spotify.configure(id),
@@ -80,14 +79,6 @@ function registerDesktopIpc({
     'app:close': () => desktop.hide(),
     'app:open-external': (_, url) => openSpotifyExternal(url, { app, shell }),
     'app:spotify-installed': () => spotifyDesktopInstalled(app),
-    'app:party-audio-prepare': (event) => {
-      if (!partyAudio) throw new Error('Audio capture is unavailable.');
-      return partyAudio.prepare(event.sender);
-    },
-    'app:party-audio-release': () => partyAudio?.release(),
-    'app:party-audio-start': (event, source) =>
-      partyAudio.start(event.sender, source),
-    'app:party-audio-pause': (_, value) => partyAudio.pause(value === true),
   };
   if (settings)
     Object.assign(handlers, {

@@ -97,38 +97,9 @@ assistive technology; interactive controls keep explicit accessible names.
 | Window metadata out / in | `--tb-duration-track-out`, `--tb-duration-track-in` | 200 / 560ms |
 
 Use `--tb-ease` for view movement. Motion communicates selection, navigation, or a
-song change. Party Mode is a separate, explicit opt-in exception for time-driven
-Now Playing text-color cycles; it does not animate layout, artwork, or transport controls. Its timed palette lives in the shared `--tb-party-*` tokens. Windows Audio Reactive
-can instead drive colors from smoothed bass/mid/treble energy, with lightness
-bounded to 64–72% and analysis limited to 15 updates per second. Each band's
-energy moves its text through the entire hue wheel. Sharp rises advance the hue
-further, easing into the new color over about 85 ms; silence lets the color settle.
-Saturation stays at 92% for clear changes between colors. Capture and
-analysis are separate: analysis pauses while the view is hidden, playback is
-paused, or Reduced Motion applies; capture requires an explicit start and has a
-Stop action. No audio stream is connected to the playback destination or recorder. Both options
-are Off by default, pause with playback and hidden views, and keep a static palette
-under Reduced Motion. Other surfaces do not add idle movement for decoration. Reduced Motion removes
+song change; do not add idle movement for decoration. Reduced Motion removes
 spatial movement and repeating animation while retaining brief color/opacity
 feedback. Playing bars hold still. Existing Gaming Mode still pauses idle effects.
-
-Party Intensity defaults to 50%. It scales audio-driven color speed, hit jumps, and lightness,
-or the timed cycle speed. At zero the palette holds still; changing it never moves
-text, changes font weight, or changes the user's saved text/accent colors.
-
-Party Mode also adds a soft halo behind the cover in window and widget views.
-Six fixed gradient layers supply the palette; only the two adjacent layers have
-nonzero opacity in audio mode. This replaces changing large blurred shadows with
-opacity blending. Audio Reactive shares the combined audio hue with this glow and
-scales its strength with smoothed energy and Party Intensity. The cover itself
-stays intact. Timed mode uses the same six-color palette; pause, Reduced Motion,
-and Gaming Mode idle hold it still. Stop removes the audio glow.
-
-Audio updates use a 15 Hz timer rather than a display-rate animation loop. Color
-variables are scoped to the player and unchanged values are not written again.
-Timed text colors use discrete steps to reduce painting. Electron's normal
-background throttling is enabled, and the capture helper runs below normal CPU
-priority. These limits reduce rendering work; they are not measured GPU savings.
 
 ## Review and checks
 

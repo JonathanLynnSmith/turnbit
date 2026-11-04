@@ -1,6 +1,6 @@
 # Settings
 
-Open Settings from Home. Settings are grouped into seven categories, in the order most apps use, and
+Open Settings from Home. Settings are grouped into six categories, in the order most apps use, and
 saved between restarts. Rows marked › open one more screen to pick a value. Values move between
 preset stops, so a few dial clicks reach any of them: colours use named swatches (including White, Spotify Green for accents, and Black for backgrounds), percentages move in 5% steps, and timeouts use 3, 5, 8, 10, 15, 20, 30, 45 seconds and on up to
 10 minutes.
@@ -13,7 +13,6 @@ preset stops, so a few dial clicks reach any of them: colours use named swatches
 | Appearance | How the menu and player look |
 | Window | Window behavior and its menu background |
 | Widget | Widget mode, desktop placement, and its background |
-| Extras | Party Mode and audio effects |
 
 ## General
 
@@ -66,18 +65,6 @@ To stay in the song list instead of switching to Now Playing, turn off **Idle to
 | Dial Menu Background | Window Mode: the look behind the dial menu. Matching shares the player's background; Black, Glass, and Cover Color (sampled from the playing cover) give the menu its own panel | Matching |
 | Dial Menu Divider | Window Mode: the hairline between the menu and the player in Split View, with the Matching background | Off |
 
-## Extras
-
-Open **Extras** from Home, or **Settings > Extras**.
-
-| Setting | What it does | Default |
-| --- | --- | --- |
-| Party Mode | Independently cycles Now Playing text colors. Pauses with playback, hidden views, or Gaming Mode idle. Reduced Motion keeps the colors still. Use Audio Reactive for system-audio-driven colors | Off |
-| Party Intensity | Speed and size of audio-driven color changes, or speed of timed color cycles. Zero holds a static palette | 50% |
-| Audio Reactive | Windows: drive Party Mode colors from output audio. Enabling also turns Party Mode on and starts capture | Off |
-| Audio Source | Follow Spotify's local output, or use the Windows default output. Changing this stops capture until you start again | Spotify Output |
-| Audio Capture | Start, cancel, retry, or stop system audio capture; appears when Party Mode and Audio Reactive are on | Stopped |
-
 ## Window
 
 | Setting | What it does | Default |
@@ -122,56 +109,3 @@ When turnbit has faded out with Idle Fade, the first dial turn or press only wak
 Previous work right away.
 
 **Start at Login** lives in the tray or menu bar menu rather than in Settings.
-
-
-## Party Mode
-
-Under **Home > Extras** (also **Settings > Extras**), Party Mode colors Now Playing text in the window
-and widget. With Audio Reactive off, the text cycles through colors over time.
-With Audio Reactive on (Windows), bass drives the title, midrange drives the artist
-and credits, and treble drives album/duration text; other labels use a combined
-level. Each text group moves through the full color wheel as its frequency band
-plays, with larger color jumps on sharp rises in energy. Silence lets colors
-settle in place. This measures frequency energy, not a precomputed beat grid.
-
-A soft glow behind the album art follows the combined audio color and brightens
-with the music. It works in both window and widget views. With Audio Reactive
-off, the glow cycles with Party Mode's timed palette. Turning Party Mode off or
-stopping audio capture removes it. Pause and Reduced Motion hold it still.
-
-Party audio updates are capped at 15 per second. The halo blends fixed color
-layers, and hidden windows use background throttling. For the least background
-animation while gaming, enable **Window > Gaming Mode** (or **Widget > Gaming
-Mode**); decorative effects pause after 1.5 seconds without Turnbit interaction.
-
-Select **Audio Reactive** to enable it and start capture, using the mouse or dial.
-The Audio Capture row shows Starting, Listening, Reconnecting, Ready, or Retry, and
-also stops/cancels capture. Ready means capture is open but analysis is paused
-while the player is paused, hidden/covered, in Gaming Mode idle, or Reduced Motion
-is enabled. Returning to an active Now Playing view resumes analysis.
-
-**Party Intensity** previews live from 0 to 100%. In audio mode it controls the
-speed and size of color changes; in timed mode it controls cycle speed. Zero holds the
-palette still. Cancel restores the saved intensity.
-
-**Audio Source** defaults to Spotify Output. This follows Spotify's local Windows
-output, including a separate Wave Link Music channel, and falls back to the
-default output if Spotify has no local session. Default Output follows Windows'
-default multimedia output instead. Device changes are checked every two seconds;
-lost devices reconnect automatically. Changing the source setting requires a new
-explicit start. These choices do not change Windows or Spotify routing.
-
-Audio is the selected output's mix, including other apps and notifications on
-that output. It cannot capture a Spotify Connect speaker playing somewhere else.
-Analysis uses local Windows WASAPI loopback, without a microphone, screen capture,
-recording, playback echo, or upload. Only three frequency levels and an overall
-level reach the interface; audio samples remain in memory in the capture helper.
-
-Stop capture in Audio Capture, or switch off Audio Reactive or Party Mode. Capture
-also stops when the renderer reloads, the window changes mode, or the app quits.
-Saved preferences survive those transitions, but capture does not restart on its
-own: select Audio Capture again. If audio mode is selected but capture is stopped,
-unavailable, or denied, there is no timed animation pretending to follow the audio.
-
-Turning Party Mode off restores Text Color and Accent Color; saved colors are
-never overwritten. Extras and all-settings resets turn both options off.

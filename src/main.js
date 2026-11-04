@@ -19,8 +19,6 @@ const {
 } = require('./integrations/spotify/recovery-settings');
 const { createDesktopWindow } = require('./desktop/window');
 const { registerDesktopIpc } = require('./desktop/ipc');
-const { createPartyAudioCapture } = require('./desktop/party-audio');
-const { pathToFileURL } = require('node:url');
 const { createSettingsStorage } = require('./desktop/settings-storage');
 const { createSessionStorage } = require('./desktop/session-storage');
 const { createBridge } = require('./bridge');
@@ -44,7 +42,6 @@ let desktop,
   mouseMode,
   displayWake,
   removeIpc,
-  partyAudio,
   input;
 let quitting = false;
 const presentation = {
@@ -167,13 +164,6 @@ else {
       send('bridge-error', bridgeError);
     });
     desktop.initialize();
-    partyAudio = createPartyAudioCapture({
-      desktop,
-      desktopCapturer: electron.desktopCapturer,
-      rendererUrl: pathToFileURL(
-        path.join(__dirname, '..', 'renderer', 'index.html'),
-      ).href,
-    });
     mouseMode = new MouseMode({
       electron,
       onEvent: (event) => {
@@ -187,7 +177,6 @@ else {
     });
     if (bridgePort) global.turnbitMouseMode = mouseMode;
     removeIpc = registerDesktopIpc({
-      partyAudio,
       app,
       ipcMain,
       desktop,
@@ -241,7 +230,6 @@ else {
   });
   app.on('will-quit', () => {
     removeIpc?.();
-    partyAudio?.dispose();
     input?.dispose();
     desktop?.dispose();
     mouseMode?.dispose();

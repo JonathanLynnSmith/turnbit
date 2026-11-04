@@ -43,9 +43,7 @@
       "assets/branding/**/*"
     ],
     "asarUnpack": [
-      "src/media-session-helper.ps1",
-      "src/desktop/party-audio-helper.ps1",
-      "src/desktop/audio/**"
+      "src/media-session-helper.ps1"
     ],
     "icon": "assets/branding/turnbit.ico",
     "mac": {

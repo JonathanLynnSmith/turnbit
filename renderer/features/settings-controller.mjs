@@ -22,7 +22,6 @@ export function createSettingsController({
   togglePin,
   toggleWindowMode,
   resetSettings,
-  partyAudio,
   toggleIdlePin,
   toggleCurrentSongBehavior,
   syncMouseMode,
@@ -49,7 +48,6 @@ export function createSettingsController({
       label: 'Widget',
       detail: 'Desktop placement and background',
     },
-    { id: 'extras', label: 'Extras', detail: 'Party Mode and audio effects' },
   ];
   function displayName(id) {
     if (id == null) return 'Automatic';
@@ -236,65 +234,6 @@ export function createSettingsController({
             action: 'clicker',
             detail: preferences.clicker ? 'On' : 'Off',
           },
-        ];
-      case 'extras':
-        return [
-          toggle('Party Mode', 'partyMode'),
-          ...(preferences.partyMode
-            ? [
-                {
-                  label: 'Party Intensity',
-                  action: 'party-intensity',
-                  key: 'partyIntensity',
-                  detail: valueText(
-                    'partyIntensity',
-                    preferences.partyIntensity,
-                  ),
-                  branch: true,
-                  showDetail: true,
-                },
-              ]
-            : []),
-          {
-            label: 'Audio Reactive',
-            action: 'party-audio',
-            detail: partyAudio.status.supported
-              ? preferences.partyAudio
-                ? 'On'
-                : 'Off'
-              : preferences.partyAudio
-                ? 'On · Windows only'
-                : 'Windows only',
-            disabled: !partyAudio.status.supported && !preferences.partyAudio,
-          },
-          ...(preferences.partyMode && preferences.partyAudio
-            ? [
-                {
-                  label: 'Audio Source',
-                  action: 'party-source',
-                  detail:
-                    preferences.partySource === 'default'
-                      ? 'Default Output'
-                      : 'Spotify Output',
-                },
-                {
-                  label: 'Audio Capture',
-                  action: 'party-audio-capture',
-                  detail:
-                    (partyAudio.status.source || 'System audio') +
-                    ' · ' +
-                    {
-                      idle: 'Start',
-                      starting: 'Starting / Cancel',
-                      listening: 'Listening / Stop',
-                      reconnecting: 'Reconnecting / Stop',
-                      paused: 'Ready / Stop',
-                      error: 'Retry',
-                      unavailable: 'Unavailable',
-                    }[partyAudio.status.state],
-                },
-              ]
-            : []),
         ];
       case 'appearance':
         return [
@@ -594,49 +533,6 @@ export function createSettingsController({
   let resetting = false;
   async function select(row) {
     switch (row.action) {
-      case 'party-source':
-        if (
-          savePreferences({
-            partySource:
-              preferences.partySource === 'default' ? 'spotify' : 'default',
-          })
-        ) {
-          row.detail =
-            preferences.partySource === 'default'
-              ? 'Default Output'
-              : 'Spotify Output';
-          drawNavigation();
-          message('Audio source changed. Start Audio Capture.');
-        }
-        break;
-      case 'party-audio':
-        if (
-          savePreferences({
-            partyAudio: !preferences.partyAudio,
-            ...(!preferences.partyAudio ? { partyMode: true } : {}),
-          })
-        ) {
-          const enabled = preferences.partyAudio;
-          if (enabled) await partyAudio.start();
-          else partyAudio.stop();
-          const back = nav.current.rows.filter(
-            (item) => item.action === 'nav-back',
-          );
-          if (nav.current.settingsGroup === 'extras') {
-            nav.current.rows = [...back, ...settingsRows('extras')];
-            nav.current.selected = nav.current.rows.findIndex(
-              (item) => item.action === 'party-audio',
-            );
-            drawNavigation();
-          }
-        }
-        break;
-      case 'party-audio-capture':
-        if (partyAudio.status.active || partyAudio.status.busy) {
-          partyAudio.stop();
-          message('System audio capture stopped');
-        } else await partyAudio.start();
-        break;
       case 'reset-settings':
         push({
           title:
@@ -702,7 +598,6 @@ export function createSettingsController({
         showLayout();
         break;
       case 'radial-size':
-      case 'party-intensity':
       case 'menu-timeout':
         push({
           title: row.label,

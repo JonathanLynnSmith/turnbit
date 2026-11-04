@@ -49,13 +49,6 @@
   --tb-duration-track-out: 200ms;
   --tb-duration-track-in: 560ms;
   --tb-ease: cubic-bezier(.2,.8,.2,1);
-  /* Party Mode changes text hue while keeping a readable, steady brightness. */
-  --tb-party-rose: #ff9baf;
-  --tb-party-amber: #f5ce85;
-  --tb-party-lime: #c4e397;
-  --tb-party-mint: #86e0bb;
-  --tb-party-cyan: #8ed9f4;
-  --tb-party-violet: #c2aff5;
 }
 
 body, #radial, #radialBackdrop {

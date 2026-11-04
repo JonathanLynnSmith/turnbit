@@ -19,7 +19,7 @@ app.whenReady().then(async()=>{try{
     await js(`savePreferences({interfaceStyle:'${style}'});`);
     assert.equal(await js(`preferences.interfaceStyle`),'radial',`${style} selection migrates to turnbit`);
   }
-  assert.equal(await labels(),'General, Playback, Controls, Appearance, Window, Widget, Extras','seven categories in the usual app order');
+  assert.equal(await labels(),'General, Playback, Controls, Appearance, Window, Widget','six categories in the usual app order');
   assert.equal(await js(`nav.current.rows.find(r=>r.label==='Playback').detail`),'Spotify, devices, and volume','categories have subtitles');
   assert.equal((await page()).highlighted,'General','Settings opens on the first category');
   const expected={
@@ -27,7 +27,6 @@ app.whenReady().then(async()=>{try{
     playback:'Volume, Playback Device, Preferred Device, When Nothing Is Playing, Keep Song Position, Open Spotify Automatically, Spotify Account',
     controls:'Reverse Dial Direction, Dial Double-Press, Hover Shortcuts, Dial Only Wake, Mouse Mode Key, Click Sounds',
     appearance:'Curved Menu, Text Alignment, Screen Edge, Text Color, Accent Color',
-    extras:'Party Mode, Audio Reactive',
     window:'Keep on Top, Transparency, Pin Dial Menu, Dial Menu Timeout, Dial Menu Returns to Playlist, Gaming Mode, Smoky Background, Background Color',
     widget:'Widget Mode, Size & Position, Keep on Top, Transparency, Pin Widget, Mouse Click Through, Gaming Mode, Smoky Background, Background Color'};
   for(const [id,want] of Object.entries(expected)){
@@ -35,15 +34,6 @@ app.whenReady().then(async()=>{try{
     assert.equal(await labels(),want,`${id} contents`);assert.equal((await page()).depth,3,`${id}: settings are two levels below Home`);
     assert.equal(await js(`nav.current.rows.filter(r=>r.action!=='nav-back'&&!r.branch&&!r.detail).length`),0,`${id}: every on/off setting shows its value`);
   }
-  await js(`nav.reset(root());nav.current.selected=nav.current.rows.findIndex(r=>r.label==='Extras');drawNavigation();`);await click();
-  assert.equal((await page()).title,'Extras','Home opens Extras directly');
-  assert.equal((await page()).depth,2,'Extras is one level below Home');
-  await js(`nav.current.selected=nav.current.rows.findIndex(r=>r.key==='partyMode');selectItem();`);
-  assert.equal(await labels(),'Party Mode, Party Intensity, Audio Reactive','Party Mode reveals intensity in Extras');
-  await js(`savePreferences({partyAudio:true});`);
-  assert.equal(await labels(),'Party Mode, Party Intensity, Audio Reactive, Audio Source, Audio Capture','Extras refreshes conditional audio controls');
-  require('node:fs').writeFileSync(path.join(__dirname,'../artifacts/extras-menu.png'),(await window.webContents.capturePage()).toPNG());
-  await js(`savePreferences({partyMode:false,partyAudio:false});`);
   let p;
   // Toggling inside a category updates and saves; Back returns to the category you came from.
   await js(`nav.reset(root());showSetting(r=>r.key==='gamingMode');`);await click();
@@ -68,5 +58,5 @@ app.whenReady().then(async()=>{try{
   assert.equal(await js(`JSON.parse(localStorage.getItem('turnbit-preferences')).radialAlign`),'auto','saved');await js(`savePreferences({radialSide:'left'});`);
   const all=await js(`settingsGroups.flatMap(g=>settingsRows(g.id).map(r=>r.label)).join('|')`);
   for(const old of ['Apperance','Clicker','Primary Color','Screen edge'])assert.ok(!all.split('|').includes(old),`old label "${old}" is gone`);
-  console.log('Settings: seven categories with subtitles, two levels deep, Appearance contains only turnbit settings, toggles save, back lands on the category, clearer labels, Curved Menu straightens the list, Text Alignment cycles Auto/Left/Right.');app.quit();
+  console.log('Settings: six categories with subtitles, two levels deep, Appearance contains only turnbit settings, toggles save, back lands on the category, clearer labels, Curved Menu straightens the list, Text Alignment cycles Auto/Left/Right.');app.quit();
 }catch(error){console.error(error);app.exit(1);}});

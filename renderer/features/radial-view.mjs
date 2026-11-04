@@ -25,7 +25,6 @@ export function createRadialView({
   playbackModes,
   SPLIT_MIN_WIDTH,
   PLAYER_STACK_WIDTH,
-  syncPartyAudio = () => {},
   SPLIT_HAZE_SPILL,
 }) {
   const visualTokens = getComputedStyle(document.documentElement);
@@ -804,19 +803,6 @@ export function createRadialView({
   }
   function drawRadial() {
     const { demo, index, playback, playing, volume } = getState();
-    document.body.dataset.partyMode = String(preferences.partyMode);
-    document.body.dataset.partyReady = String(demo || !!playback?.item);
-    document.body.dataset.partyPlaying = String(playing);
-    const intensity =
-      nav.current.kind === 'visibility' && nav.current.key === 'partyIntensity'
-        ? nav.current.value
-        : preferences.partyIntensity;
-    document.body.dataset.partyIntensityZero = String(intensity === 0);
-    document.body.style.setProperty(
-      '--party-speed',
-      String(2 ** (1 - intensity / 50)),
-    );
-    syncPartyAudio();
     syncSpotifyLinks(demo, playback);
 
     // Selection changes do not require a round trip to native window management.

@@ -145,13 +145,6 @@ function homeRows() {
       branch: true,
     },
     { label: 'Settings', action: 'settings', icon: 'settings', branch: true },
-    {
-      label: 'Extras',
-      action: 'settings-group',
-      group: 'extras',
-      icon: 'extras',
-      branch: true,
-    },
   ];
 }
 const homeStart = () => 1;
@@ -468,37 +461,7 @@ const trackTransition = new window.TrackTransition($('#radialNow'), {
   reducedMotion: () => reducedMotion.matches,
 });
 const visibilityState = { invisible: false, minimized: false };
-const partyAudio = window.TurnbitFeatures.createPartyAudio({
-  api: api?.partyAudio,
-  getHost: () =>
-    $(
-      preferences.windowMode && preferences.nowPlayingBackdrop
-        ? '#radialBackdrop'
-        : '#radialNow',
-    ),
-  getState: () => ({
-    enabled: preferences.partyMode && preferences.partyAudio,
-    intensity:
-      nav.current.kind === 'visibility' && nav.current.key === 'partyIntensity'
-        ? nav.current.value
-        : preferences.partyIntensity,
-    source: preferences.partySource,
-    playing,
-    ready: demo || !!playback?.item,
-    visible:
-      !visibilityState.invisible &&
-      !visibilityState.minimized &&
-      (preferences.windowMode && preferences.nowPlayingBackdrop
-        ? !dialOverlay.visible || document.body.dataset.backdropSplit === 'true'
-        : nav.current.kind === 'now'),
-    gamingIdle:
-      preferences.gamingMode && Date.now() - lastVisualActivity > 1500,
-  }),
-  onStatus: refreshPartyAudioSettings,
-  message,
-});
 const radialView = window.TurnbitFeatures.createRadialView({
-  syncPartyAudio: () => partyAudio.sync(),
   $,
   preferences,
   nav,
@@ -969,7 +932,6 @@ function textAlign() {
 // Open Settings at the category holding a matching row, with that row highlighted (used by tests and shortcuts).
 
 const settingsController = window.TurnbitFeatures.createSettingsController({
-  partyAudio,
   resetSettings,
   $,
   preferences,
@@ -1021,21 +983,6 @@ const {
 } = settingsController;
 const settingsGroups = settingsController.settingsGroups;
 
-function refreshPartyAudioSettings() {
-  const page = nav.current;
-  if (page.settingsGroup !== 'extras') return;
-  const selected = page.rows[page.selected];
-  const back = page.rows.filter((row) => row.action === 'nav-back');
-  page.rows = [...back, ...settingsController.settingsRows('extras')];
-  page.selected = Math.max(
-    0,
-    page.rows.findIndex(
-      (row) => row.action === selected?.action && row.key === selected?.key,
-    ),
-  );
-  drawNavigation();
-}
-
 function savePreferences(patch) {
   try {
     const next = window.TurnbitSettings.persistPreferences(
@@ -1044,9 +991,6 @@ function savePreferences(patch) {
       patch,
     );
     Object.assign(preferences, next);
-    partyAudio.sync();
-    if (Object.hasOwn(patch, 'partyMode') || Object.hasOwn(patch, 'partyAudio'))
-      refreshPartyAudioSettings();
     applyTheme(document.body, preferences.appearance);
     document.body.dataset.windowMode = String(preferences.windowMode);
     document.body.dataset.menuBackground = preferences.menuBackground;
@@ -1308,7 +1252,6 @@ async function selectItem(fromDial = false) {
           'radialWidthPct',
           'radialHeight',
           'menuTimeout',
-          'partyIntensity',
         ].includes(page.key)
           ? {
               [page.key]: page.value,
@@ -1807,7 +1750,6 @@ if (api) {
   api.onVisibility?.((state) => {
     const wasHidden = visibilityState.invisible || visibilityState.minimized;
     Object.assign(visibilityState, state);
-    partyAudio.sync();
     const hidden = visibilityState.invisible || visibilityState.minimized;
     document.body.dataset.renderSuspended = String(hidden);
     if (hidden) {
@@ -1863,7 +1805,6 @@ setInterval(() => {
     drawNavigation();
   followIdleSong();
   syncGamingMode();
-  partyAudio.sync();
   renderProgress();
 }, 250);
 applyTheme(document.body, preferences.appearance);

@@ -238,7 +238,6 @@ body[data-render-suspended=true] *{animation-play-state:paused!important}
 #radial .radial-label.radial-control>span{font-size:13px;font-weight:500;letter-spacing:2.5px;text-transform:uppercase;opacity:calc(.6 + .4*var(--light,0))}
 #radial .radial-label.radial-control .row-icon{width:1.1em;height:1.1em;margin-right:.55em;vertical-align:-.18em;background:var(--tb-accent)}
 .row-icon-settings{--icon:url('assets/menu-settings.svg')}
-.row-icon-extras{--icon:url('assets/menu-extras.svg')}
 .row-icon-playlists{--icon:url('assets/menu-playlists.svg')}
 .row-icon-liked-songs{--icon:url('assets/menu-liked-songs.svg')}
 #radial .radial-label.radial-control .row-icon-playing{width:1.1em;height:1.1em;margin-right:.55em;vertical-align:-.18em}
