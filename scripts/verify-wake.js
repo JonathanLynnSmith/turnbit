@@ -10,13 +10,14 @@ app.whenReady().then(async()=>{
     const command=command=>post({type:'command',command});
     window.blur();await js(`lastMouseActivity=Date.now()+60000;`);
     await js(`savePreferences({reverseDial:false,nowPlayingOpens:'auto'});`);
-    const sleep=async(setup=true)=>{if(setup)await js(`savePreferences({interfaceStyle:'radial',visibility:{mode:'idle',opacity:70,idleOpacity:0,timeout:1}});nav.reset(root());showSetting(row=>row.action==='radial-background');`);await wait(2200);assert.equal(window.getOpacity(),0);};
-    await sleep();await post({type:'dial',delta:1});assert.ok(window.getOpacity()>.99);assert.equal(await js(`nav.current.selected`),2);
-    await post({type:'dial',delta:1});assert.equal(await js(`nav.current.selected`),3);
-    await sleep();await command('center-down');await command('center-up');await command('center-click');await wait(400);assert.equal(await js(`nav.current.title`),'Appearance');
-    await command('center-down');await command('center-up');await command('center-click');await wait(400);assert.equal(await js(`nav.current.title`),'Case Theme');
-    await sleep();await command('menu-down');await wait(600);await command('menu-up');assert.equal(await js(`nav.current.title`),'Appearance');
-    await command('menu-down');await command('menu-up');assert.equal(await js(`nav.current.title`),'Settings');
+    const sleep=async(setup=true)=>{if(setup)await js(`savePreferences({interfaceStyle:'radial',visibility:{mode:'idle',opacity:70,idleOpacity:0,timeout:1}});nav.reset(root());showSetting(row=>row.key==='radialBackground');`);await wait(2200);assert.equal(window.getOpacity(),0);};
+    // The first turn while asleep only wakes; the next one moves.
+    await sleep();await post({type:'dial',delta:1});assert.ok(window.getOpacity()>.99);assert.equal(await js(`nav.current.selected`),1,'waking keeps the selection');
+    await post({type:'dial',delta:1});assert.equal(await js(`nav.current.selected`),2,'the next turn moves');
+    await sleep();await command('center-down');await command('center-up');await command('center-click');await wait(400);assert.equal(await js(`nav.current.title`),'Background','a press while asleep only wakes');
+    await command('center-down');await command('center-up');await command('center-click');await wait(400);assert.equal(await js(`nav.current.title`),'Smoky Background','the next press selects');
+    await sleep();await command('menu-down');await wait(600);await command('menu-up');assert.equal(await js(`nav.current.title`),'Background','Back while asleep only wakes');
+    await command('menu-down');await command('menu-up');assert.equal(await js(`nav.current.title`),'Widget','the next Back goes up a level');
     await sleep();await command('toggle');assert.equal(await js(`nav.current.kind`),'now');
     await js(`window.startIndex=index;`);await sleep(false);await command('next-down');await command('next-up');assert.equal(await js(`index!==window.startIndex`),true);
     await sleep(false);await command('previous-down');await command('previous-up');assert.equal(await js(`index===window.startIndex`),true);
@@ -42,7 +43,7 @@ app.whenReady().then(async()=>{
     assert.equal(await js(`preferences.reverseDial`),true);
     assert.equal(await js(`preferences.nowPlayingOpens==='manual'`),true);
     await js(`savePreferences({visibility:{mode:'off',opacity:70,idleOpacity:20,timeout:10}});`);
-    console.log('Native wake gestures, optional idle/song/Play navigation, hidden playback and preference persistence passed.');app.quit();
+    console.log('Native wake gestures, Now Playing Opens navigation, hidden playback and preference persistence passed.');app.quit();
   }catch(error){console.error(error);app.exit(1);}
 });
 

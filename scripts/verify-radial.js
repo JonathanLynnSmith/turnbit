@@ -89,7 +89,7 @@ app.whenReady().then(async()=>{
     await js(`savePreferences({radialSide:'right'});showNow();`);await wait(400);await shot('turnbit-radial-polished-right.png');
     await check(`getComputedStyle(document.querySelector('#radialContext')).textAlign==='right' && getComputedStyle(document.querySelector('#radialNow')).right==='72px'`);
     await js(`savePreferences({radialSide:'left'});`);
-    await js(`nav.reset(root());showSetting(row=>row.action==='radial-background');`);
+    await js(`nav.reset(root());showSetting(row=>row.key==='radialBackground');`);
     await select();await turn(3);await check(`nav.current.value===35 && preferences.radialBackground===24 && document.querySelector('#radial').style.getPropertyValue('--smoke-opacity')==='0.35'`);
     await back();await check(`preferences.radialBackground===24 && document.querySelector('#radial').style.getPropertyValue('--smoke-opacity')==='0.24'`);
     await select();await turn(-20);await turn(-4);await select();await check(`preferences.radialBackground===0 && document.querySelector('#radial').style.getPropertyValue('--smoke-opacity')==='0'`);
