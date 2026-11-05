@@ -22,7 +22,7 @@ async function main() {
   }
   const run = (code) => win.webContents.executeJavaScript(code);
   await run(
-    `savePreferences({interfaceStyle:'radial',windowMode:false,idleNowPlaying:false,hoverBack:false,mouseModeKey:'off',visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:10}});demo=true;nav.reset(root());drawNavigation();`,
+    `savePreferences({interfaceStyle:'radial',windowMode:false,nowPlayingOpens:'manual',hoverBack:false,mouseModeKey:'off',visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:10}});demo=true;nav.reset(root());drawNavigation();`,
   );
   await wait(300);
   const result = await run(`(async()=>{

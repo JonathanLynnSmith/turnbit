@@ -42,11 +42,11 @@ app.whenReady().then(async()=>{
     // A desk widget has to survive a Space switch and show over fullscreen apps.
     if(process.platform==='darwin')assert.equal(window.isVisibleOnAllWorkspaces(),true,'widget shows on every Space');
 
-    await window.webContents.executeJavaScript(`localStorage.removeItem('turnbit-preferences');localStorage.setItem('dialpod-preferences',JSON.stringify({interfaceStyle:'radial',appearance:'black',gamingMode:true,mouseModeKey:'off'}));`);
+    await window.webContents.executeJavaScript(`localStorage.removeItem('turnbit-preferences');localStorage.setItem('dialpod-preferences',JSON.stringify({interfaceStyle:'radial',clicker:true,gamingMode:true,mouseModeKey:'off'}));`);
     window.webContents.reload();await wait(600);
-    assert.equal(await window.webContents.executeJavaScript(`preferences.appearance==='black'&&preferences.gamingMode`),true,'legacy settings survive the turnbit rename');
-    await window.webContents.executeJavaScript(`savePreferences({idleNowPlaying:false});`);
-    assert.equal(await window.webContents.executeJavaScript(`localStorage.getItem('dialpod-preferences')===null&&JSON.parse(localStorage.getItem('turnbit-preferences')).appearance==='black'`),true,'saving completes preference migration');
+    assert.equal(await window.webContents.executeJavaScript(`preferences.clicker&&preferences.gamingMode`),true,'legacy settings survive the turnbit rename');
+    await window.webContents.executeJavaScript(`savePreferences({nowPlayingOpens:'manual'});`);
+    assert.equal(await window.webContents.executeJavaScript(`localStorage.getItem('dialpod-preferences')===null&&JSON.parse(localStorage.getItem('turnbit-preferences')).clicker===true`),true,'saving completes preference migration');
     let previous=window;
     window.webContents.executeJavaScript(`window.turnbit.windowMode(true)`).catch(()=>{});
     window=await waitForNewWindow(previous);
@@ -68,8 +68,8 @@ app.whenReady().then(async()=>{
     assert.deepEqual(await window.webContents.executeJavaScript(`[preferences.backdropLayout,JSON.parse(localStorage.getItem('turnbit-preferences')).backdropLayout,document.body.dataset.backdropSplit,nav.current.rows[nav.current.selected].detail]`),['split','split','true','Split View'],'selecting it switches to Split View and saves');
     await window.webContents.executeJavaScript(`selectItem();`);await wait(250);
     assert.deepEqual(await window.webContents.executeJavaScript(`[preferences.backdropLayout,document.body.dataset.backdropSplit]`),['overlay','false'],'selecting again returns to Overlay');
-    // Dial Menu Background cycles Matching, Black, Glass, Cover Color; only the panel looks draw a panel.
-    assert.equal(await window.webContents.executeJavaScript(`settingsRows('appearance').find(row=>row.action==='menu-background')?.detail`),'Matching','menu background starts on Matching');
+    // Window > Menu Background > Style cycles Matching, Black, Glass, Cover Color; only the panel looks draw a panel.
+    assert.equal(await window.webContents.executeJavaScript(`showSetting(row=>row.action==='menu-background');[nav.current.title,nav.current.rows[nav.current.selected]?.detail]`).then(([title,detail])=>title+': '+detail),'Menu Background: Matching','menu background starts on Matching');
     const panel=`[preferences.menuBackground,document.body.dataset.menuBackground,getComputedStyle($('#radialMenuPanel')).display,nav.current.rows[nav.current.selected].detail]`;
     await window.webContents.executeJavaScript(`showSetting(row=>row.action==='menu-background');selectItem();`);await wait(250);
     assert.deepEqual(await window.webContents.executeJavaScript(panel),['black','black','block','Black'],'Black draws its own menu panel');

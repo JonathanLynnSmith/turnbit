@@ -8,7 +8,7 @@ const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 app.whenReady().then(async()=>{try{
   await wait(1200);const win=BrowserWindow.getAllWindows()[0],js=code=>win.webContents.executeJavaScript(code);
   const errors=[];win.webContents.on('console-message',event=>{if(event.level==='error')errors.push(event.message);});
-  await js(`savePreferences({interfaceStyle:'radial',idleNowPlaying:false,visibility:{mode:'off'}});nav.reset(root());drawNavigation();`);
+  await js(`savePreferences({interfaceStyle:'radial',nowPlayingOpens:'manual',visibility:{mode:'off'}});nav.reset(root());drawNavigation();`);
   for(const side of ['left','right']){
     await js(`savePreferences({radialSide:'${side}'});nav.reset(root());showLibrary('songs');`);await wait(500);
     const weights=await js(`(()=>{rotate(1);const node=radial.nodes.get(nav.current.selected);window.weightCheckNode=node;return [getComputedStyle(node).fontWeight,node.getAttribute('aria-selected')];})()`);

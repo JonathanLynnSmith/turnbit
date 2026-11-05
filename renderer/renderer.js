@@ -71,7 +71,6 @@ let demo = true,
   pinned = false;
 let demoQueue = [0, 1, 2],
   volumeDeviceId = null;
-const { themes, applyTheme } = window.TurnbitThemes;
 const { cleanVisibility } = window.TurnbitSettings;
 const cleanLastSongList = (value) =>
   window.TurnbitSettings.cleanLastSongList(value, demos.length);
@@ -92,9 +91,10 @@ const SPLIT_MIN_WIDTH = 960,
   SPLIT_HAZE_SPILL = 96,
   WIDE_MENU_BOW = 340;
 const preferences = window.TurnbitSettings.loadPreferences(localStorage, {
-  themes,
   demoCount: demos.length,
 });
+// Now Playing opens on Play, on choosing a song, and after idle, unless the user asked to stay put.
+const nowPlayingAuto = () => preferences.nowPlayingOpens === 'auto';
 let audioContext;
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 function clickSound() {
@@ -125,10 +125,7 @@ function clickSound() {
 }
 // Home: playback, library, and Settings.
 function homeRows() {
-  const last =
-    preferences.lastSongList && preferences.homeLastSongList
-      ? [lastSongListRow()]
-      : [];
+  const last = preferences.lastSongList ? [lastSongListRow()] : [];
   return [
     { label: 'Now Playing', action: 'now', icon: 'now', control: true },
     ...last,
@@ -329,7 +326,7 @@ function message(text = '') {
   }
   clearTimeout(noticeTimer);
   notice.textContent = text;
-  notice.hidden = !text || preferences.interfaceStyle !== 'radial';
+  notice.hidden = !text;
   if (text)
     noticeTimer = setTimeout(() => {
       notice.hidden = true;
@@ -344,9 +341,7 @@ const BACK_HOLD_MS = 1000;
 let backHold = null;
 function shortcutRow(page) {
   const row = page?.rows[page.selected];
-  return row?.control && (row.action !== 'nav-back' || preferences.backRow)
-    ? row
-    : null;
+  return row?.control ? row : null;
 }
 function cancelBackHold() {
   if (!backHold) return;
@@ -412,14 +407,6 @@ function ensureBackRow(page) {
     page === nav.idlePage
   )
     return;
-  if (!preferences.backRow) {
-    if (page.rows[0]?.action === 'nav-back') {
-      page.rows.shift();
-      page.selected = Math.max(0, page.selected - 1);
-      page.awaitingFirst = false;
-    }
-    return;
-  }
   if (page.rows[0]?.action !== 'nav-back') {
     page.rows.unshift({
       label: 'Back',
@@ -639,7 +626,7 @@ async function command(cmd, value) {
     cmd === 'toggle' &&
     !backdropActive() &&
     !quietPlay &&
-    preferences.playOpensNowPlaying &&
+    nowPlayingAuto() &&
     (nav.current.kind !== 'now' || $('#settings').open)
   ) {
     // From any menu/form, the first Play press only opens the player.
@@ -917,13 +904,9 @@ function radialLayoutNow() {
   };
 }
 
-// Text Alignment: Auto aligns text toward the docked screen edge; Left or Right fix it.
+// Menu text aligns to the same side as the menu.
 function textAlign() {
-  return preferences.radialAlign === 'auto'
-    ? preferences.radialSide === 'left'
-      ? 'right'
-      : 'left'
-    : preferences.radialAlign;
+  return preferences.radialSide;
 }
 
 // Settings are grouped by task: Settings > category > setting. Rows marked with › open one more screen to pick a
@@ -943,7 +926,6 @@ const settingsController = window.TurnbitFeatures.createSettingsController({
   message,
   noteActivity,
   getState: getPlaybackView,
-  themes,
   mouseModeKeys,
   radialColorName,
   backdropActive,
@@ -957,7 +939,6 @@ const settingsController = window.TurnbitFeatures.createSettingsController({
   togglePin,
   toggleWindowMode,
   toggleIdlePin,
-  toggleCurrentSongBehavior,
   syncMouseMode,
   command,
   menuBack,
@@ -968,7 +949,6 @@ const {
   verticalName,
   layoutRows,
   showLayout,
-  alignName,
   radialSettingsRows,
   settingsRows,
   showSettings,
@@ -991,19 +971,12 @@ function savePreferences(patch) {
       patch,
     );
     Object.assign(preferences, next);
-    applyTheme(document.body, preferences.appearance);
     document.body.dataset.windowMode = String(preferences.windowMode);
     document.body.dataset.menuBackground = preferences.menuBackground;
-    document.body.dataset.screen = preferences.screenTheme;
-    document.body.dataset.interface = preferences.interfaceStyle;
     document.body.dataset.edge = preferences.radialSide;
     document.body.dataset.align = textAlign();
     api
-      ?.setInterface?.(
-        preferences.interfaceStyle,
-        preferences.radialSide,
-        radialLayoutNow(),
-      )
+      ?.setInterface?.('radial', preferences.radialSide, radialLayoutNow())
       ?.catch((error) => message(error.message));
     syncVisibility();
     syncRecovery(patch);
@@ -1011,17 +984,6 @@ function savePreferences(patch) {
   } catch {
     message('Could not save this setting. Please try again.');
     return false;
-  }
-}
-function toggleCurrentSongBehavior() {
-  if (
-    savePreferences({
-      keepCurrentSongPosition: !preferences.keepCurrentSongPosition,
-    })
-  ) {
-    const row = nav.current.rows.find((row) => row.action === 'current-song');
-    if (row) row.detail = preferences.keepCurrentSongPosition ? 'On' : 'Off';
-    drawNavigation();
   }
 }
 let pinQueue = Promise.resolve();
@@ -1169,7 +1131,7 @@ const {
 // Choosing a source can be two pages deep; return to Playback with its summary up to date.
 
 function finishSongSelection() {
-  if (preferences.songOpensNowPlaying) showNow();
+  if (nowPlayingAuto()) showNow();
   else {
     drawNavigation();
     render();
@@ -1177,7 +1139,8 @@ function finishSongSelection() {
 }
 async function playRow(row) {
   const sourcePath = nav.rememberMusic();
-  if (preferences.keepCurrentSongPosition && isCurrentSong(row)) {
+  // Choosing the song that is already playing opens it instead of restarting it.
+  if (isCurrentSong(row)) {
     if (sourcePath) nav.musicPath = sourcePath;
     finishSongSelection();
     return;
@@ -1227,6 +1190,13 @@ async function selectItem(fromDial = false) {
     if (focused?.matches('button,a,summary')) focused.click();
     return;
   }
+  // Saving the window haze selects Matching, so Menu Background's Style row follows it.
+  function syncMenuBackgroundRow() {
+    const style = nav.current.rows?.find(
+      (item) => item.action === 'menu-background',
+    );
+    if (style) style.detail = menuBackgroundName();
+  }
   if (nav.current.kind === 'color') {
     const page = nav.current;
     if (
@@ -1238,6 +1208,7 @@ async function selectItem(fromDial = false) {
       nav.back();
       const row = nav.current.rows.find((item) => item.key === page.key);
       if (row) row.detail = radialColorName(page.value);
+      syncMenuBackgroundRow();
       drawNavigation();
     }
     return;
@@ -1272,6 +1243,7 @@ async function selectItem(fromDial = false) {
             item.action === 'radial-background'),
       );
       if (row) row.detail = valueText(page.key, page.value);
+      syncMenuBackgroundRow();
       drawNavigation();
     }
     return;
@@ -1372,7 +1344,7 @@ function syncInputContext() {
     dialOnlyWake: preferences.dialOnlyWake,
     openPlayerOnToggle:
       !backdropActive() &&
-      preferences.playOpensNowPlaying &&
+      nowPlayingAuto() &&
       (nav.current.kind !== 'now' || $('#settings').open),
   };
   const key = JSON.stringify(value);
@@ -1796,7 +1768,7 @@ setInterval(() => {
   } else if (
     idle.tick(
       !preferences.idlePinned &&
-        preferences.idleNowPlaying &&
+        nowPlayingAuto() &&
         !$('#settings').open &&
         !nav.current.loading &&
         !nav.current.visibilitySettings,
@@ -1807,19 +1779,13 @@ setInterval(() => {
   syncGamingMode();
   renderProgress();
 }, 250);
-applyTheme(document.body, preferences.appearance);
 document.body.dataset.windowMode = String(preferences.windowMode);
-document.body.dataset.screen = preferences.screenTheme;
-document.body.dataset.interface = preferences.interfaceStyle;
+document.body.dataset.interface = 'radial';
 document.body.dataset.edge = preferences.radialSide;
 document.body.dataset.align = textAlign();
 syncPlayerColumn();
 api
-  ?.setInterface?.(
-    preferences.interfaceStyle,
-    preferences.radialSide,
-    radialLayoutNow(),
-  )
+  ?.setInterface?.('radial', preferences.radialSide, radialLayoutNow())
   ?.catch((error) => message(error.message));
 drawNavigation();
 render();

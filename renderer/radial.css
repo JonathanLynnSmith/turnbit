@@ -386,7 +386,7 @@ body[data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true
 body[data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true]:not([data-player-column=narrow]) .radial-backdrop-info{scale:var(--player-scale)}
 /* A hairline marks the seam, and fades with the menu that makes it. It glides when a new song's width moves it. */
 body[data-backdrop-active=true][data-backdrop-split=true] #radialBackdrop::after{content:'';position:absolute;top:9%;bottom:9%;left:var(--split-line);width:1px;background:linear-gradient(to bottom,#ffffff00,#ffffff1f 22%,#ffffff1f 78%,#ffffff00);z-index:1;pointer-events:none;opacity:0;transition:opacity .22s ease,left .3s var(--tb-ease),right .3s var(--tb-ease)}
-body[data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true][data-split-divider=true] #radialBackdrop::after{opacity:1;transition:opacity var(--tb-duration-view) ease .10s,left .3s var(--tb-ease),right .3s var(--tb-ease)}
+body[data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true][data-menu-background=match] #radialBackdrop::after{opacity:1;transition:opacity var(--tb-duration-view) ease .10s,left .3s var(--tb-ease),right .3s var(--tb-ease)}
 body[data-backdrop-active=true][data-backdrop-split=true][data-edge=right] #radialBackdrop::after{left:auto;right:var(--split-line)}
 /* The playing row's artwork floats outside its label. In Split View that room only exists on the
    menu's own side of the seam, so a right-docked menu keeps it inboard. */

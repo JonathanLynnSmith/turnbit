@@ -45,10 +45,12 @@
     return null;
   }
 
-  function loadPreferences(storage, { themes, demoCount }) {
+  // Now Playing opens: 'auto' switches to Now Playing on Play, on choosing a song, and after idle;
+  // 'manual' only opens it when asked, so browsing stays in the list.
+  const NOW_PLAYING_OPENS = ['auto', 'manual'];
+  function loadPreferences(storage, { demoCount }) {
     const preferences = {
       lastSongList: null,
-      idleFollowSong: true,
       dialOnlyWake: false,
       mousePassthrough: false,
       preferredDevice: null,
@@ -59,19 +61,10 @@
       idlePinned: false,
       reverseDial: false,
       doublePress: 'back',
-      homeLastSongList: true,
-      backRow: true,
       hoverBack: true,
-      idleNowPlaying: true,
-      songOpensNowPlaying: true,
-      playOpensNowPlaying: true,
+      nowPlayingOpens: 'auto',
       keepOnTop: false,
-      keepCurrentSongPosition: true,
-      appearance: 'silver',
-      screenTheme: 'light',
-      interfaceStyle: 'radial',
       radialSide: 'left',
-      radialAlign: 'left',
       radialWidthPct: 35,
       radialHeight: 100,
       radialVertical: 'center',
@@ -91,8 +84,6 @@
       backdropLayout: 'overlay',
       menuBackground: 'match',
       menuTimeout: 3,
-      menuReturnsToSource: true,
-      splitDivider: false,
     };
     try {
       const saved = JSON.parse(
@@ -100,28 +91,28 @@
           storage.getItem('dialpod-preferences') ||
           '{}',
       );
-      if (saved.appearance === 'spotify-center') saved.appearance = 'spotify';
       for (const key of [
         'mousePassthrough',
         'dialOnlyWake',
-        'idleFollowSong',
         'autoLaunchSpotify',
         'gamingMode',
         'idlePinned',
         'reverseDial',
         'radialCurve',
-        'homeLastSongList',
-        'backRow',
         'hoverBack',
-        'idleNowPlaying',
-        'songOpensNowPlaying',
-        'playOpensNowPlaying',
         'windowMode',
         'nowPlayingBackdrop',
-        'menuReturnsToSource',
-        'splitDivider',
       ])
         if (typeof saved[key] === 'boolean') preferences[key] = saved[key];
+      if (NOW_PLAYING_OPENS.includes(saved.nowPlayingOpens))
+        preferences.nowPlayingOpens = saved.nowPlayingOpens;
+      // Before the single choice, staying in the list meant turning off both Idle to Now Playing
+      // and Open Song in Now Playing. Carry that combination over once.
+      else if (
+        saved.idleNowPlaying === false &&
+        saved.songOpensNowPlaying === false
+      )
+        preferences.nowPlayingOpens = 'manual';
       preferences.lastSongList = cleanLastSongList(
         saved.lastSongList,
         demoCount,
@@ -164,16 +155,8 @@
         preferences.doublePress = saved.doublePress;
       if (typeof saved.keepOnTop === 'boolean')
         preferences.keepOnTop = saved.keepOnTop;
-      if (typeof saved.keepCurrentSongPosition === 'boolean')
-        preferences.keepCurrentSongPosition = saved.keepCurrentSongPosition;
-      if (themes.some((theme) => theme.id === saved.appearance))
-        preferences.appearance = saved.appearance;
-      if (['light', 'dark'].includes(saved.screenTheme))
-        preferences.screenTheme = saved.screenTheme;
-      else if (preferences.appearance === 'spotify')
-        preferences.screenTheme = 'dark';
-      // Archived interface selections migrate to the active desktop interface.
-      preferences.interfaceStyle = 'radial';
+      // Archived interface selections (iPod, Zune) and their case themes are no longer read, so
+      // they fall back to the radial interface while every other preference is kept.
       for (const [key, min, max] of [
         ['radialWidthPct', 15, 70],
         ['radialHeight', 30, 100],
@@ -190,8 +173,6 @@
         typeof saved.radialDisplay === 'string'
       )
         preferences.radialDisplay = saved.radialDisplay;
-      if (['auto', 'left', 'right'].includes(saved.radialAlign))
-        preferences.radialAlign = saved.radialAlign;
       if (['left', 'right'].includes(saved.radialSide))
         preferences.radialSide = saved.radialSide;
       // Existing installations used one opacity in both modes. Seed each once, then keep them independent.
@@ -236,64 +217,70 @@
     return preferences;
   }
 
+  // Settings that no longer exist. Their behavior is fixed at the old default, so saved values
+  // are dropped the next time preferences are written.
+  const RETIRED_KEYS = [
+    'appearance',
+    'screenTheme',
+    'interfaceStyle',
+    'backRow',
+    'homeLastSongList',
+    'idleFollowSong',
+    'keepCurrentSongPosition',
+    'menuReturnsToSource',
+    'splitDivider',
+    'radialAlign',
+    'idleNowPlaying',
+    'songOpensNowPlaying',
+    'playOpensNowPlaying',
+  ];
   function persistPreferences(storage, current, patch) {
-    const next = { ...current, ...patch, interfaceStyle: 'radial' };
+    const next = { ...current, ...patch };
+    for (const key of RETIRED_KEYS) delete next[key];
     storage.setItem('turnbit-preferences', JSON.stringify(next));
     storage.removeItem('dialpod-preferences');
     return next;
   }
 
+  // App-wide settings live in General, so Window and Widget only reset what is theirs.
   const RESET_KEYS = {
     general: [
-      'backRow',
-      'homeLastSongList',
-      'playOpensNowPlaying',
-      'songOpensNowPlaying',
-      'idleNowPlaying',
-      'idleFollowSong',
+      'nowPlayingOpens',
+      'keepOnTop',
+      'visibility',
+      'dialOnlyWake',
+      'idlePinned',
+      'gamingMode',
     ],
     playback: [
       'preferredDevice',
       'coldStart',
       'coldStartPlaylist',
       'autoLaunchSpotify',
-      'keepCurrentSongPosition',
     ],
     controls: [
       'reverseDial',
       'doublePress',
       'hoverBack',
-      'dialOnlyWake',
       'mouseModeKey',
       'clicker',
     ],
     appearance: [
       'radialCurve',
-      'radialAlign',
       'radialSide',
       'primaryHue',
       'accentHue',
       'nowPlayingBackdrop',
       'backdropLayout',
-      'menuBackground',
-      'splitDivider',
     ],
     window: [
-      'keepOnTop',
-      'visibility',
-      'idlePinned',
       'menuTimeout',
-      'menuReturnsToSource',
-      'gamingMode',
+      'menuBackground',
       'windowBackground',
       'windowSmokeHue',
     ],
     widget: [
       'windowMode',
-      'keepOnTop',
-      'visibility',
-      'idlePinned',
-      'gamingMode',
       'radialDisplay',
       'radialWidthPct',
       'radialHeight',
@@ -304,10 +291,7 @@
     ],
   };
   function resetPatch(group = 'all') {
-    const defaults = loadPreferences(
-      { getItem: () => null },
-      { themes: [], demoCount: 0 },
-    );
+    const defaults = loadPreferences({ getItem: () => null }, { demoCount: 0 });
     const keys =
       group === 'all'
         ? [...new Set(Object.values(RESET_KEYS).flat())]
@@ -322,6 +306,8 @@
     cleanVisibility,
     cleanLastSongList,
     MENU_BACKGROUNDS,
+    NOW_PLAYING_OPENS,
+    RETIRED_KEYS,
   };
   if (typeof module !== 'undefined') module.exports = settings;
   else window.TurnbitSettings = settings;

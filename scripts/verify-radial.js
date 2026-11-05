@@ -13,7 +13,7 @@ app.whenReady().then(async()=>{
     await js(`savePreferences({visibility:{mode:'off',opacity:70,idleOpacity:20,timeout:10},interfaceStyle:'radial',radialSide:'left',radialBackground:24,idlePinned:false,keepOnTop:false,primaryHue:360,accentHue:145});nav.reset(root());drawNavigation();`);
     await js(`pinned=false;api.pin(false);`);
     await wait(400);
-    await check(`preferences.interfaceStyle==='radial' && !document.querySelector('.ipod') && getComputedStyle(document.querySelector('#radial')).display==='block'`);
+    await check(`document.body.dataset.interface==='radial' && !document.querySelector('.ipod') && getComputedStyle(document.querySelector('#radial')).display==='block'`);
     const leftBounds=window.getBounds(),leftArea=screen.getDisplayMatching(leftBounds).bounds;assert.equal(leftBounds.x,leftArea.x);assert.equal(leftBounds.y,leftArea.y);assert.equal(leftBounds.height,leftArea.height);
     await js(`nav.reset(root());drawNavigation();`);const settingsRow=await js(`nav.current.rows.findIndex(r=>r.action==='settings')`);await turn(settingsRow-1);await wait(60);
     await check(`radial.position>1 && radial.position<${settingsRow}`);await wait(500);
@@ -93,7 +93,7 @@ app.whenReady().then(async()=>{
     await select();await turn(3);await check(`nav.current.value===35 && preferences.radialBackground===24 && document.querySelector('#radial').style.getPropertyValue('--smoke-opacity')==='0.35'`);
     await back();await check(`preferences.radialBackground===24 && document.querySelector('#radial').style.getPropertyValue('--smoke-opacity')==='0.24'`);
     await select();await turn(-20);await turn(-4);await select();await check(`preferences.radialBackground===0 && document.querySelector('#radial').style.getPropertyValue('--smoke-opacity')==='0'`);
-    window.webContents.reload();await wait(1200);await check(`preferences.interfaceStyle==='radial' && preferences.radialSide==='left' && preferences.radialBackground===0`);
+    window.webContents.reload();await wait(1200);await check(`document.body.dataset.interface==='radial' && preferences.radialSide==='left' && preferences.radialBackground===0`);
     await js(`savePreferences({radialBackground:24});`);
     await js(`pinned=false;savePreferences({keepOnTop:false});api.pin(false);`);await wait(200);
     await js(`showSetting(row=>row.action==='pin');`);await select();
@@ -126,7 +126,7 @@ app.whenReady().then(async()=>{
     await wait(600);try{fs.writeFileSync(path.join(__dirname,'../artifacts/turnbit-playback-icons.png'),(await window.webContents.capturePage()).toPNG());}catch{}
     await js(`savePreferences({keepOnTop:false,idlePinned:false});pinned=false;api.pin(false);`);
     await command({type:'command',command:'pin'});await wait(400);assert.equal(window.isAlwaysOnTop(),false);await check(`preferences.idlePinned&&!preferences.keepOnTop&&!pinned`);
-    await js(`savePreferences({idleNowPlaying:true,visibility:{mode:'idle',opacity:70,idleOpacity:0,timeout:1}});nav.reset(root());idle.lastActivity=Date.now()-11000;drawNavigation();lastMouseActivity=Date.now()+60000;`);await wait(2200);
+    await js(`savePreferences({nowPlayingOpens:'auto',visibility:{mode:'idle',opacity:70,idleOpacity:0,timeout:1}});nav.reset(root());idle.lastActivity=Date.now()-11000;drawNavigation();lastMouseActivity=Date.now()+60000;`);await wait(2200);
     assert.ok(window.getOpacity()>.99);await check(`nav.current.kind==='list'`);
     await command({type:'command',command:'pin'});await wait(400);assert.equal(window.isAlwaysOnTop(),false);await check(`!preferences.idlePinned&&!preferences.keepOnTop&&!pinned`);
     await wait(2200);assert.equal(window.getOpacity(),0);

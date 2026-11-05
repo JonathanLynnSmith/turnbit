@@ -23,18 +23,21 @@ export function createSettingsController({
   toggleWindowMode,
   resetSettings,
   toggleIdlePin,
-  toggleCurrentSongBehavior,
   syncMouseMode,
   command,
   menuBack,
   openSettings,
 }) {
   let knownDisplays = [];
-  // Each category answers one question, in the order most apps use: General (what the menus show
-  // and when), Playback (what plays and where), Controls (how the dial and buttons respond),
-  // Appearance (how it looks), Window (how the window behaves).
+  // Each category answers one question, in the order most apps use: General (when Now Playing opens
+  // and how turnbit sits on the desktop, in either mode), Playback (what plays and where), Controls
+  // (how the dial and buttons respond), Appearance (how it looks), then what only Window or Widget has.
   const settingsGroups = [
-    { id: 'general', label: 'General', detail: 'Menus and Now Playing' },
+    {
+      id: 'general',
+      label: 'General',
+      detail: 'Now Playing, transparency, and pinning',
+    },
     {
       id: 'playback',
       label: 'Playback',
@@ -42,11 +45,15 @@ export function createSettingsController({
     },
     { id: 'controls', label: 'Controls', detail: 'Dial, mouse, and sounds' },
     { id: 'appearance', label: 'Appearance', detail: 'Layout and colors' },
-    { id: 'window', label: 'Window', detail: 'Dial menu and background' },
+    {
+      id: 'window',
+      label: 'Window',
+      detail: 'Dial menu timeout and background',
+    },
     {
       id: 'widget',
       label: 'Widget',
-      detail: 'Desktop placement and background',
+      detail: 'Placement, click through, and background',
     },
   ];
   function displayName(id) {
@@ -105,11 +112,6 @@ export function createSettingsController({
       drawNavigation();
     }
   }
-  function alignName() {
-    return { auto: 'Auto', left: 'Left', right: 'Right' }[
-      preferences.radialAlign
-    ];
-  }
   function radialSettingsRows() {
     return [
       {
@@ -118,7 +120,6 @@ export function createSettingsController({
         key: 'radialCurve',
         detail: preferences.radialCurve ? 'On' : 'Off',
       },
-      { label: 'Text Alignment', action: 'radial-align', detail: alignName() },
       {
         label: preferences.windowMode ? 'Menu Side' : 'Screen Edge',
         action: 'radial-side',
@@ -140,6 +141,43 @@ export function createSettingsController({
       },
     ];
   }
+  function nowPlayingOpensName() {
+    return preferences.nowPlayingOpens === 'manual'
+      ? 'Only When Asked'
+      : 'Automatically';
+  }
+  // Window Mode's dial menu background: the panel style, plus the haze over a Matching background.
+  function menuBackgroundRows() {
+    return [
+      ...(backdropActive()
+        ? [
+            {
+              label: 'Style',
+              action: 'menu-background',
+              detail: menuBackgroundName(),
+            },
+          ]
+        : []),
+      ...smokeRows('window'),
+    ];
+  }
+  function showMenuBackground() {
+    push({ title: 'Menu Background', rows: menuBackgroundRows() });
+  }
+  function showWidgetBackground() {
+    push({ title: 'Background', rows: smokeRows('widget') });
+  }
+  // Rows that open one more page of settings, so showSetting can reach what is inside them.
+  const subPages = {
+    'menu-background-page': {
+      rows: menuBackgroundRows,
+      show: showMenuBackground,
+    },
+    'widget-background-page': {
+      rows: () => smokeRows('widget'),
+      show: showWidgetBackground,
+    },
+  };
   function smokeRows(mode) {
     const key = mode === 'widget' ? 'radialBackground' : 'windowBackground';
     const colorKey = mode + 'SmokeHue';
@@ -181,12 +219,23 @@ export function createSettingsController({
     switch (group) {
       case 'general':
         return [
-          toggle('Back in Lists', 'backRow'),
-          toggle('Last Song List on Home', 'homeLastSongList'),
-          toggle('Play Opens Now Playing', 'playOpensNowPlaying'),
-          toggle('Open Song in Now Playing', 'songOpensNowPlaying'),
-          toggle('Idle to Now Playing', 'idleNowPlaying'),
-          toggle('Follow Playing Song', 'idleFollowSong'),
+          {
+            label: 'Now Playing Opens',
+            action: 'now-playing-opens',
+            detail: nowPlayingOpensName(),
+          },
+          {
+            label: 'Keep on Top',
+            action: 'pin',
+            detail: getState().pinned ? 'On' : 'Off',
+          },
+          { label: 'Transparency', action: 'visibility', branch: true },
+          {
+            label: preferences.windowMode ? 'Pin Dial Menu' : 'Pin Widget',
+            action: 'idle-pin',
+            detail: preferences.idlePinned ? 'On' : 'Off',
+          },
+          toggle('Gaming Mode', 'gamingMode'),
         ];
       case 'playback':
         return [
@@ -206,11 +255,6 @@ export function createSettingsController({
             branch: true,
             showDetail: true,
           },
-          {
-            label: 'Keep Song Position',
-            action: 'current-song',
-            detail: preferences.keepCurrentSongPosition ? 'On' : 'Off',
-          },
           toggle('Open Spotify Automatically', 'autoLaunchSpotify'),
           { label: 'Spotify Account', action: 'connect', branch: true },
         ];
@@ -223,7 +267,6 @@ export function createSettingsController({
             detail: preferences.doublePress === 'home' ? 'Home' : 'Back',
           },
           toggle('Hover Shortcuts', 'hoverBack'),
-          toggle('Dial Only Wake', 'dialOnlyWake'),
           {
             label: 'Mouse Mode Key',
             action: 'mouse-mode-key',
@@ -239,7 +282,7 @@ export function createSettingsController({
         return [
           ...radialSettingsRows(),
           // The window player's own look, only in Window Mode.
-          ...(preferences.windowMode && preferences.interfaceStyle === 'radial'
+          ...(preferences.windowMode
             ? [toggle('Now Playing Backdrop', 'nowPlayingBackdrop')]
             : []),
           ...(backdropActive()
@@ -249,32 +292,11 @@ export function createSettingsController({
                   action: 'backdrop-layout',
                   detail: backdropLayoutName(),
                 },
-                {
-                  label: 'Dial Menu Background',
-                  action: 'menu-background',
-                  detail: menuBackgroundName(),
-                },
-                // A background panel's own edge marks the seam, so the divider only goes with Matching.
-                ...(preferences.backdropLayout === 'split' &&
-                preferences.menuBackground === 'match'
-                  ? [toggle('Dial Menu Divider', 'splitDivider')]
-                  : []),
               ]
             : []),
         ];
       case 'window':
         return [
-          {
-            label: 'Keep on Top',
-            action: 'pin',
-            detail: getState().pinned ? 'On' : 'Off',
-          },
-          { label: 'Transparency', action: 'visibility', branch: true },
-          {
-            label: 'Pin Dial Menu',
-            action: 'idle-pin',
-            detail: preferences.idlePinned ? 'On' : 'Off',
-          },
           {
             label: 'Dial Menu Timeout',
             action: 'menu-timeout',
@@ -283,9 +305,11 @@ export function createSettingsController({
             branch: true,
             showDetail: true,
           },
-          toggle('Dial Menu Returns to Playlist', 'menuReturnsToSource'),
-          toggle('Gaming Mode', 'gamingMode'),
-          ...smokeRows('window'),
+          {
+            label: 'Menu Background',
+            action: 'menu-background-page',
+            branch: true,
+          },
         ];
       case 'widget':
         return [
@@ -295,20 +319,12 @@ export function createSettingsController({
             detail: preferences.windowMode ? 'Off' : 'On',
           },
           { label: 'Size & Position', action: 'radial-layout', branch: true },
-          {
-            label: 'Keep on Top',
-            action: 'pin',
-            detail: getState().pinned ? 'On' : 'Off',
-          },
-          { label: 'Transparency', action: 'visibility', branch: true },
-          {
-            label: 'Pin Widget',
-            action: 'idle-pin',
-            detail: preferences.idlePinned ? 'On' : 'Off',
-          },
           toggle('Mouse Click Through', 'mousePassthrough'),
-          toggle('Gaming Mode', 'gamingMode'),
-          ...smokeRows('widget'),
+          {
+            label: 'Background',
+            action: 'widget-background-page',
+            branch: true,
+          },
         ];
     }
     return [];
@@ -336,8 +352,9 @@ export function createSettingsController({
   }
   function showSetting(match) {
     showSettings();
+    const inside = (row) => subPages[row.action]?.rows().some(match);
     const group = settingsGroups.find((item) =>
-      settingsRows(item.id).some(match),
+      settingsRows(item.id).some((row) => match(row) || inside(row)),
     );
     if (!group) return false;
     nav.current.selected = nav.current.rows.findIndex(
@@ -345,7 +362,15 @@ export function createSettingsController({
     );
     drawNavigation();
     showSettingsGroup(group.id);
-    nav.current.selected = nav.current.rows.findIndex(match);
+    const direct = nav.current.rows.findIndex(match);
+    if (direct >= 0) nav.current.selected = direct;
+    else {
+      const parent = nav.current.rows.find(inside);
+      nav.current.selected = nav.current.rows.indexOf(parent);
+      drawNavigation();
+      subPages[parent.action].show();
+      nav.current.selected = nav.current.rows.findIndex(match);
+    }
     drawNavigation();
     return true;
   }
@@ -386,6 +411,17 @@ export function createSettingsController({
           branch: true,
           showDetail: true,
         },
+        // Dial Only Wake only matters once turnbit can fade out.
+        ...(value.mode === 'off'
+          ? []
+          : [
+              {
+                label: 'Dial Only Wake',
+                action: 'playback-preference',
+                key: 'dialOnlyWake',
+                detail: preferences.dialOnlyWake ? 'On' : 'Off',
+              },
+            ]),
       ],
       hint:
         value.mode === 'idle'
@@ -669,6 +705,24 @@ export function createSettingsController({
           drawNavigation();
         }
         break;
+      case 'menu-background-page':
+        showMenuBackground();
+        break;
+      case 'widget-background-page':
+        showWidgetBackground();
+        break;
+      case 'now-playing-opens':
+        if (
+          savePreferences({
+            nowPlayingOpens:
+              preferences.nowPlayingOpens === 'manual' ? 'auto' : 'manual',
+          })
+        ) {
+          row.detail = nowPlayingOpensName();
+          noteActivity();
+          drawNavigation();
+        }
+        break;
       case 'menu-background': {
         const backgrounds = window.TurnbitSettings.MENU_BACKGROUNDS;
         if (
@@ -680,13 +734,8 @@ export function createSettingsController({
               ],
           })
         ) {
-          // The menu stays up so the new look shows straight away; the divider row follows Matching.
-          const page = nav.current,
-            back = page.rows[0]?.action === 'nav-back' ? [page.rows[0]] : [];
-          page.rows = [...back, ...settingsRows(page.settingsGroup)];
-          page.selected = page.rows.findIndex(
-            (item) => item.action === 'menu-background',
-          );
+          // The menu stays up so the new look shows straight away.
+          row.detail = menuBackgroundName();
           revealDialOverlay();
           drawNavigation();
         }
@@ -705,23 +754,8 @@ export function createSettingsController({
           drawNavigation();
         }
         break;
-      case 'radial-align':
-        if (
-          savePreferences({
-            radialAlign: { auto: 'left', left: 'right', right: 'auto' }[
-              preferences.radialAlign
-            ],
-          })
-        ) {
-          row.detail = alignName();
-          drawNavigation();
-        }
-        break;
       case 'settings-group':
         showSettingsGroup(row.group);
-        break;
-      case 'current-song':
-        toggleCurrentSongBehavior();
         break;
       case 'radial-color':
         push({
@@ -848,7 +882,9 @@ export function createSettingsController({
     verticalName,
     layoutRows,
     showLayout,
-    alignName,
+    nowPlayingOpensName,
+    showMenuBackground,
+    showWidgetBackground,
     radialSettingsRows,
     settingsRows,
     showSettings,

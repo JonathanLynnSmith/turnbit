@@ -46,7 +46,7 @@ async function main() {
     );
   };
   await run(
-    `savePreferences({idleNowPlaying:false, idlePinned:false, hoverBack:false, mouseModeKey:'off', visibility:{mode:'off',opacity:100}});demo=true;playing=false;nav.reset(root());drawNavigation();`,
+    `savePreferences({nowPlayingOpens:'manual', idlePinned:false, hoverBack:false, mouseModeKey:'off', visibility:{mode:'off',opacity:100}});demo=true;playing=false;nav.reset(root());drawNavigation();`,
   );
   for (const side of ['left', 'right']) {
     await run(
@@ -87,7 +87,7 @@ async function main() {
   listen();
   win.setSize(1100, 760);
   await run(
-    `savePreferences({idleNowPlaying:false,menuTimeout:600,hoverBack:false,visibility:{mode:'off',opacity:100}});demos[0].name='Fortnight (feat. Post Malone) - BLOND:ISH Remix';demo=true;index=0;playing=false;drawNavigation();`,
+    `savePreferences({nowPlayingOpens:'manual',menuTimeout:600,hoverBack:false,visibility:{mode:'off',opacity:100}});demos[0].name='Fortnight (feat. Post Malone) - BLOND:ISH Remix';demo=true;index=0;playing=false;drawNavigation();`,
   );
   await until(() => run(`$('#radialBackdropTitle').textContent==='Fortnight'`));
   await shot('song-title-window');

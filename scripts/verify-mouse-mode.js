@@ -5,7 +5,7 @@ process.env.TURNBIT_BRIDGE_PORT='4778';require('./widget-profile')(app);require(
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 app.whenReady().then(async()=>{try{
   await wait(1200);const mode=global.turnbitMouseMode,window=BrowserWindow.getAllWindows().find(item=>!mode.overlays.includes(item)),js=code=>window.webContents.executeJavaScript(code);
-  await js(`savePreferences({mouseModeKey:'f13',interfaceStyle:'radial',playOpensNowPlaying:true,mousePassthrough:false,visibility:{mode:'off'}});syncMouseMode();nav.goHome();drawNavigation();`);await wait(300);assert.equal(mode.key,'f13');
+  await js(`savePreferences({mouseModeKey:'f13',interfaceStyle:'radial',nowPlayingOpens:'auto',mousePassthrough:false,visibility:{mode:'off'}});syncMouseMode();nav.goHome();drawNavigation();`);await wait(300);assert.equal(mode.key,'f13');
   const visible=()=>mode.overlays.filter(item=>!item.isDestroyed()&&item.isVisible());
   // Hold: the overlay covers each display and turnbit hears scroll and clicks from it.
   mode.tracker.press();await wait(500);

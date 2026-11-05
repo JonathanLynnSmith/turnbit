@@ -354,10 +354,8 @@ export function createRadialView({
   }
   // Resizing (Size & Position, moving displays) changes the free space for the fade and the label path: redraw both.
   window.addEventListener('resize', () => {
-    if (preferences.interfaceStyle === 'radial') {
-      drawNavigation();
-      updateSmokeShape();
-    }
+    drawNavigation();
+    updateSmokeShape();
   });
 
   let miniIndexCache = {};
@@ -381,11 +379,7 @@ export function createRadialView({
   }
   // Window Mode alternates between the large player and a dedicated dial browsing screen.
   function backdropActive() {
-    return (
-      preferences.windowMode &&
-      preferences.nowPlayingBackdrop &&
-      preferences.interfaceStyle === 'radial'
-    );
+    return preferences.windowMode && preferences.nowPlayingBackdrop;
   }
   // Split View changes how the two views share the window while the menu is up: instead of covering the
   // player, the menu takes its docked half and the player keeps the other, both live. The menu still
@@ -470,7 +464,6 @@ export function createRadialView({
     document.body.dataset.dialOverlay = String(visible);
     $('#windowDialPinned').hidden = !visible || !preferences.idlePinned;
     document.body.dataset.backdropSplit = String(split);
-    document.body.dataset.splitDivider = String(preferences.splitDivider);
     const radialHost = $('#radial');
     const player = $('.radial-backdrop-info'),
       browseButton = $('#radialBackdropBrowse');
@@ -537,11 +530,7 @@ export function createRadialView({
   // The path is only worth rewinding to while the menu is somewhere else.
   function menuRewindPath() {
     const path = nav.musicPath;
-    return preferences.menuReturnsToSource &&
-      path?.length &&
-      nav.current !== path[path.length - 1]
-      ? path
-      : null;
+    return path?.length && nav.current !== path[path.length - 1] ? path : null;
   }
   function rewindMenuToSource(animate = false) {
     const path = menuRewindPath();
@@ -789,10 +778,6 @@ export function createRadialView({
   }
   let nativeLayoutKey = null;
   function syncNativeLayout() {
-    if (preferences.interfaceStyle !== 'radial') {
-      nativeLayoutKey = null;
-      return;
-    }
     const layout = radialLayoutNow();
     const key = JSON.stringify([preferences.radialSide, layout]);
     if (key === nativeLayoutKey) return;
@@ -811,14 +796,6 @@ export function createRadialView({
     ensureBackRow(nav.current);
     ensureHomeLayout(nav.current);
     if (visibilityState.invisible || visibilityState.minimized) return;
-    if (preferences.interfaceStyle !== 'radial') {
-      radial.stop();
-      trackTransition.reset();
-      $('#radialBackdrop').hidden = true;
-      document.body.dataset.backdropActive = 'false';
-      syncDialOverlay();
-      return;
-    }
     const page = nav.current;
     const previewingSmoke =
       ['windowBackground', 'windowSmokeHue'].includes(page.key) &&

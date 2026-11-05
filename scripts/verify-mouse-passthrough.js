@@ -6,7 +6,7 @@ const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 app.whenReady().then(async()=>{try{
   await wait(1200);const window=BrowserWindow.getAllWindows()[0],js=code=>window.webContents.executeJavaScript(code);
   let ignored=false;const original=window.setIgnoreMouseEvents.bind(window);window.setIgnoreMouseEvents=value=>{ignored=value;original(value);};
-  await js(`savePreferences({mousePassthrough:false,dialOnlyWake:false,idlePinned:false,idleNowPlaying:false,interfaceStyle:'radial',visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:1}});`);
+  await js(`savePreferences({mousePassthrough:false,dialOnlyWake:false,idlePinned:false,nowPlayingOpens:'manual',interfaceStyle:'radial',visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:1}});`);
   assert.equal(window.isFocusable(),true);
   await js(`savePreferences({mousePassthrough:true});`);await wait(80);assert.equal(ignored,true);assert.equal(window.isFocusable(),false);assert.equal(await js(`visibilityState.invisible`),false);
   await js(`showSetting(row=>row.key==='mousePassthrough');`);

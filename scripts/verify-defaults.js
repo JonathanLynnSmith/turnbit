@@ -57,9 +57,9 @@ async function main() {
     );
   assert.deepEqual(
     await run(
-      `[preferences.windowMode,preferences.menuTimeout,preferences.primaryHue,preferences.accentHue,preferences.splitDivider]`,
+      `[preferences.windowMode,preferences.menuTimeout,preferences.primaryHue,preferences.accentHue]`,
     ),
-    [true, 3, 360, 141, false],
+    [true, 3, 360, 141],
   );
   assert.equal(await run(`radialColor(preferences.accentHue,true)`), '#1db954');
   assert.equal(
@@ -68,7 +68,7 @@ async function main() {
     'Now Playing has no browsing label',
   );
   await run(
-    `savePreferences({hoverBack:false,mouseModeKey:'off',idleNowPlaying:false});nav.reset(root());browseFromPlayer();showSettings();`,
+    `savePreferences({hoverBack:false,mouseModeKey:'off',nowPlayingOpens:'manual'});nav.reset(root());browseFromPlayer();showSettings();`,
   );
   assert.equal(
     await run(`$('#windowViewLabel').hidden`),
@@ -87,7 +87,7 @@ async function main() {
     'Off',
   );
   assert.equal(
-    await run(`nav.current.rows.some(r=>r.key==='radialBackground')`),
+    await run(`nav.current.rows.some(r=>r.action==='widget-background-page')`),
     true,
   );
   await shot('settings-widget-section');
@@ -175,7 +175,7 @@ async function main() {
   );
   listen();
   await run(
-    `savePreferences({hoverBack:false,mouseModeKey:'off',idleNowPlaying:false});nav.reset(root());drawNavigation();`,
+    `savePreferences({hoverBack:false,mouseModeKey:'off',nowPlayingOpens:'manual'});nav.reset(root());drawNavigation();`,
   );
   color = await pixel();
   assert.ok(
@@ -228,9 +228,9 @@ async function main() {
   );
   assert.deepEqual(
     await run(
-      `[preferences.primaryHue,preferences.splitDivider,preferences.windowSmokeHue,preferences.windowBackground,preferences.lastSongList.kind]`,
+      `[preferences.primaryHue,preferences.windowSmokeHue,preferences.windowBackground,preferences.lastSongList.kind]`,
     ),
-    [360, false, -1, 24, 'songs'],
+    [360, -1, 24, 'songs'],
   );
   const backend = await run(`window.turnbit.settings.get()`);
   assert.equal(backend.coldStart.mode, 'last');

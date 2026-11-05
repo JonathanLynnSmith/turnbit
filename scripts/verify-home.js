@@ -11,7 +11,7 @@ app.whenReady().then(async()=>{try{
   const menu=async()=>{await post({type:'command',command:'menu-down'});await post({type:'command',command:'menu-up'});await wait(250);};
   const page=()=>js(`({title:nav.current.title,kind:nav.current.kind,labels:nav.current.rows.map(r=>r.label).join(', '),highlighted:nav.current.rows[nav.current.selected]?.label,depth:nav.stack.length})`);
   for(const style of ['radial']){
-    await js(`savePreferences({interfaceStyle:'${style}',lastSongList:null,homeLastSongList:true,idleNowPlaying:false,idlePinned:false,songOpensNowPlaying:true,visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:10}});demo=true;nav.reset(root());drawNavigation();`);await wait(200);
+    await js(`savePreferences({interfaceStyle:'${style}',lastSongList:null,nowPlayingOpens:'auto',idlePinned:false,visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:10}});demo=true;nav.reset(root());drawNavigation();`);await wait(200);
     let p=await page();assert.equal(p.labels,'Now Playing, Liked Songs, Playlists, Settings',`${style}: Home layout`);assert.equal(p.highlighted,'Liked Songs','Home opens on Liked Songs');
     await click();p=await page();assert.equal(p.title,'Liked Songs','one press opens Liked Songs');assert.equal(p.depth,2,'directly under Home');
     await menu();p=await page();assert.equal(p.title,'turnbit');assert.equal(p.highlighted,'Liked Songs','back lands on Liked Songs');
@@ -21,12 +21,9 @@ app.whenReady().then(async()=>{try{
   // Browsing a list adds Last Song List, above Settings.
   await js(`nav.reset(root());showLibrary('songs');`);await wait(300);await js(`nav.goHome();drawNavigation();`);await wait(100);
   assert.equal((await page()).labels,'Now Playing, Last Song List, Liked Songs, Playlists, Settings','Last Song List sits above Liked Songs');
-  // Last Song List on Home is a setting: off hides it, on brings it back.
-  await js(`savePreferences({homeLastSongList:false});drawNavigation();`);assert.equal((await page()).labels,'Now Playing, Liked Songs, Playlists, Settings','setting off hides Last Song List');
-  await js(`savePreferences({homeLastSongList:true});drawNavigation();`);assert.equal((await page()).labels,'Now Playing, Last Song List, Liked Songs, Playlists, Settings','setting on restores it');
   // Center press from Now Playing returns to the playing list, directly under Home.
   await js(`nav.current.selected=nav.current.rows.findIndex(r=>r.action==='songs');drawNavigation();`);await click();await click();
   assert.equal((await page()).kind,'now','choosing a song opens Now Playing');await js(`nav.musicPath=null;nav.browsingPath=null;`);await click();
   let p=await page();assert.equal(p.title,'Liked Songs','center press returns to the song list');assert.equal(p.depth,2,'with Home directly underneath');
-  console.log('Home: Liked Songs and Playlists one press from Home in turnbit, back lands on them, Last Song List above Liked Songs (and configurable), center press returns under Home.');app.quit();
+  console.log('Home: Liked Songs and Playlists one press from Home in turnbit, back lands on them, Last Song List above Liked Songs, center press returns under Home.');app.quit();
 }catch(error){console.error(error);app.exit(1);}});

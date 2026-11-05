@@ -14,7 +14,7 @@ app.whenReady().then(async()=>{try{
   const page=()=>js(`({title:nav.current.title,kind:nav.current.kind,highlighted:nav.current.rows?.[nav.current.selected]?.label})`);
   const intoPlaylist=async()=>{await js(`nav.reset(root());nav.current.selected=nav.current.rows.findIndex(r=>r.action==='playlists');drawNavigation();`);await click();await js(`nav.current.selected=nav.current.rows.findIndex(r=>r.action==='playlist');drawNavigation();`);await click();assert.equal((await page()).title,'After Hours');};
   for(const style of ['radial']){
-    await js(`savePreferences({interfaceStyle:'${style}',doublePress:'back',hoverBack:true,idleNowPlaying:false,idlePinned:false,songOpensNowPlaying:true,visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:10}});demo=true;`);
+    await js(`savePreferences({interfaceStyle:'${style}',doublePress:'back',hoverBack:true,nowPlayingOpens:'auto',idlePinned:false,visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:10}});demo=true;`);
     await intoPlaylist();await doublePress();assert.equal((await page()).title,'Playlists',`${style}: Back mode goes back one level`);
     // Switch the setting from Settings.
     await js(`nav.reset(root());showSetting(r=>r.action==='double-press');`);
@@ -32,15 +32,15 @@ app.whenReady().then(async()=>{try{
   await js(`savePreferences({interfaceStyle:'radial',doublePress:'home'})`);
   await wait(300);
   await js(`nav.reset(root())`);
-  await js(`showSetting(row=>row.key==='backRow')`);
-  assert.equal((await page()).highlighted,'Back in Lists','Settings opens on the toggle');
-  const before=await js(`preferences.backRow`);
+  await js(`showSetting(row=>row.key==='gamingMode')`);
+  assert.equal((await page()).highlighted,'Gaming Mode','Settings opens on the toggle');
+  const before=await js(`preferences.gamingMode`);
   await press();await wait(60);await press();await wait(450);
   assert.equal((await page()).title,'General','a fast double press on a toggle stays on the page');
-  assert.equal(await js(`preferences.backRow`),before,'both presses landed, so the toggle is back where it started');
+  assert.equal(await js(`preferences.gamingMode`),before,'both presses landed, so the toggle is back where it started');
   await press();await wait(450);
-  assert.equal(await js(`preferences.backRow`),!before,'a later press still toggles');
-  assert.equal(await js(`nav.current.rows.find(row=>row.key==='backRow')?.detail`),before?'Off':'On','the row shows the value it holds');
-  await js(`savePreferences({backRow:${JSON.stringify(before)},doublePress:'back'})`);
+  assert.equal(await js(`preferences.gamingMode`),!before,'a later press still toggles');
+  assert.equal(await js(`nav.current.rows.find(row=>row.key==='gamingMode')?.detail`),before?'Off':'On','the row shows the value it holds');
+  await js(`savePreferences({gamingMode:${JSON.stringify(before)},doublePress:'back'})`);
   console.log('Dial Double-Press: Back goes up one level, Home goes straight Home (from lists and Now Playing), the setting saves, the Menu button is unaffected, and hyper-clicking a toggle keeps toggling instead of jumping Home.');app.quit();
 }catch(error){console.error(error);app.exit(1);}});

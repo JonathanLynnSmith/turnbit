@@ -229,7 +229,7 @@ export function createLibraryController({
     if (current < 0 || current === page.selected) return false;
     page.selected = current;
     if (nav.current !== page) return true;
-    if (preferences.interfaceStyle === 'radial') radial.animateTo(current);
+    radial.animateTo(current);
     drawNavigation();
     return true;
   }
@@ -246,11 +246,7 @@ export function createLibraryController({
     if (!key || key === pending.key) return;
     pendingSkipFollow = null;
     const page = nav.current;
-    if (
-      preferences.interfaceStyle !== 'radial' ||
-      !['songs', 'playlist'].includes(page.libraryKind)
-    )
-      return;
+    if (!['songs', 'playlist'].includes(page.libraryKind)) return;
     const current = page.rows.findIndex(isCurrentSong);
     if (current < 0) return;
     page.selected = current;
@@ -273,9 +269,7 @@ export function createLibraryController({
         ? visibilityState.invisible
         : Date.now() - lastVisualActivity >= wait);
     if (
-      !preferences.idleFollowSong ||
       preferences.idlePinned ||
-      preferences.interfaceStyle !== 'radial' ||
       page.kind !== 'list' ||
       !['songs', 'playlist'].includes(page.libraryKind) ||
       page.loading ||

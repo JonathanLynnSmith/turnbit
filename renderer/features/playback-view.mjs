@@ -109,28 +109,26 @@ export function createPlaybackView({
       const node = $(selector);
       if (node.textContent !== value) node.textContent = value;
     };
-    if (preferences.interfaceStyle === 'radial') {
-      if (nav.current.kind === 'now') {
-        const input = $('#radialSeek');
-        if (document.activeElement !== input) {
-          input.value = position;
-          input.style.setProperty('--fill', (position / length) * 100 + '%');
-        }
-        text('#radialElapsed', time(position));
-      } else if (nav.current.kind === 'list') {
-        for (const [i, node] of radial.nodes) {
-          if (node.classList.contains('has-mini'))
-            radial.renderMini(node, radialMiniPlayer(nav.current.rows[i]));
-        }
+    if (nav.current.kind === 'now') {
+      const input = $('#radialSeek');
+      if (document.activeElement !== input) {
+        input.value = position;
+        input.style.setProperty('--fill', (position / length) * 100 + '%');
       }
-      if (backdropActive()) {
-        const input = $('#radialBackdropSeek');
-        if (document.activeElement !== input) {
-          input.value = position;
-          input.style.setProperty('--fill', (position / length) * 100 + '%');
-        }
-        text('#radialBackdropElapsed', time(position));
+      text('#radialElapsed', time(position));
+    } else if (nav.current.kind === 'list') {
+      for (const [i, node] of radial.nodes) {
+        if (node.classList.contains('has-mini'))
+          radial.renderMini(node, radialMiniPlayer(nav.current.rows[i]));
       }
+    }
+    if (backdropActive()) {
+      const input = $('#radialBackdropSeek');
+      if (document.activeElement !== input) {
+        input.value = position;
+        input.style.setProperty('--fill', (position / length) * 100 + '%');
+      }
+      text('#radialBackdropElapsed', time(position));
     }
   }
   function render() {
@@ -175,7 +173,6 @@ export function createPlaybackView({
       nav.current.rows,
       nav.current.selected,
       nav.current.value,
-      preferences.interfaceStyle,
       preferences.primaryHue,
       preferences.accentHue,
       innerWidth,

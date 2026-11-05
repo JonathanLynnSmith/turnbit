@@ -4,7 +4,7 @@ const {
   loadPreferences,
   persistPreferences,
 } = require('../renderer/settings/preferences');
-const options = { themes: [{ id: 'silver' }, { id: 'spotify' }], demoCount: 3 };
+const options = { demoCount: 3 };
 function storage(entries = {}) {
   const values = new Map(Object.entries(entries));
   return {
@@ -14,11 +14,55 @@ function storage(entries = {}) {
   };
 }
 
-test('fresh installs open in Window Mode with left-aligned text on the curved menu', () => {
+test('fresh installs open in Window Mode with the menu on the left of the curved menu', () => {
   const value = loadPreferences(storage(), options);
   assert.equal(value.windowMode, true);
-  assert.equal(value.radialAlign, 'left');
+  assert.equal(value.radialSide, 'left');
   assert.equal(value.radialCurve, true);
+  assert.equal(value.nowPlayingOpens, 'auto');
+});
+
+test('Now Playing Opens keeps its choice and carries over the old stay-in-the-list combination', () => {
+  const load = (saved) =>
+    loadPreferences(
+      storage({ 'turnbit-preferences': JSON.stringify(saved) }),
+      options,
+    ).nowPlayingOpens;
+  assert.equal(load({ nowPlayingOpens: 'manual' }), 'manual');
+  assert.equal(load({ nowPlayingOpens: 'sometimes' }), 'auto');
+  assert.equal(
+    load({ idleNowPlaying: false, songOpensNowPlaying: false }),
+    'manual',
+  );
+  assert.equal(load({ idleNowPlaying: false }), 'auto');
+  assert.equal(
+    load({
+      nowPlayingOpens: 'auto',
+      idleNowPlaying: false,
+      songOpensNowPlaying: false,
+    }),
+    'auto',
+  );
+});
+
+test('retired settings are dropped on the next save, and the rest are kept', () => {
+  const store = storage({
+    'turnbit-preferences': JSON.stringify({
+      backRow: false,
+      splitDivider: true,
+      radialAlign: 'right',
+      keepCurrentSongPosition: false,
+      clicker: true,
+    }),
+  });
+  const value = loadPreferences(store, options);
+  for (const key of ['backRow', 'splitDivider', 'radialAlign'])
+    assert.equal(Object.hasOwn(value, key), false, key);
+  persistPreferences(store, value, { idleNowPlaying: false });
+  const saved = JSON.parse(store.getItem('turnbit-preferences'));
+  for (const key of ['backRow', 'keepCurrentSongPosition', 'idleNowPlaying'])
+    assert.equal(Object.hasOwn(saved, key), false, key);
+  assert.equal(saved.clicker, true);
 });
 
 test('dial menu background keeps known looks and falls back to Matching', () => {
@@ -58,7 +102,7 @@ test('legacy preferences migrate archived interfaces to radial without losing so
     }),
   });
   const value = loadPreferences(store, options);
-  assert.equal(value.interfaceStyle, 'radial');
+  assert.equal(Object.hasOwn(value, 'interfaceStyle'), false);
   assert.equal(value.autoLaunchSpotify, true);
   assert.equal(value.radialWidthPct, 70);
   assert.deepEqual(value.lastSongList.playlist.demoIndexes, [0, 2]);
@@ -70,7 +114,7 @@ test('legacy preferences migrate archived interfaces to radial without losing so
 test('corrupt storage falls back to independent defaults and failed writes leave current state intact', () => {
   const store = storage({ 'turnbit-preferences': '{bad' });
   const value = loadPreferences(store, options);
-  assert.equal(value.interfaceStyle, 'radial');
+  assert.equal(value.windowMode, true);
   value.visibility.opacity = 1;
   assert.equal(loadPreferences(storage(), options).visibility.opacity, 70);
   store.setItem = () => {
@@ -96,40 +140,34 @@ for (const interfaceStyle of ['ipod', 'zune']) {
       }),
       options,
     );
-    assert.equal(value.interfaceStyle, 'radial');
+    assert.equal(Object.hasOwn(value, 'interfaceStyle'), false);
+    assert.equal(Object.hasOwn(value, 'appearance'), false);
     assert.equal(value.clicker, true);
     assert.equal(value.radialSide, 'right');
-    assert.equal(value.appearance, 'spotify');
     const next = persistPreferences(storage(), value, { interfaceStyle });
-    assert.equal(next.interfaceStyle, 'radial');
+    assert.equal(Object.hasOwn(next, 'interfaceStyle'), false);
   });
 }
 
-test('new defaults are white, Spotify green, three seconds and no divider; saved choices remain', () => {
+test('new defaults are white, Spotify green, and three seconds; saved choices remain', () => {
   const defaults = loadPreferences(storage(), options);
   assert.deepEqual(
-    [
-      defaults.primaryHue,
-      defaults.accentHue,
-      defaults.menuTimeout,
-      defaults.splitDivider,
-    ],
-    [360, 141, 3, false],
+    [defaults.primaryHue, defaults.accentHue, defaults.menuTimeout],
+    [360, 141, 3],
   );
   const saved = loadPreferences(
     storage({
       'turnbit-preferences': JSON.stringify({
         accentHue: 150,
         menuTimeout: 8,
-        splitDivider: true,
         windowMode: false,
       }),
     }),
     options,
   );
   assert.deepEqual(
-    [saved.accentHue, saved.menuTimeout, saved.splitDivider, saved.windowMode],
-    [150, 8, true, false],
+    [saved.accentHue, saved.menuTimeout, saved.windowMode],
+    [150, 8, false],
   );
 });
 
@@ -166,6 +204,12 @@ test('category resets only change their own preferences, and all reset keeps his
   assert.equal(widget.windowMode, true);
   assert.equal(widget.radialBackground, 24);
   assert.equal(Object.hasOwn(widget, 'windowBackground'), false);
+  // App-wide settings reset from General only.
+  for (const key of ['keepOnTop', 'visibility', 'idlePinned', 'gamingMode']) {
+    assert.equal(Object.hasOwn(widget, key), false, key);
+    assert.equal(Object.hasOwn(resetPatch('window'), key), false, key);
+    assert.equal(Object.hasOwn(resetPatch('general'), key), true, key);
+  }
   const all = resetPatch('all');
   assert.equal(all.menuTimeout, 3);
   assert.equal(all.accentHue, 141);

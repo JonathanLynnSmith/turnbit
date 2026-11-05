@@ -110,7 +110,7 @@ async function main() {
   assert.equal(state.item, undefined);
   assert.equal(state.device.volume, 50);
   await run(
-    `savePreferences({playOpensNowPlaying:false,mouseModeKey:'off',idleNowPlaying:false});window.turnbit.playback.command('next')`,
+    `savePreferences({mouseModeKey:'off',nowPlayingOpens:'manual'});window.turnbit.playback.command('next')`,
   );
   await until(
     async () => run(`playback?.item?.name==='Second'`),

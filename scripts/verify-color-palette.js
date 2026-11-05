@@ -51,7 +51,7 @@ async function main() {
     );
   };
   await run(
-    `savePreferences({idleNowPlaying:false,idlePinned:false,hoverBack:false,mouseModeKey:'off',primaryHue:360,accentHue:150,visibility:{mode:'off',opacity:100}});demo=true;playing=false;`,
+    `savePreferences({nowPlayingOpens:'manual',idlePinned:false,hoverBack:false,mouseModeKey:'off',primaryHue:360,accentHue:150,visibility:{mode:'off',opacity:100}});demo=true;playing=false;`,
   );
   await openColor('accentHue');
   assert.equal(await run(`$('#radialColorPalette').children.length`), 14);

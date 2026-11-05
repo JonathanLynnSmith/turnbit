@@ -5,7 +5,6 @@ import '../src/core/value-control.js';
 import './library-cache.js';
 import './center-click.js';
 import '../src/core/transport-hold.js';
-import './themes.js';
 import './artwork.js';
 import './radial.js';
 import './track-transition.js';

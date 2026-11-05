@@ -61,7 +61,7 @@ async function main() {
   ) =>
     `demo=false;acceptPlayback({item:{uri:'spotify:track:AAAAAAAAAAAAAAAAAAAAAA',name:${JSON.stringify(name)},artists:[{name:${JSON.stringify(artist)}}],album:{name:${JSON.stringify(album)},images:${cover ? JSON.stringify([{ url: cover }]) : '[]'}},duration_ms:228000},is_playing:true,progress_ms:62000,device:{name:'Desktop',volume_percent:50}});drawNavigation();`;
   await run(
-    `savePreferences({hoverBack:false,mouseModeKey:'off',idleNowPlaying:false,menuTimeout:600});`,
+    `savePreferences({hoverBack:false,mouseModeKey:'off',nowPlayingOpens:'manual',menuTimeout:600});`,
   );
   win.setSize(1100, 760);
   await run(playback(''));
@@ -224,7 +224,7 @@ async function main() {
   );
   listen();
   await run(
-    `savePreferences({hoverBack:false,mouseModeKey:'off',idleNowPlaying:false,visibility:{mode:'off'}});`,
+    `savePreferences({hoverBack:false,mouseModeKey:'off',nowPlayingOpens:'manual',visibility:{mode:'off'}});`,
   );
   for (const side of ['left', 'right']) {
     await run(`savePreferences({radialSide:'${side}'});`);

@@ -10,7 +10,7 @@ app.whenReady().then(async()=>{try{
   const click=async()=>{await post({type:'command',command:'center-down'});await post({type:'command',command:'center-up'});await post({type:'command',command:'center-click'});await wait(450);};
   const page=()=>js(`({title:nav.current.title,kind:nav.current.kind,first:nav.current.rows[0]?.label,highlighted:nav.current.rows[nav.current.selected]?.label})`);
   for(const style of ['radial']){
-    await js(`savePreferences({interfaceStyle:'${style}',idleNowPlaying:false,idlePinned:false,visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:10}});demo=true;nav.reset(root());drawNavigation();`);await wait(200);
+    await js(`savePreferences({interfaceStyle:'${style}',nowPlayingOpens:'manual',idlePinned:false,visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:10}});demo=true;nav.reset(root());drawNavigation();`);await wait(200);
     let p=await page();assert.notEqual(p.first,'Back',`${style}: Home has no Back row`);
     await js(`showMusic();`);await wait(100);p=await page();
     assert.equal(p.first,'Back',`${style}: Music starts with Back`);assert.equal(p.highlighted,'Playlists',`${style}: entering Music highlights the first item`);

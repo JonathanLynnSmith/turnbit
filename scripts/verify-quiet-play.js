@@ -9,15 +9,15 @@ app.whenReady().then(async()=>{try{
   const post=async event=>{const response=await fetch('http://127.0.0.1:4778/device/event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(event)});assert.equal(response.status,204);await wait(80);};
   // The D100H sends "touch" on key down, then the action.
   const play=async()=>{await post({type:'command',command:'touch'});await post({type:'command',command:'toggle'});};
-  const setup=async(dialOnlyWake,playOpensNowPlaying,page='list')=>{await js(`savePreferences({dialOnlyWake:${dialOnlyWake},playOpensNowPlaying:${playOpensNowPlaying},mousePassthrough:false,idleNowPlaying:false,idlePinned:false,interfaceStyle:'radial',visibility:{mode:'idle',opacity:100,idleOpacity:0,timeout:1}});demo=true;playing=true;nav.reset(root());${page==='now'?'showNow();':''}drawNavigation();lastMouseActivity=Date.now()+60000;noteActivity();`);await wait(150);};
+  const setup=async(dialOnlyWake,playOpensNowPlaying,page='list')=>{await js(`savePreferences({dialOnlyWake:${dialOnlyWake},nowPlayingOpens:'${playOpensNowPlaying?'auto':'manual'}',mousePassthrough:false,idlePinned:false,interfaceStyle:'radial',visibility:{mode:'idle',opacity:100,idleOpacity:0,timeout:1}});demo=true;playing=true;nav.reset(root());${page==='now'?'showNow();':''}drawNavigation();lastMouseActivity=Date.now()+60000;noteActivity();`);await wait(150);};
   const state=()=>js(`({playing,kind:nav.current.kind,invisible:visibilityState.invisible})`);
 
   await setup(true,true);await play();
-  assert.deepEqual(await state(),{playing:true,kind:'now',invisible:false},'Visible + Play Opens Now Playing: opens Now Playing without pausing');
+  assert.deepEqual(await state(),{playing:true,kind:'now',invisible:false},'Visible + Now Playing Opens Automatically: opens Now Playing without pausing');
   await play();assert.equal((await state()).playing,false,'On Now Playing: Play pauses');
 
   await setup(true,false);await play();
-  assert.deepEqual(await state(),{playing:false,kind:'list',invisible:false},'Visible + Play Opens Now Playing off: pauses and stays on the screen');
+  assert.deepEqual(await state(),{playing:false,kind:'list',invisible:false},'Visible + Now Playing Opens Only When Asked: pauses and stays on the screen');
 
   await setup(true,true);await wait(1100);const fading=window.getOpacity();assert.ok(fading<1,'fading');
   await play();assert.deepEqual(await state(),{playing:false,kind:'list',invisible:false},'Fading + Dial Only Wake: pauses quietly, no navigation');assert.ok(window.getOpacity()<=fading,'stays faded');
@@ -30,5 +30,5 @@ app.whenReady().then(async()=>{try{
 
   await setup(false,false);await play();
   assert.deepEqual(await state(),{playing:false,kind:'list',invisible:false},'Both off: pauses and stays on the screen');
-  console.log('Play follows Play Opens Now Playing while visible, plays quietly while asleep with Dial Only Wake, and the dial wakes.');app.quit();
+  console.log('Play follows Now Playing Opens while visible, plays quietly while asleep with Dial Only Wake, and the dial wakes.');app.quit();
 }catch(error){console.error(error);app.exit(1);}});

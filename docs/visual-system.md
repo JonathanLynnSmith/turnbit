@@ -76,7 +76,7 @@ Effects have specific jobs:
 - The smoky gradient protects labels over the desktop and feathers the edge of
   the menu. Window and Widget retain independent user-controlled opacity/colors.
 - A progress gradient shows completed versus remaining playback.
-- Glass is an explicit Dial Menu Background preference, not a general surface
+- Glass is an explicit Menu Background style, not a general surface
   style. Reduced Transparency replaces it with a solid surface. Cover Color uses
   a flat sampled tint. Play, notices, and the fallback sleeve remain solid.
 

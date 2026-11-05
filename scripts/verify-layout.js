@@ -12,7 +12,7 @@ app.whenReady().then(async()=>{try{
   const turn=async(delta,times)=>{for(let i=0;i<times;i++){await send({type:'dial',delta});await wait(40);}await wait(400);};
   const page=()=>js(`({title:nav.current.title,highlighted:nav.current.rows?.[nav.current.selected]?.label,detail:nav.current.rows?.[nav.current.selected]?.detail,labels:nav.current.rows?.filter(r=>r.action!=='nav-back').map(r=>r.label).join(', ')})`);
   const area=()=>screen.getDisplayMatching(window.getBounds()).bounds,b=()=>window.getBounds();
-  await js(`savePreferences({interfaceStyle:'radial',radialSide:'left',radialWidthPct:35,radialHeight:100,radialVertical:'center',radialDisplay:null,idleNowPlaying:false,visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:10}});demo=true;nav.reset(root());drawNavigation();`);await wait(700);
+  await js(`savePreferences({interfaceStyle:'radial',radialSide:'left',radialWidthPct:35,radialHeight:100,radialVertical:'center',radialDisplay:null,nowPlayingOpens:'manual',visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:10}});demo=true;nav.reset(root());drawNavigation();`);await wait(700);
   let a=area(),w=b();assert.equal(w.height,a.height,'default: full screen height');const near=(actual,want,msg)=>assert.ok(Math.abs(actual-want)<=2,`${msg} (${actual} vs ${want})`);const pct=n=>Math.min(a.width,Math.max(400,Math.round(a.width*n/100)));near(w.width,pct(35),'default width: 35% of the screen');assert.equal(w.x,a.x,'docked left');
   await js(`showSetting(r=>r.action==='radial-layout');`);await click();
   let p=await page();assert.equal(p.title,'Size & Position');assert.equal(p.labels,'Display, Width, Height, Vertical Position');
