@@ -145,15 +145,11 @@ export function createRadialView({
 
     if (row.action !== 'song') return row.detail;
     const artist =
-      row.item?.artists
-        ?.map((artist) => artist.name)
-        .filter(Boolean)
-        .join(', ') ||
-      row.item?.artist ||
-      row.item?.publisher ||
+      row.track?.artists?.filter(Boolean).join(', ') ||
+      row.track?.publisher ||
       'Unknown artist';
     const active =
-      isCurrentSong(row) && (demo ? playing || progress > 0 : playback?.item);
+      isCurrentSong(row) && (demo ? playing || progress > 0 : playback?.track);
     const status = active ? '' : row.detail;
     return [artist, status].filter(Boolean).join(' · ');
   }
@@ -162,23 +158,19 @@ export function createRadialView({
 
     if (
       !isCurrentSong(row) ||
-      !(demo ? playing || progress > 0 : playback?.item)
+      !(demo ? playing || progress > 0 : playback?.track)
     )
       return null;
     return {
       title: row.label,
       artist:
-        row.item?.artists
-          ?.map((artist) => artist.name)
-          .filter(Boolean)
-          .join(', ') ||
-        row.item?.artist ||
-        playback?.item?.publisher ||
+        row.track?.artists?.filter(Boolean).join(', ') ||
+        playback?.track?.publisher ||
         'Unknown artist',
       art:
         !demo &&
-        (playback?.item?.album?.images?.[0]?.url ||
-          row.item?.album?.images?.[0]?.url),
+        (playback?.track?.album?.artwork?.[0]?.url ||
+          row.track?.album?.artwork?.[0]?.url),
       playing,
       ratio: duration() ? currentProgress() / duration() : 0,
       elapsed: time(currentProgress()),
@@ -364,8 +356,8 @@ export function createRadialView({
     const key = [
       demo,
       index,
-      playback?.item?.uri,
-      demo ? playing || progress > 0 : !!playback?.item,
+      playback?.track?.id,
+      demo ? playing || progress > 0 : !!playback?.track,
     ].join(':');
     if (miniIndexCache.rows !== page.rows || miniIndexCache.key !== key)
       miniIndexCache = {
@@ -594,15 +586,14 @@ export function createRadialView({
           : key === 'shuffle'
             ? 'Shuffle ' + (active ? 'on' : 'off')
             : 'Repeat ' +
-              ({ off: 'off', context: 'all', track: 'one song' }[
-                modes.repeat
-              ] || 'off');
+              ({ off: 'off', all: 'all', one: 'one song' }[modes.repeat] ||
+                'off');
       button.setAttribute('aria-label', label);
       button.title = label;
       if (key === 'like') {
+        // The provider says whether the current item can be saved (not a local file or an episode).
         button.disabled =
-          !demo &&
-          !/^spotify:track:[A-Za-z0-9]{22}$/.test(playback?.item?.uri || '');
+          !demo && !(playback?.track && playback.capabilities?.like !== false);
         button.setAttribute(
           'aria-busy',
           String(likeRequests > 0 || (!demo && !!playback?.likedPending)),
@@ -616,9 +607,9 @@ export function createRadialView({
       nav.current.kind === 'list' && (!backdropActive() || dialOverlay.visible)
         ? nav.current.rows[nav.current.selected]
         : null;
-    const selectedUri = selected?.item?.uri || selected?.playlist?.uri;
+    const selectedUri = selected?.track?.id || selected?.playlist?.uri;
     const match = /^spotify:(track|episode|playlist):([A-Za-z0-9]{22})$/.exec(
-      selectedUri || playback?.item?.uri || '',
+      selectedUri || playback?.track?.id || '',
     );
     const href = match
       ? `https://open.spotify.com/${match[1]}/${match[2]}`
@@ -749,7 +740,7 @@ export function createRadialView({
 
     updateBackdropControls();
     $('.radial-backdrop-state .eq').dataset.playing = String(playing);
-    const empty = !demo && !playback?.item;
+    const empty = !demo && !playback?.track;
     document.body.dataset.playerEmpty = String(empty);
     $('#radialBackdropState').textContent = demo
       ? 'DEMO · NO AUDIO'
@@ -873,7 +864,7 @@ export function createRadialView({
       else
         trackTransition.update(
           [
-            demo ? 'demo:' + index : playback?.item?.uri,
+            demo ? 'demo:' + index : playback?.track?.id,
             getState().track.title,
             getState().track.artist,
             getState().track.album,

@@ -1,6 +1,6 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
-const {VolumeControl}=require('../renderer/volume');
+const {VolumeControl}=require('../src/core/value-control');
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 
 test('live seek sends during a sustained hold, coalesces slow writes, and finishes at the latest position',async t=>{

@@ -6,10 +6,6 @@ const {
   createSpotifyPlaybackProvider,
 } = require("../src/integrations/spotify/playback-provider");
 const { createPlaybackService } = require("../src/app/playback-service");
-const {
-  createPlaybackClient,
-  legacyPlayback,
-} = require("../renderer/client/playback-client");
 const raw = () => ({
   item: {
     uri: `spotify:track:${"a".repeat(22)}`,
@@ -58,14 +54,6 @@ test("Spotify payloads normalize into a provider-independent model with capabili
   data.item.is_local = true;
   assert.equal(normalizePlayback(data).capabilities.like, false);
   assert.equal(normalizePlayback(null), null);
-  const oldView = legacyPlayback({ ...state, playing: false });
-  assert.deepEqual(oldView.item, {
-    ...data.item,
-    is_local: false,
-    type: "track",
-  });
-  assert.equal(oldView.repeat_state, "context");
-  assert.equal(oldView.device.volume_percent, 45);
 });
 
 test("Spotify provider connects actual client state and normalized commands to the service", async (t) => {
@@ -136,47 +124,6 @@ test("provider preserves remote position timestamps for later like notifications
   assert.equal(events[0].state.observedAt, 1000);
   listener({ ...raw(), localSession: true });
   assert.equal(events[1].state.observedAt, 5000);
-});
-
-test("existing views translate selected track metadata and service events through one adapter", async () => {
-  let selected,
-    listener,
-    unsubscribed = false;
-  const api = createPlaybackClient({
-    playback: {
-      command: async (name, value) => {
-        selected = { name, value };
-      },
-      onEvent(fn) {
-        listener = fn;
-        return () => {
-          unsubscribed = true;
-        };
-      },
-    },
-  });
-  const data = raw();
-  await api.command("play-item", { uri: data.item.uri, item: data.item });
-  assert.equal(selected.value.trackId, data.item.uri);
-  assert.equal(selected.value.track.title, "Song");
-  assert.equal(selected.value.item, undefined);
-  const events = [];
-  const off = api.onState((event) => events.push(event));
-  listener({
-    type: "state",
-    state: { ...normalizePlayback(data), playing: false },
-  });
-  listener({ type: "notice", message: "Connecting" });
-  listener({ type: "device-recovered", device: { id: "new" } });
-  listener({ type: "error", message: "offline" });
-  assert.equal(events[0].item.name, "Song");
-  assert.deepEqual(events.slice(1), [
-    { recoveryMessage: "Connecting" },
-    { recoveredDevice: { id: "new" } },
-    { error: "offline" },
-  ]);
-  off();
-  assert.equal(unsubscribed, true);
 });
 
 test("service playback delegates device recovery and carries recovery notices without replacing state", async (t) => {

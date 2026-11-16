@@ -19,6 +19,7 @@ const {
 } = require('./integrations/spotify/recovery-settings');
 const { createDesktopWindow } = require('./desktop/window');
 const { registerDesktopIpc } = require('./desktop/ipc');
+const { keepExistingProfile } = require('./desktop/profile');
 const { createSettingsStorage } = require('./desktop/settings-storage');
 const { createSessionStorage } = require('./desktop/session-storage');
 const { createBridge } = require('./bridge');
@@ -30,6 +31,8 @@ const { MouseMode } = require('./mouse-mode');
 
 const APP_ID = 'com.turnbit.app';
 if (process.platform === 'win32') app.setAppUserModelId(APP_ID);
+// Before the single-instance lock, which is kept in the profile folder.
+keepExistingProfile(app);
 let desktop,
   spotify,
   playback,

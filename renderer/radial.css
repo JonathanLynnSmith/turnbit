@@ -206,7 +206,7 @@ body[data-interface=radial][data-edge=right] #actionNotice{left:auto;right:72px;
 .playback-indicators [data-mode=like] .spotify-like-on,.playback-indicators [data-mode=like][data-active=true] .spotify-like-off{display:none}
 .playback-indicators [data-mode=like][data-active=true] .spotify-like-on{display:block}
 .repeat-one{display:none;fill:currentColor;stroke:none;font:600 10px var(--tb-font-ui)}
-[data-repeat=track] .repeat-one{display:block}
+[data-repeat=one] .repeat-one{display:block}
 body[data-edge=right] #radialNow .playback-indicators,body[data-edge=right] .radial-now-snapshot .playback-indicators{justify-content:flex-end}
 
 .playback-indicators [data-pending=true]{animation:like-pending .7s ease-in-out infinite alternate}
@@ -370,12 +370,12 @@ body[data-backdrop-active=true]:not([data-backdrop-split=true]) #radial{width:mi
    so the idle timeout collapses it and the player expands over its half. Narrow windows stay on the
    overlay (SPLIT_MIN_WIDTH). The menu keeps this geometry while hidden, so it slides out of its own half.
    It takes a third of the window at any size, so a large or full-screen window doesn't leave it a slim strip. */
-/* While the menu is up, the space beside it splits into three equal gaps: menu text, divider, player,
-   window edge. The menu's highlighted row stops 30px inside its own edge (radial.js). --player-width is the
+/* While the menu is up, the space beside it is laid out around a seam (--split-line, not drawn): the
+   gaps from menu text to seam, seam to player, and player to window edge are equal. The menu's highlighted row stops 30px inside its own edge (radial.js). --player-width is the
    widest the open player can be (artwork, gap and a full 560px text column, the sizes .radial-backdrop-info
    and .radial-backdrop-cover use), capped to fit; --player-live is its actual width for the current song,
-   measured by radial-view.mjs. Either is drawn at --player-scale. So the divider can be placed in CSS:
-   midway between the menu and the player, with the player centred in the space beyond the line. */
+   measured by radial-view.mjs. Either is drawn at --player-scale. So the seam can be placed in CSS:
+   midway between the menu and the player, with the player centred in the space beyond it. */
 body[data-backdrop-active=true][data-backdrop-split=true]{--split-menu:max(230px,33.333%);--split-gap:clamp(48px,4vw,88px);--player-scale:.82;--split-edge:calc(var(--split-menu) - 30px);--player-width:min(calc(min(28vw,390px,100vh - 340px) + clamp(32px,3.5vw,72px) + 560px),calc((100% - var(--split-menu)) / var(--player-scale) - 2 * var(--split-gap)));--split-line:calc((2 * var(--split-edge) + 100% - var(--player-scale) * min(var(--player-live,var(--player-width)),var(--player-width))) / 3);--split-start:calc(var(--split-line) + var(--split-gap))}
 body[data-backdrop-active=true][data-backdrop-split=true] #radial{position:fixed;top:0;bottom:0;left:0;width:var(--split-menu);height:auto;margin:0}
 body[data-backdrop-active=true][data-backdrop-split=true][data-edge=right] #radial{left:auto;right:0}
@@ -384,10 +384,6 @@ body[data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true
 /* The player steps back while the menu is up: it shrinks about its own centre as it slides over, so the
    change reads clearly even when it only moves a short way. The stacked layout is already compact. */
 body[data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true]:not([data-player-column=narrow]) .radial-backdrop-info{scale:var(--player-scale)}
-/* A hairline marks the seam, and fades with the menu that makes it. It glides when a new song's width moves it. */
-body[data-backdrop-active=true][data-backdrop-split=true] #radialBackdrop::after{content:'';position:absolute;top:9%;bottom:9%;left:var(--split-line);width:1px;background:linear-gradient(to bottom,#ffffff00,#ffffff1f 22%,#ffffff1f 78%,#ffffff00);z-index:1;pointer-events:none;opacity:0;transition:opacity .22s ease,left .3s var(--tb-ease),right .3s var(--tb-ease)}
-body[data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true][data-menu-background=match] #radialBackdrop::after{opacity:1;transition:opacity var(--tb-duration-view) ease .10s,left .3s var(--tb-ease),right .3s var(--tb-ease)}
-body[data-backdrop-active=true][data-backdrop-split=true][data-edge=right] #radialBackdrop::after{left:auto;right:var(--split-line)}
 /* The playing row's artwork floats outside its label. In Split View that room only exists on the
    menu's own side of the seam, so a right-docked menu keeps it inboard. */
 body[data-backdrop-active=true][data-backdrop-split=true][data-edge=right] .radial-mini .mini-cover{left:auto;right:-72px}
@@ -447,15 +443,13 @@ body[data-player-column=narrow] .radial-backdrop-actions{justify-content:center;
   body[data-backdrop-active=true][data-dial-overlay=true] #radial,
   .radial-backdrop-info,
   body[data-backdrop-active=true]:not([data-backdrop-split=true])[data-dial-overlay=true] .radial-backdrop-info,
-  body[data-backdrop-active=true][data-backdrop-split=true] #radialBackdrop::after,
-  body[data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true] #radialBackdrop::after,
   #radialBackdropArt,.radial-backdrop-transport button,.radial-backdrop-actions button{transition:none;transform:none}
 }
 
 /* Dial Menu Background: Matching shares the player's backdrop and smoke, as above. The other looks
    give the menu its own panel on its docked side, inside the backdrop so it can reach exactly to
    Split View's seam (--split-line) and come and go with the menu. Its edge marks the seam, so the
-   hairline divider and the menu's smoke step aside. */
+   menu's smoke steps aside. */
 /* Overlay: as wide as the menu plus the playing row's artwork, which hangs outside its label. */
 #radialMenuPanel{display:none}
 body[data-backdrop-active=true]:not([data-menu-background=match]) #radialMenuPanel{display:block;position:absolute;top:0;bottom:0;left:0;width:min(100%,calc(50% + 250px));z-index:1;pointer-events:none;opacity:0;transform:translateX(-14px);transition:opacity var(--tb-duration-state) ease,transform .22s ease,width .3s var(--tb-ease)}
@@ -463,7 +457,6 @@ body[data-backdrop-active=true][data-backdrop-split=true] #radialMenuPanel{width
 body[data-backdrop-active=true][data-edge=right] #radialMenuPanel{left:auto;right:0;transform:translateX(14px)}
 body[data-backdrop-active=true][data-dial-overlay=true] #radialMenuPanel{opacity:1;transform:none;transition:opacity var(--tb-duration-view) ease .06s,transform .32s var(--tb-ease) .06s,width .3s var(--tb-ease)}
 body[data-backdrop-active=true]:not([data-menu-background=match]) #radialHaze{visibility:hidden}
-body[data-backdrop-active=true][data-backdrop-split=true]:not([data-menu-background=match]) #radialBackdrop::after{display:none}
 /* Black: a solid panel that casts a shadow across the player. */
 body[data-menu-background=black] #radialMenuPanel{background:#050607;box-shadow:24px 0 70px #000d,1px 0 0 #ffffff0f}
 body[data-menu-background=black][data-edge=right] #radialMenuPanel{box-shadow:-24px 0 70px #000d,-1px 0 0 #ffffff0f}

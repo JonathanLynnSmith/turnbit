@@ -1,3 +1,4 @@
+require('./harness-env');
 const {app,BrowserWindow}=require('electron');
 const path=require('node:path'),assert=require('node:assert/strict');
 app.disableHardwareAcceleration();app.setPath('userData',path.join(app.getPath('temp'),'turnbit-back-row-test'));
@@ -12,7 +13,7 @@ app.whenReady().then(async()=>{try{
   for(const style of ['radial']){
     await js(`savePreferences({interfaceStyle:'${style}',nowPlayingOpens:'manual',idlePinned:false,visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:10}});demo=true;nav.reset(root());drawNavigation();`);await wait(200);
     let p=await page();assert.notEqual(p.first,'Back',`${style}: Home has no Back row`);
-    await js(`showMusic();`);await wait(100);p=await page();
+    await js(`push({title:'Music',rows:[{label:'Playlists',action:'playlists',icon:'playlists',branch:true},{label:'Liked Songs',action:'songs',icon:'liked-songs',branch:true}]});`);await wait(100);p=await page();
     assert.equal(p.first,'Back',`${style}: Music starts with Back`);assert.equal(p.highlighted,'Playlists',`${style}: entering Music highlights the first item`);
     await js(`nav.current.selected=nav.current.rows.findIndex(row=>row.action==='songs');drawNavigation();`);await click();await wait(400);p=await page();
     assert.equal(p.first,'Back');assert.equal(p.highlighted,'Night Drive',`${style}: Liked Songs (loaded after opening) highlights the first song, not Back`);

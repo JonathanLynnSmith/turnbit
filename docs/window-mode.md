@@ -48,9 +48,8 @@ chosen from a list there is nothing to return to, and the menu keeps its page.
   back to the centre of the whole window.
 
 In Split View the space beside the menu is spaced evenly: the gap from the menu's highlighted row to
-the divider, from the divider to the player, and from the player to the window's edge are all the
-same, so the divider always sits midway between the menu and the player. With the Matching
-background a hairline marks it; a background panel's own edge marks it otherwise. The player's artwork and song info move as one unit and stay centred over the
+the seam, from the seam to the player, and from the player to the window's edge are all the
+same. No line is drawn at the seam; a background panel's own edge is the only thing that marks it. The player's artwork and song info move as one unit and stay centred over the
 playback controls whatever the title's length.
 
 The player fits any window size. Cover, song info, and controls stay together as one group centred in
@@ -67,8 +66,7 @@ When the player's own column is narrower than 640 px it stacks the artwork above
 background, so both views read as one surface. The others give the menu its own panel on its side
 that comes and goes with it: **Black** is solid and casts a shadow across the player, **Glass** is a
 lighter frosted pane, and **Cover Color** tints the panel with a colour sampled from the playing
-song's cover. In Split View the panel's edge is the seam, so the hairline divider only shows with
-Matching. The same page holds the window menu's **Smoky Background** and **Background Color**.
+song's cover. In Split View the panel's edge is the seam. The same page holds the window menu's **Smoky Background** and **Background Color**.
 
 ## Look and feel
 

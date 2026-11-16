@@ -1,3 +1,4 @@
+require('./harness-env');
 // Runs the real desktop composition with a fake Spotify network boundary.
 // No credentials, Spotify process, or external API calls are used.
 const { app, BrowserWindow } = require("electron");
@@ -102,7 +103,7 @@ async function main() {
   let run = (code) => win.webContents.executeJavaScript(code);
   await until(
     async () =>
-      run(`typeof api!=='undefined'&&!demo&&playback?.item?.name==='First'`),
+      run(`typeof api!=='undefined'&&!demo&&playback?.track?.title==='First'`),
     "normalized state reaches existing view",
   );
   const state = await run("window.turnbit.playback.getState()");
@@ -113,7 +114,7 @@ async function main() {
     `savePreferences({mouseModeKey:'off',nowPlayingOpens:'manual'});window.turnbit.playback.command('next')`,
   );
   await until(
-    async () => run(`playback?.item?.name==='Second'`),
+    async () => run(`playback?.track?.title==='Second'`),
     "direct service command refreshes UI",
   );
   const response = await fetch("http://127.0.0.1:4817/device/event", {
@@ -123,7 +124,7 @@ async function main() {
   });
   assert.equal(response.status, 204);
   await until(
-    async () => run(`playback?.item?.name==='First'`),
+    async () => run(`playback?.track?.title==='First'`),
     "hardware uses the same service",
   );
   await run(`window.turnbit.playback.command('volume',72)`);
@@ -146,7 +147,7 @@ async function main() {
   );
   await until(
     async () =>
-      run(`typeof api!=='undefined'&&!demo&&playback?.item?.name==='First'`),
+      run(`typeof api!=='undefined'&&!demo&&playback?.track?.title==='First'`),
     "reload reconnects to existing service",
   );
   assert.equal(
@@ -167,7 +168,7 @@ async function main() {
   await until(()=>index===1,'hardware playback while the renderer is gone');
   const loaded=new Promise(resolve=>win.webContents.once('did-finish-load',resolve));
   win.webContents.reload();await loaded;
-  await until(async()=>run("typeof api!=='undefined'&&!demo&&playback?.item?.name==='Second'"),'renderer recovers current backend state');
+  await until(async()=>run("typeof api!=='undefined'&&!demo&&playback?.track?.title==='Second'"),'renderer recovers current backend state');
   assert.equal((await run('window.turnbit.settings.get()')).autoLaunchSpotify,false);
   assert.deepEqual(errors, []);
   console.log(

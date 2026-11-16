@@ -1,3 +1,4 @@
+require('./harness-env');
 // Fresh-profile checks for defaults, resets, per-mode smoke, and browsing context.
 const { app, BrowserWindow } = require('electron');
 const assert = require('node:assert/strict');

@@ -1,3 +1,4 @@
+require('./harness-env');
 const { app, BrowserWindow } = require('electron');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -29,7 +30,7 @@ async function main() {
     let layouts=0,activities=0;const layoutValues=[];const setInterface=api.setInterface,activity=api.activity;
     api.setInterface=(...args)=>{layouts++;layoutValues.push(args[2]?.width);return setInterface(...args);};
     api.activity=(...args)=>{activities++;return activity(...args);};
-    const rows=Array.from({length:1000},(_,i)=>({label:'A long title for song '+i,action:'song',demoIndex:i%3,item:{name:'Song '+i,artist:'Test artist',duration:180000},detail:'3:00'}));
+    const rows=Array.from({length:1000},(_,i)=>({label:'A long title for song '+i,action:'song',demoIndex:i%3,track:{title:'Song '+i,artists:['Test artist'],durationMs:180000},detail:'3:00'}));
     push({title:'Performance list',rows});
     const samples=[];layouts=0;activities=0;
     for(let i=0;i<40;i++){

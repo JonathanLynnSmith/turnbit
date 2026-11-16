@@ -1,6 +1,6 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
-const {TransportHold}=require('../renderer/transport-hold');
+const {TransportHold}=require('../src/core/transport-hold');
 test('tap skips once; a hold repeatedly scrubs and never skips on release',t=>{
   t.mock.timers.enable({apis:['setTimeout','setInterval']});
   const skipped=[],scrubbed=[],hold=new TransportHold(d=>skipped.push(d),d=>scrubbed.push(d));

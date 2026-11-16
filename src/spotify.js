@@ -393,133 +393,158 @@ class SpotifyClient {
       return this.api(`/playlists/${id}/items?${paging}`);
     throw new Error('Invalid library request.');
   }
+  // One handler per command. Like, shuffle and repeat read state first; a chosen
+  // item and a chosen device have their own requests; everything else is transport.
   async command(command, value) {
-    if (['like', 'shuffle', 'repeat'].includes(command)) {
-      const state =
-        command === 'like' &&
-        this.playbackState &&
-        Date.now() - this.playbackRead < 6000 &&
-        !this.switching()
-          ? this.playbackState
-          : await this.getPlaybackState({ force: true });
-      if (!state) throw new Error('Open Spotify and start a song first.');
-      if (command === 'like' && this.switching(state))
-        throw new Error(
-          'Spotify is still switching songs. Try again in a moment.',
-        );
-      if (command === 'like') {
-        const item = state.item;
-        if (
-          item?.is_local ||
-          !/^spotify:track:[a-zA-Z0-9]{22}$/.test(item?.uri || '')
-        )
-          throw new Error(
-            'The current item is not a Spotify song that can be liked.',
-          );
-        if (typeof state.liked !== 'boolean')
-          throw new Error(
-            'Could not check whether this song is liked. Try again.',
-          );
-        const liked = !state.liked;
-        // The write is queued by the main process. Preserve its acknowledged
-        // result across delayed polls and Spotify's briefly stale library reads.
-        try {
-          await this.api(
-            `/me/library?${new URLSearchParams({ uris: item.uri })}`,
-            { method: liked ? 'PUT' : 'DELETE' },
-          );
-        } catch (error) {
-          if (error.status === 403)
-            throw new Error(
-              'Reconnect Spotify in Settings to grant permission to save Liked Songs.',
-            );
-          throw error;
-        }
-        const entry = { liked, confirmed: false, until: Date.now() + 60000 };
-        this.likeStates.set(item.uri, entry);
-        this.publishLike(item.uri, entry);
-        entry.verification = this.verifyLike(item.uri, entry);
-        return {
-          message: liked
-            ? 'Adding to Liked Songs…'
-            : 'Removing from Liked Songs…',
-        };
-      }
-      const next =
-        command === 'shuffle'
-          ? !state.shuffle_state
-          : { off: 'context', context: 'track', track: 'off' }[
-              state.repeat_state
-            ] || 'context';
-      const params = new URLSearchParams({ state: String(next) });
-      if (state.device?.id) params.set('device_id', state.device.id);
-      await this.api(`/me/player/${command}?${params}`, { method: 'PUT' });
-      this.emit({
-        ...state,
-        [command === 'shuffle' ? 'shuffle_state' : 'repeat_state']: next,
+    if (command === 'like') return this.toggleLike();
+    if (command === 'shuffle' || command === 'repeat')
+      return this.toggleMode(command);
+    if (command === 'play-item') return this.playItem(value);
+    if (command === 'device') return this.chooseDevice(value);
+    return this.transport(command, value);
+  }
+  async toggleLike() {
+    const state =
+      this.playbackState &&
+      Date.now() - this.playbackRead < 6000 &&
+      !this.switching()
+        ? this.playbackState
+        : await this.getPlaybackState({ force: true });
+    if (!state) throw new Error('Open Spotify and start a song first.');
+    if (this.switching(state))
+      throw new Error(
+        'Spotify is still switching songs. Try again in a moment.',
+      );
+    const item = state.item;
+    if (
+      item?.is_local ||
+      !/^spotify:track:[a-zA-Z0-9]{22}$/.test(item?.uri || '')
+    )
+      throw new Error(
+        'The current item is not a Spotify song that can be liked.',
+      );
+    if (typeof state.liked !== 'boolean')
+      throw new Error('Could not check whether this song is liked. Try again.');
+    const liked = !state.liked;
+    // The write is queued by the main process. Preserve its acknowledged
+    // result across delayed polls and Spotify's briefly stale library reads.
+    try {
+      await this.api(`/me/library?${new URLSearchParams({ uris: item.uri })}`, {
+        method: liked ? 'PUT' : 'DELETE',
       });
-      return {
-        message:
-          command === 'shuffle'
-            ? `Shuffle ${next ? 'on' : 'off'}`
-            : `Repeat: ${{ off: 'off', context: 'all', track: 'one song' }[next]}`,
-      };
+    } catch (error) {
+      if (error.status === 403)
+        throw new Error(
+          'Reconnect Spotify in Settings to grant permission to save Liked Songs.',
+        );
+      throw error;
     }
-    if (command === 'play-item') {
-      const valid = (uri) =>
-        typeof uri === 'string' &&
-        /^spotify:(track|episode):[a-zA-Z0-9]{22}$/.test(uri);
-      let body;
-      if (
-        value?.contextUri &&
-        /^spotify:playlist:[a-zA-Z0-9]{22}$/.test(value.contextUri)
-      ) {
-        body = { context_uri: value.contextUri };
-        if (value.position !== undefined) {
-          if (!Number.isInteger(value.position) || value.position < 0)
-            throw new Error('Invalid playlist position.');
-          body.offset = { position: value.position };
-        }
-      } else if (valid(value?.uri)) body = { uris: [value.uri] };
-      else throw new Error('This item cannot be played through Spotify.');
-      const pending = valid(value?.item?.uri)
-        ? { item: value.item, until: Date.now() + 8000 }
-        : null;
-      if (pending) {
-        this.pendingPlay = pending;
+    const entry = { liked, confirmed: false, until: Date.now() + 60000 };
+    this.likeStates.set(item.uri, entry);
+    this.publishLike(item.uri, entry);
+    entry.verification = this.verifyLike(item.uri, entry);
+    return {
+      message: liked ? 'Adding to Liked Songs…' : 'Removing from Liked Songs…',
+    };
+  }
+  // Shuffle flips; repeat steps off, all, one song.
+  async toggleMode(command) {
+    const state = await this.getPlaybackState({ force: true });
+    if (!state) throw new Error('Open Spotify and start a song first.');
+    const next =
+      command === 'shuffle'
+        ? !state.shuffle_state
+        : { off: 'context', context: 'track', track: 'off' }[
+            state.repeat_state
+          ] || 'context';
+    const params = new URLSearchParams({ state: String(next) });
+    if (state.device?.id) params.set('device_id', state.device.id);
+    await this.api(`/me/player/${command}?${params}`, { method: 'PUT' });
+    this.emit({
+      ...state,
+      [command === 'shuffle' ? 'shuffle_state' : 'repeat_state']: next,
+    });
+    return {
+      message:
+        command === 'shuffle'
+          ? `Shuffle ${next ? 'on' : 'off'}`
+          : `Repeat: ${{ off: 'off', context: 'all', track: 'one song' }[next]}`,
+    };
+  }
+  // Start a chosen song, or a playlist (optionally at a position). A known song
+  // is shown at once and reverted if Spotify rejects the request.
+  async playItem(value) {
+    const valid = (uri) =>
+      typeof uri === 'string' &&
+      /^spotify:(track|episode):[a-zA-Z0-9]{22}$/.test(uri);
+    let body;
+    if (
+      value?.contextUri &&
+      /^spotify:playlist:[a-zA-Z0-9]{22}$/.test(value.contextUri)
+    ) {
+      body = { context_uri: value.contextUri };
+      if (value.position !== undefined) {
+        if (!Number.isInteger(value.position) || value.position < 0)
+          throw new Error('Invalid playlist position.');
+        body.offset = { position: value.position };
+      }
+    } else if (valid(value?.uri)) body = { uris: [value.uri] };
+    else throw new Error('This item cannot be played through Spotify.');
+    const pending = valid(value?.item?.uri)
+      ? { item: value.item, until: Date.now() + 8000 }
+      : null;
+    if (pending) {
+      this.pendingPlay = pending;
+      this.emit(this.playbackState);
+    }
+    try {
+      await this.startPlayback(body);
+    } catch (error) {
+      if (this.pendingPlay === pending && pending) {
+        this.pendingPlay = null;
         this.emit(this.playbackState);
       }
+      throw error;
+    }
+    if (pending) this.scheduleRefresh(1500);
+  }
+  async chooseDevice(value) {
+    // The renderer sends the whole device it listed, so picking one costs no extra read.
+    const picked =
+      typeof value === 'string'
+        ? { id: value, name: '', type: '' }
+        : cleanDevice(value);
+    const id = picked?.id;
+    if (typeof id !== 'string' || !id || id.length > 256)
+      throw new Error('Select a playback device.');
+    await this.api('/me/player', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ device_ids: [id], play: false }),
+    });
+    this.deviceId = id;
+    this.rememberDevice(picked);
+  }
+  // Transport goes to the Spotify desktop app's own controls when it is the active player; the Web API is the fallback.
+  async transport(command, value) {
+    if (await this.localTransport(command, value)) return;
+    if (command === 'toggle') {
+      let state;
       try {
-        await this.startPlayback(body);
+        state = await this.getPlaybackState();
       } catch (error) {
-        if (this.pendingPlay === pending && pending) {
-          this.pendingPlay = null;
-          this.emit(this.playbackState);
-        }
-        throw error;
+        if (error.status !== 404) throw error;
       }
-      if (pending) this.scheduleRefresh(1500);
+      command = state?.is_playing ? 'pause' : 'play';
+    }
+    if (command === 'play') {
+      await this.startPlayback();
       return;
     }
-    if (command === 'device') {
-      // The renderer sends the whole device it listed, so picking one costs no extra read.
-      const picked =
-        typeof value === 'string'
-          ? { id: value, name: '', type: '' }
-          : cleanDevice(value);
-      const id = picked?.id;
-      if (typeof id !== 'string' || !id || id.length > 256)
-        throw new Error('Select a playback device.');
-      await this.api('/me/player', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ device_ids: [id], play: false }),
-      });
-      this.deviceId = id;
-      this.rememberDevice(picked);
-      return;
-    }
-    // Transport goes to the Spotify desktop app's own controls when it is the active player; the Web API is the fallback.
+    await this.webTransport(command, value);
+  }
+  // True when the desktop app's own controls took the command.
+  async localTransport(command, value) {
     const localReady = {
       play: true,
       pause: true,
@@ -536,28 +561,15 @@ class SpotifyClient {
       this.media?.state?.available &&
       (await this.media.command('play'))
     )
-      return;
-    if (
+      return true;
+    return !!(
       localReady[command] &&
       this.localTrusted() &&
       (await this.media.command(command, value))
-    )
-      return;
-    if (command === 'toggle') {
-      let state;
-      try {
-        state = await this.getPlaybackState();
-      } catch (error) {
-        if (error.status !== 404) throw error;
-      }
-      command = state?.is_playing ? 'pause' : 'play';
-    }
-    if (command === 'play') {
-      await this.startPlayback();
-      return;
-    }
+    );
+  }
+  async webTransport(command, value) {
     const methods = {
-      play: 'PUT',
       pause: 'PUT',
       next: 'POST',
       previous: 'POST',

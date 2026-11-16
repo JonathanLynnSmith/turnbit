@@ -44,8 +44,8 @@ npm start
 ```
 
 turnbit lives in the system tray (Windows) or menu bar (macOS). Closing it hides it there; click the
-icon to bring it back, and use its menu to quit. To build a standalone app, see
-[Building a standalone app](docs/platforms.md#building-a-standalone-app).
+icon to bring it back, and use its menu to quit. To build an installer instead of running from source,
+see [Building a standalone app](docs/platforms.md#building-a-standalone-app).
 
 Next, [connect Spotify](#connect-spotify) and, if you have one, [set up the D100H](#set-up-the-ulanzi-d100h).
 
@@ -149,12 +149,14 @@ For more, see [How turnbit works](docs/how-it-works.md), including how to log ev
 | Command | What it does |
 | --- | --- |
 | `npm start` | Run turnbit |
-| `npm run check` | ESLint (with dependency rules) and the unit tests |
+| `npm run check` | ESLint (with dependency rules), the formatting check, and the unit tests |
+| `npm run test:harnesses` | Smoke plus every offline harness in real Electron windows, with a pass/fail summary |
 | `npm run smoke` | Offline end-to-end run through the real app and a simulated dial |
 | `npm run test:desktop` | Window Mode and the Now Playing screen in real Electron windows |
 | `npm run test:playback` | Playback services and hardware commands with a simulated Spotify |
 | `npm run format:check` | Check source formatting |
-| `npm run package` | Build the standalone app |
+| `npm run dist` | Build an installer (Windows `.exe`, macOS `.dmg`) |
+| `npm run package` | Build the standalone app without an installer |
 | `npm run demo:gif` | Rebuild the README GIF from a scripted demo-mode run |
 
 Tests simulate Spotify and the dial and use their own sessions and ports, so they can run while

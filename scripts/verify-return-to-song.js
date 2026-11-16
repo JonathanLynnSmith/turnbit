@@ -1,3 +1,4 @@
+require('./harness-env');
 const {app,BrowserWindow}=require('electron');
 const path=require('node:path'),assert=require('node:assert/strict');
 app.disableHardwareAcceleration();app.setPath('userData',path.join(app.getPath('temp'),'turnbit-return-song-test'));
@@ -9,7 +10,7 @@ app.whenReady().then(async()=>{try{
   const post=async event=>{const response=await fetch('http://127.0.0.1:4779/device/event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(event)});assert.equal(response.status,204);await wait(120);};
   const click=async()=>{await post({type:'command',command:'center-down'});await post({type:'command',command:'center-up'});await post({type:'command',command:'center-click'});await wait(450);};
   const selectedSong=()=>js(`({kind:nav.current.kind,title:nav.current.title,selected:nav.current.rows[nav.current.selected]?.demoIndex,playing:index})`);
-  const reset=async style=>{await js(`savePreferences({interfaceStyle:'${style}',dialOnlyWake:false,nowPlayingOpens:'auto',idlePinned:false,visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:10}});demo=true;nav.reset(root());showMusic();showLibrary('songs');drawNavigation();`);await wait(250);};
+  const reset=async style=>{await js(`savePreferences({interfaceStyle:'${style}',dialOnlyWake:false,nowPlayingOpens:'auto',idlePinned:false,visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:10}});demo=true;nav.reset(root());push({title:'Music',rows:[{label:'Playlists',action:'playlists',icon:'playlists',branch:true},{label:'Liked Songs',action:'songs',icon:'liked-songs',branch:true}]});showLibrary('songs');drawNavigation();`);await wait(250);};
 
   await reset('radial');
   await click();let s=await selectedSong();assert.equal(s.kind,'now','Choosing a song opens Now Playing');assert.equal(s.playing,0);
@@ -21,7 +22,7 @@ app.whenReady().then(async()=>{try{
   await click();s=await selectedSong();assert.equal(s.kind,'list','One click returns to the song list');assert.equal(s.selected,0,'One click lands on the playing song');
 
   // Playlist lists have a "Play this playlist" row first; the right song row must still be chosen.
-  await js(`nav.reset(root());showMusic();showLibrary('playlists');`);await wait(250);
+  await js(`nav.reset(root());push({title:'Music',rows:[{label:'Playlists',action:'playlists',icon:'playlists',branch:true},{label:'Liked Songs',action:'songs',icon:'liked-songs',branch:true}]});showLibrary('playlists');`);await wait(250);
   await js(`nav.current.selected=nav.current.rows.findIndex(r=>r.action==='playlist');drawNavigation();`);await click();
   await js(`nav.current.selected=nav.current.rows.findIndex(r=>r.action==='song');drawNavigation();`);await click();
   const first=(await selectedSong()).playing;await post({type:'command',command:'next'});const now=(await selectedSong()).playing;assert.notEqual(now,first);

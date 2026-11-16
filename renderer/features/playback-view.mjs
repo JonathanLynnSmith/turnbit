@@ -5,7 +5,6 @@ export function createPlaybackView({
   radial,
   visibilityState,
   getState,
-  demos,
   duration,
   currentProgress,
   time,
@@ -21,10 +20,11 @@ export function createPlaybackView({
 
     if (row.action !== 'song') return false;
     if (demo) return row.demoIndex === index;
-    const current = playback?.item;
-    const uris = [current?.uri, current?.linked_from?.uri].filter(Boolean);
-    return [row.item?.uri, row.item?.linked_from?.uri].some(
-      (uri) => uri && uris.includes(uri),
+    // A relinked track plays under another id; either id identifies the song.
+    const current = playback?.track;
+    const ids = [current?.id, current?.linkedId].filter(Boolean);
+    return [row.track?.id, row.track?.linkedId].some(
+      (id) => id && ids.includes(id),
     );
   }
   function renderPlaybackIndicators() {
@@ -75,8 +75,7 @@ export function createPlaybackView({
             : key === 'shuffle'
               ? 'Shuffle ' + (shuffle ? 'on' : 'off')
               : 'Repeat ' +
-                ({ off: 'off', context: 'all', track: 'one song' }[repeat] ||
-                  'off');
+                ({ off: 'off', all: 'all', one: 'one song' }[repeat] || 'off');
         icon.dataset.pending = String(
           key === 'like' &&
             (likeRequests > 0 || (!demo && !!playback?.likedPending)),
@@ -142,29 +141,26 @@ export function createPlaybackView({
       demoShuffle,
       demoRepeat,
       likeRequests,
-      demoQueue,
+      track,
     } = getState();
 
     if (visibilityState.invisible || visibilityState.minimized) return;
     const stamp = [
       demo,
       index,
-      demos[index]?.name,
-      demos[index]?.artist,
-      demos[index]?.album,
+      track.title,
+      track.artist,
+      track.album,
+      track.artwork,
       playing,
       volume,
-      playback?.item?.uri,
-      playback?.item?.name,
-      playback?.item?.album?.name,
-      playback?.item?.album?.images?.[0]?.url,
-      playback?.item?.artists?.map((a) => a.name).join(', '),
-      playback?.item?.duration_ms,
+      playback?.track?.id,
+      playback?.track?.durationMs,
       playback?.device?.name,
       playback?.liked,
       playback?.likedPending,
-      playback?.shuffle_state,
-      playback?.repeat_state,
+      playback?.shuffle,
+      playback?.repeat,
       demoShuffle,
       demoRepeat,
       demoLikes.has(index),

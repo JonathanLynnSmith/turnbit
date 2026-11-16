@@ -16,10 +16,21 @@ Keyboard & Mouse Mode are the same code on both systems.
 
 ## Building a standalone app
 
-Run `npm run package`.
+Run `npm run dist` to build an installer for the system you are on.
 
-- **Windows:** `turnbit.exe` lands in `dist\win-unpacked`. Keep that whole folder together.
-- **macOS:** `turnbit.app` lands in `dist/mac` (or `dist/mac-arm64`).
+- **Windows:** `dist	urnbit-<version>-win-x64.exe`, an installer that lets you pick the folder and adds
+  Start menu and uninstall entries.
+- **macOS:** `dist/turnbit-<version>-mac-<arch>.dmg`. Open it and drag turnbit to Applications.
 
-Builds are unsigned, so both systems warn the first time you open one. On macOS, right-click the app
-and choose **Open**.
+`npm run package` skips the installer and leaves the app itself in `dist\win-unpacked` (keep that whole
+folder together) or `dist/mac` (`dist/mac-arm64` on Apple silicon).
+
+Builds are unsigned, so both systems warn the first time you open one. On Windows, choose **More info**
+then **Run anyway**. On macOS, right-click the app and choose **Open**.
+
+Pushing a version tag such as `v0.3.0` runs `.github/workflows/release.yml`, which builds both installers
+and attaches them to a draft GitHub release. Nothing is public until you publish the draft.
+
+An installed build keeps its settings and Spotify session in a `turnbit` profile folder. A machine that
+ran turnbit from source before it was renamed keeps using its existing `desktop-ulanzi-ipod-poc` folder,
+so nothing is lost.

@@ -1,3 +1,4 @@
+require('./harness-env');
 // Visual review with realistic metadata. Optional artwork stays outside the repository.
 const { app, BrowserWindow } = require('electron');
 const assert = require('node:assert/strict');
@@ -59,7 +60,7 @@ async function main() {
     artist = 'Taylor Swift',
     album = 'THE TORTURED POETS DEPARTMENT',
   ) =>
-    `demo=false;acceptPlayback({item:{uri:'spotify:track:AAAAAAAAAAAAAAAAAAAAAA',name:${JSON.stringify(name)},artists:[{name:${JSON.stringify(artist)}}],album:{name:${JSON.stringify(album)},images:${cover ? JSON.stringify([{ url: cover }]) : '[]'}},duration_ms:228000},is_playing:true,progress_ms:62000,device:{name:'Desktop',volume_percent:50}});drawNavigation();`;
+    `demo=false;acceptPlayback({track:{id:'spotify:track:AAAAAAAAAAAAAAAAAAAAAA',title:${JSON.stringify(name)},artists:[${JSON.stringify(artist)}],album:{title:${JSON.stringify(album)},artwork:${cover ? JSON.stringify([{ url: cover }]) : '[]'}},durationMs:228000},playing:true,positionMs:62000,device:{name:'Desktop',volume:50}});drawNavigation();`;
   await run(
     `savePreferences({hoverBack:false,mouseModeKey:'off',nowPlayingOpens:'manual',menuTimeout:600});`,
   );

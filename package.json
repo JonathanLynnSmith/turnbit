@@ -1,5 +1,5 @@
 {
-  "name": "desktop-ulanzi-ipod-poc",
+  "name": "turnbit",
   "version": "0.2.0",
   "author": "turnbit contributors",
   "license": "MIT",
@@ -11,18 +11,20 @@
     "dev": "electron .",
     "lint": "eslint src renderer scripts test ulanzi-plugin/com.turnbit.spotify.ulanziPlugin/app.js",
     "test": "node --test",
-    "check": "npm run lint && npm test",
+    "check": "npm run lint && npm run format:check && npm test",
     "plugin:build": "node scripts/build-plugin.js",
     "plugin:install": "node scripts/install-plugin.js",
     "studio:restart": "node scripts/restart-studio.js",
     "package": "electron-builder --dir",
+    "dist": "electron-builder",
     "demo:gif": "electron scripts/make-demo-gif.js",
     "test:playback": "electron scripts/verify-playback-service.js",
     "test:desktop": "electron scripts/verify-window-mode.js && electron scripts/verify-now-playing-backdrop.js",
-    "format": "prettier --write \"src/**/*.js\" \"renderer/**/*.{js,mjs}\"",
-    "format:check": "prettier --check \"src/**/*.js\" \"renderer/**/*.{js,mjs}\"",
+    "format": "prettier --write \"src/**/*.js\" \"renderer/**/*.{js,mjs,html}\"",
+    "format:check": "prettier --check \"src/**/*.js\" \"renderer/**/*.{js,mjs,html}\"",
     "test:navigation": "electron scripts/verify-navigation-performance.js",
-    "smoke": "electron scripts/smoke.js"
+    "smoke": "electron scripts/smoke.js",
+    "test:harnesses": "node scripts/verify-all.js"
   },
   "devDependencies": {
     "electron": "^44.7.2",
@@ -52,10 +54,22 @@
       "extendInfo": {
         "LSUIElement": true,
         "NSAppleEventsUsageDescription": "turnbit controls the Spotify app on this Mac so play, pause, skip, and seek respond instantly."
-      }
+      },
+      "target": [
+        "dmg"
+      ]
     },
     "win": {
-      "icon": "assets/branding/turnbit.ico"
+      "icon": "assets/branding/turnbit.ico",
+      "target": [
+        "nsis"
+      ]
+    },
+    "artifactName": "turnbit-${version}-${os}-${arch}.${ext}",
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
     }
   },
   "allowScripts": {

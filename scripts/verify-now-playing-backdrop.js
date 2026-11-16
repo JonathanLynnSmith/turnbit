@@ -1,3 +1,4 @@
+require('./harness-env');
 // Window Mode switches between Now Playing and dial browsing through the hardware bridge.
 const { app, BrowserWindow } = require('electron');
 const assert = require('node:assert/strict');
@@ -49,7 +50,7 @@ async function main(){
   assert.equal(await run(`$('#radialBackdrop').hidden`),false,'Window Mode opens the large player by default');
   assert.equal(await hidden(),true,'the window starts with an unobstructed player');
   assert.equal(await run(`preferences.menuTimeout`),3,'the browsing timeout starts at 3 seconds');
-  await run(`savePreferences({nowPlayingOpens:'auto',hoverBack:false,mouseModeKey:'off'});demo=false;acceptPlayback({item:{uri:'spotify:track:AAAAAAAAAAAAAAAAAAAAAA',name:'Night Drive',artists:[{name:'turnbit sessions'}],album:{name:'After Hours',images:[{url:${JSON.stringify(ART)}}]},duration_ms:214000},is_playing:true,progress_ms:62000,liked:false,shuffle_state:false,repeat_state:'off',device:{id:'test',name:'Living Room',volume_percent:62}});drawNavigation();`);
+  await run(`savePreferences({nowPlayingOpens:'auto',hoverBack:false,mouseModeKey:'off'});demo=false;acceptPlayback({track:{id:'spotify:track:AAAAAAAAAAAAAAAAAAAAAA',title:'Night Drive',artists:['turnbit sessions'],album:{title:'After Hours',artwork:[{url:${JSON.stringify(ART)}}]},durationMs:214000},playing:true,positionMs:62000,liked:false,shuffle:false,repeat:'off',device:{id:'test',name:'Living Room',volume:62}});drawNavigation();`);
   // Song text updates after cover decoding; the cover itself swaps without animation.
   await until(()=>run(`$('#radialBackdropTitle').textContent==='Night Drive'&&$('#radialBackdropArtist').textContent==='turnbit sessions'`),'the player shows the new song');
   for(const selector of ['#radialBackdropSeek','#radialBackdropVolume','#radialBackdropPlay','#radialBackdropBrowse'])assert.equal(await hittable(selector),true,selector+' receives input');
@@ -137,7 +138,7 @@ async function main(){
   assert.equal(await run('playing'),true,'hardware Play toggles immediately');
   assert.equal(await hidden(),true,'hardware Play keeps the clean player visible');
   await run(`$('#radialBackdropPlay').click();$('[data-backdrop-command=like]').click();$('[data-backdrop-command=shuffle]').click();$('[data-backdrop-command=repeat]').click();`);
-  assert.equal(await run(`!playing&&demoLikes.has(index)&&demoShuffle&&demoRepeat==='context'`),true,'persistent playback controls work');
+  assert.equal(await run(`!playing&&demoLikes.has(index)&&demoShuffle&&demoRepeat==='all'`),true,'persistent playback controls work');
   assert.equal(await hidden(),true,'playback controls do not summon the dial');
   assert.equal(await run(`$('[data-backdrop-command=like]').getAttribute('aria-pressed')`),'true','Like exposes its saved state');
   win.focus();await wait(100);await run(`$('#radialBackdropPlay').focus();`);
@@ -174,7 +175,7 @@ async function main(){
     }
   }
   // Ambient glow: the artwork tints the middle of the menu, with the mask carrying the falloff.
-  const playing=`{item:{uri:'spotify:track:AAAAAAAAAAAAAAAAAAAAAA',name:'Night Drive',artists:[{name:'turnbit sessions'}],album:{name:'After Hours',images:[{url:${JSON.stringify(ART)}}]},duration_ms:214000},is_playing:true,progress_ms:62000,device:{id:'test',name:'Living Room',volume_percent:62}}`;
+  const playing=`{track:{id:'spotify:track:AAAAAAAAAAAAAAAAAAAAAA',title:'Night Drive',artists:['turnbit sessions'],album:{title:'After Hours',artwork:[{url:${JSON.stringify(ART)}}]},durationMs:214000},playing:true,positionMs:62000,device:{id:'test',name:'Living Room',volume:62}}`;
   await run(`demo=false;acceptPlayback(${playing});render();`);await wait(250);
   const glow=()=>run(`(()=>{const el=$('#radialGlow'),style=getComputedStyle(el);return {opacity:style.opacity,color:style.backgroundColor,sampled:style.getPropertyValue('--artwork-color').trim(),image:style.backgroundImage,masked:(style.maskImage||style.webkitMaskImage||'').includes('gradient')};})()`);
   // The glow follows the cover through the song crossfade, then eases in.
@@ -193,7 +194,7 @@ async function main(){
   assert.equal(await run(`$('#radialBackdrop').contains($('#radialGlow'))&&!!($('#radialGlow').compareDocumentPosition($('.radial-backdrop-info'))&Node.DOCUMENT_POSITION_FOLLOWING)`),true,'painting under the player, so it reaches behind the controls');
   assert.equal(await run(`Number(getComputedStyle($('#radial')).zIndex||0)>Number(getComputedStyle($('#radialBackdrop')).zIndex||0)`),true,'and under the menu, so the text over it stays crisp');
   assert.equal(await run(`getComputedStyle($('#radialGlow')).pointerEvents`),'none','the glow takes no input of its own');
-  await run(`demo=false;acceptPlayback({item:null,is_playing:false});render();`);
+  await run(`demo=false;acceptPlayback({track:null,playing:false});render();`);
   await until(async()=>Number((await glow()).opacity)===0,'the glow did not fade out with nothing playing');
   await run(`acceptPlayback(${playing});render();`);
   await until(async()=>Number((await glow()).opacity)>0,'the glow did not come back with the artwork');
@@ -219,7 +220,7 @@ async function main(){
 
   // The dial menu rewinds to the list the playing song was chosen from, so
   // browsing elsewhere never costs you your place in the music.
-  const wandered=async()=>{await run(`browseFromPlayer();nav.goHome();showMusic();drawNavigation();`);await wait(250);assert.equal(await run(`nav.current.title`),'Music','browsing wanders off the playlist');};
+  const wandered=async()=>{await run(`browseFromPlayer();nav.goHome();push({title:'Music',rows:[{label:'Playlists',action:'playlists',icon:'playlists',branch:true},{label:'Liked Songs',action:'songs',icon:'liked-songs',branch:true}]});drawNavigation();`);await wait(250);assert.equal(await run(`nav.current.title`),'Music','browsing wanders off the playlist');};
   const atSource=()=>run(`[nav.current.playlist?.id,nav.current.rows[nav.current.selected]?.demoIndex,nav.stack.length]`);
   await run(`savePreferences({menuTimeout:600,nowPlayingOpens:'auto'});demo=true;nav.reset(root());browseFromPlayer();showLibrary('playlist',{id:'demo-night',name:'After Hours',demoIndexes:[0,1]});`);
   await until(()=>run(`nav.current.rows.some(row=>row.action==='song'&&row.demoIndex===1)`),'the demo playlist did not load');
@@ -235,13 +236,13 @@ async function main(){
   await run(`browseFromPlayer();`);await wait(250);
   assert.equal(await run(`nav.current.playlist?.id`),'demo-night','so the next press opens the music again');
   // The timeout shows the rewind instead: the list flows in while the menu is still up, then it goes.
-  await run(`savePreferences({menuTimeout:1});nav.goHome();showMusic();drawNavigation();dialOverlay.lastInput=Date.now()-20000;`);
+  await run(`savePreferences({menuTimeout:1});nav.goHome();push({title:'Music',rows:[{label:'Playlists',action:'playlists',icon:'playlists',branch:true},{label:'Liked Songs',action:'songs',icon:'liked-songs',branch:true}]});drawNavigation();dialOverlay.lastInput=Date.now()-20000;`);
   await until(()=>run(`nav.current.playlist?.id==='demo-night'`),'the timeout did not rewind the menu');
   assert.equal(await hidden(),false,'the menu holds on screen for the switch');
   assert.equal(await run(`$('#radialLabels').dataset.rewind==='true'&&$('#windowViewLabel').textContent==='AFTER HOURS'`),true,'with the new list animating in under its own heading');
   await until(hidden,'the menu did not close after the rewind had been seen');
   // Reopening inside the hold keeps the menu up on the list it rewound to.
-  await run(`savePreferences({menuTimeout:600});browseFromPlayer();nav.goHome();showMusic();drawNavigation();savePreferences({menuTimeout:1});dialOverlay.lastInput=Date.now()-20000;`);
+  await run(`savePreferences({menuTimeout:600});browseFromPlayer();nav.goHome();push({title:'Music',rows:[{label:'Playlists',action:'playlists',icon:'playlists',branch:true},{label:'Liked Songs',action:'songs',icon:'liked-songs',branch:true}]});drawNavigation();savePreferences({menuTimeout:1});dialOverlay.lastInput=Date.now()-20000;`);
   await until(()=>run(`nav.current.playlist?.id==='demo-night'`),'the timeout did not rewind the menu');
   await run(`savePreferences({menuTimeout:600});browseFromPlayer();`);await wait(700);
   assert.equal(await hidden(),false,'coming back during the hold cancels the close');
@@ -292,17 +293,14 @@ async function main(){
   await until(()=>run(`$('#radialBackdropTitle').textContent===${JSON.stringify(chosen)}`),'the player beside the menu did not follow the selection');
   assert.equal(await hidden(),false,'the menu stays put');
   assert.equal(await insideMenu(),true,'the playing row keeps its artwork inside the menu half');
-  // With the Matching background a hairline marks the seam between the halves; a background
-  // panel's own edge marks it otherwise.
-  const seam=()=>run(`Number(getComputedStyle($('#radialBackdrop'),'::after').opacity)`);
-  await run(`savePreferences({menuBackground:'match'});drawNavigation();`);
-  await until(async()=>await seam()===1,'the divider did not show with Matching');
+  // Nothing is drawn between the halves; a background panel changes the menu's half only.
+  const seam=()=>run(`getComputedStyle($('#radialBackdrop'),'::after').content`);
+  await run(`savePreferences({menuBackground:'match'});drawNavigation();`);await wait(400);
+  assert.equal(await seam(),'none','no dividing line is drawn between the menu and the player');
   await shot('window-split.png');
-  await run(`savePreferences({menuBackground:'glass'});drawNavigation();`);
-  await until(async()=>await seam()===0,'the divider did not give way to the panel edge');
-  assert.equal(await run(`document.body.dataset.backdropSplit`),'true','with the halves themselves untouched');
+  await run(`savePreferences({menuBackground:'glass'});drawNavigation();`);await wait(250);
+  assert.equal(await run(`document.body.dataset.backdropSplit`),'true','a background panel leaves the halves themselves untouched');
   await run(`savePreferences({menuBackground:'match'});drawNavigation();`);
-  await until(async()=>await seam()===1,'the divider did not come back');
   await run(`nav.reset(root());showLibrary('songs');`);
   await until(()=>run(`nav.current.rows.some(row=>row.action==='song')`),'the demo song list did not load');
   // Opening Now Playing on a song puts the menu away, the same as it does in the overlay.
@@ -322,7 +320,7 @@ async function main(){
   assert.equal(await run(`document.body.dataset.backdropSplit`),'true','widening restores Split View');
   assert.equal(await run(`document.body.dataset.playerColumn`),'wide','a wide enough half puts artwork beside the text');
   assert.equal(await run(`Math.abs($('#radial').getBoundingClientRect().width-innerWidth/3)<=1`),true,'the menu takes a third of a large window rather than a fixed-width strip');
-  assert.equal(await run(`(()=>{const line=parseFloat(getComputedStyle($('#radialBackdrop'),'::after').left),row=$('#radial').getBoundingClientRect().right-30,r=$('.radial-backdrop-info').getBoundingClientRect(),gaps=[line-row,r.left-line,innerWidth-r.right];return Math.max(...gaps)-Math.min(...gaps)<=2;})()`),true,'the divider sits midway between the menu and the player, which centres in the space beyond it');
+  assert.equal(await run(`(()=>{const row=$('#radial').getBoundingClientRect().right-30,r=$('.radial-backdrop-info').getBoundingClientRect();return Math.abs((r.left-row)/2-(innerWidth-r.right))<=2;})()`),true,'the player sits two even gaps from the menu and one from the window edge');
   assert.equal(await run(`(()=>{const pair=()=>{const c=$('.radial-backdrop-cover').getBoundingClientRect(),t=$('.radial-backdrop-track').getBoundingClientRect(),k=$('.radial-backdrop-controls').getBoundingClientRect();return Math.abs((c.left+t.right)/2-(k.left+k.right)/2)<=2;};const title=$('#radialBackdropTitle'),before=title.textContent,short=pair();title.textContent='An Unusually Long Song Title That Keeps Going Past One Line';const long=pair();title.textContent=before;return short&&long;})()`),true,'artwork and song info centre over the controls for short and long titles');
   await run(`savePreferences({backdropLayout:'overlay'});drawNavigation();`);await wait(400);
   assert.equal(await run(`document.body.dataset.backdropSplit`),'false','switching back leaves one view at a time');
@@ -337,7 +335,7 @@ async function main(){
   assert.equal(await run(`$('#radialBackdrop').hidden`),true,'optional classic window presentation still works');
   assert.equal(await run(`$('#radial').inert`),false,'ordinary widget navigation remains accessible');
   assert.deepEqual(errors,[],'no renderer crashes');
-  console.log('Window views: complete player fade, an artwork-tinted menu glow, dedicated browsing, an adjustable menu timeout, a watchable rewind to the playlist in play, Split View on both edges with its Matching divider, idle collapse and narrow-window fallback, song selection, rapid reversals, idle return, focus, responsive controls, and playback passed.');
+  console.log('Window views: complete player fade, an artwork-tinted menu glow, dedicated browsing, an adjustable menu timeout, a watchable rewind to the playlist in play, Split View on both edges with no dividing line, idle collapse and narrow-window fallback, song selection, rapid reversals, idle return, focus, responsive controls, and playback passed.');
   app.quit();
 }
 main().catch(error=>{console.error(error);app.exit(1);});

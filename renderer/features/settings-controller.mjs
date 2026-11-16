@@ -539,16 +539,20 @@ export function createSettingsController({
       return;
     }
     try {
-      const data = await api.library('playlists');
+      const data = await api.library.page({ kind: 'playlists', offset: 0 });
       page.rows = (data?.items || [])
         .filter((item) =>
-          /^spotify:playlist:[a-zA-Z0-9]{22}$/.test(item?.uri || ''),
+          /^spotify:playlist:[a-zA-Z0-9]{22}$/.test(item?.playbackId || ''),
         )
         .map((item) => ({
-          label: item.name || 'Untitled playlist',
+          label: item.title || 'Untitled playlist',
           action: 'cold-start-playlist',
-          playlist: { uri: item.uri, name: item.name || 'Untitled playlist' },
-          detail: item.uri === preferences.coldStartPlaylist?.uri ? '✓' : '',
+          playlist: {
+            uri: item.playbackId,
+            name: item.title || 'Untitled playlist',
+          },
+          detail:
+            item.playbackId === preferences.coldStartPlaylist?.uri ? '✓' : '',
         }));
       if (!page.rows.length)
         page.rows = [{ label: 'No playlists found', disabled: true }];

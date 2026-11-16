@@ -1,3 +1,4 @@
+require('./harness-env');
 // Offline behavior and layout checks for the discrete color palette.
 const { app, BrowserWindow } = require('electron');
 const assert = require('node:assert/strict');

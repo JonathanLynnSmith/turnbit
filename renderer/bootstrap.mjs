@@ -1,35 +1,18 @@
-// Explicit dependency loading. Existing screens keep their named entry points
-// during migration; feature modules receive their dependencies through factories.
+// Explicit dependency loading, in order. The classic helper scripts publish
+// their entry points on window (they are also required by the unit tests);
+// renderer.js is a module that composes the interface from them.
 import './navigation.js';
 import '../src/core/value-control.js';
 import './library-cache.js';
 import './center-click.js';
 import '../src/core/transport-hold.js';
+import '../src/core/input-steps.js';
 import './artwork.js';
 import './radial.js';
 import './track-transition.js';
 import './dial-overlay.js';
 import './settings/preferences.js';
 import './settings/value-steps.js';
-import './client/playback-client.js';
 import './client/settings-client.js';
-import { createRadialView } from './features/radial-view.mjs';
-import { createPlaybackView } from './features/playback-view.mjs';
-import { createLibraryController } from './features/library-controller.mjs';
-import { createSettingsController } from './features/settings-controller.mjs';
-
-window.TurnbitFeatures = {
-  createRadialView,
-  createPlaybackView,
-  createLibraryController,
-  createSettingsController,
-};
-await new Promise((resolve, reject) => {
-  const entry = document.createElement('script');
-  entry.src = new URL('./renderer.js', import.meta.url).href;
-  entry.onload = resolve;
-  entry.onerror = () =>
-    reject(new Error('Could not load the desktop interface.'));
-  document.body.append(entry);
-});
-await import('./window-gestures.js');
+import './renderer.js';
+import './window-gestures.js';

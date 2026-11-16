@@ -1,5 +1,14 @@
+// Composes the interface: state, navigation, input bindings, and the feature
+// factories. bootstrap.mjs loads the classic helper scripts this reads from window.
+import { createRadialView } from './features/radial-view.mjs';
+import { createPlaybackView } from './features/playback-view.mjs';
+import { createLibraryController } from './features/library-controller.mjs';
+import { createSettingsController } from './features/settings-controller.mjs';
+
 const $ = (selector) => document.querySelector(selector);
-const api = window.createPlaybackClient(window.turnbit);
+const { INPUT_STEPS } = window.TurnbitInput;
+// A copy, because the preload object is frozen and harnesses wrap its methods to count calls.
+const api = window.turnbit && { ...window.turnbit };
 if (api?.spotifyDesktopInstalled)
   api.spotifyDesktopInstalled().then(
     (installed) => {
@@ -31,6 +40,35 @@ const demos = [
     duration: 245000,
   },
 ];
+// Demo songs in the same shape as a provider track, so every view reads one model.
+const demoTrack = (i) =>
+  demos[i] && {
+    id: 'demo:' + i,
+    linkedId: null,
+    publisher: '',
+    title: demos[i].name,
+    artists: [demos[i].artist],
+    album: {
+      title: demos[i].album,
+      artwork: demos[i].artwork ? [{ url: demos[i].artwork }] : [],
+    },
+    durationMs: demos[i].duration,
+    local: false,
+    kind: 'track',
+  };
+const currentTrack = () => (demo ? demoTrack(index) : playback?.track) || null;
+// What the player shows for the current song, with its empty-state wording.
+function trackView() {
+  const track = currentTrack();
+  return {
+    title: track?.title || 'Nothing playing',
+    artist: demo
+      ? track?.artists?.[0]
+      : track?.artists?.join(', ') || 'Open Spotify to start listening',
+    album: track?.album?.title || '',
+    artwork: track?.album?.artwork?.[0]?.url || '',
+  };
+}
 let lastVisualActivity = Date.now();
 const getPlaybackView = () => ({
   demo,
@@ -46,20 +84,7 @@ const getPlaybackView = () => ({
   demoRepeat,
   pinned,
   demoQueue,
-  track: {
-    title:
-      (demo ? demos[index]?.name : playback?.item?.name) || 'Nothing playing',
-    artist: demo
-      ? demos[index]?.artist
-      : playback?.item?.artists?.map((a) => a.name).join(', ') ||
-        'Open Spotify to start listening',
-    album: demo ? demos[index]?.album : playback?.item?.album?.name || '',
-    // Demo tracks may carry their own artwork (the README GIF gives its fictional songs covers).
-    artwork:
-      (demo
-        ? demos[index]?.artwork
-        : playback?.item?.album?.images?.[0]?.url) || '',
-  },
+  track: trackView(),
 });
 let demo = true,
   index = 0,
@@ -71,7 +96,6 @@ let demo = true,
   pinned = false;
 let demoQueue = [0, 1, 2],
   volumeDeviceId = null;
-const { cleanVisibility } = window.TurnbitSettings;
 const cleanLastSongList = (value) =>
   window.TurnbitSettings.cleanLastSongList(value, demos.length);
 // Shortcut held for Keyboard & Mouse Mode. F13 suits a mouse side button or macro key mapped to it in the mouse's software.
@@ -266,7 +290,7 @@ function syncVisibility() {
 }
 const volumeControl = new window.VolumeControl(
   async (value) => {
-    if (!demo) await api.command('volume', value);
+    if (!demo) await api.playback.command('volume', value);
   },
   {
     interval: 600,
@@ -280,7 +304,7 @@ const volumeControl = new window.VolumeControl(
 );
 const seekControl = new window.VolumeControl(
   async (value) => {
-    if (!demo) await api.command('seek', value);
+    if (!demo) await api.playback.command('seek', value);
   },
   {
     max: 86400000,
@@ -309,10 +333,16 @@ const time = (ms) => {
   const s = Math.floor(Math.max(0, ms) / 1000);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 };
-const duration = () =>
-  demo ? demos[index].duration : playback?.item?.duration_ms || 0;
+const duration = () => currentTrack()?.durationMs || 0;
 function currentProgress() {
   return Math.min(duration(), progress + (playing ? Date.now() - updated : 0));
+}
+// A dial bridge failure does not fix itself, so say it once rather than on every report.
+let shownHardwareError = null;
+function hardwareError(text) {
+  if (!text || text === shownHardwareError) return;
+  shownHardwareError = text;
+  message(text);
 }
 let noticeTimer;
 function message(text = '') {
@@ -332,9 +362,6 @@ function message(text = '') {
       notice.hidden = true;
     }, 5000);
 }
-// Lists below Home start with a Back row, so the dial alone can go back without a Menu button. Inserting it keeps
-// the same item highlighted, so entering a list still lands on its first real item.
-// A small inline icon drawn in the text color (see .row-icon in styles.css), e.g. the Back row's arrow.
 // Hover Shortcuts: resting on a shortcut row after turning onto it runs it after a
 // short hold. Its icon turns into a ring that fills while it counts (driven by --back-hold, so it survives redraws).
 const BACK_HOLD_MS = 1000;
@@ -386,19 +413,19 @@ function startBackHold() {
   };
   backHold = { frame: requestAnimationFrame(step) };
 }
-// Keep Home matching homeRows() (switching interfaces, or Last Song List appearing), with the same item highlighted.
+// Keep Home matching homeRows() (Last Song List appearing), with the same item highlighted.
 function ensureHomeLayout(page) {
   if (page !== nav.stack[0] || page === nav.idlePage) return;
   const want = homeRows(),
     key = (rows) => rows.map((row) => row.action).join();
   if (key(want) === key(page.rows)) return;
-  const swap = { music: 'songs', songs: 'music', playlists: 'music' },
-    was = page.rows[page.selected]?.action;
+  const was = page.rows[page.selected]?.action;
   page.rows = want;
-  let index = want.findIndex((row) => row.action === was);
-  if (index < 0) index = want.findIndex((row) => row.action === swap[was]);
+  const index = want.findIndex((row) => row.action === was);
   page.selected = index >= 0 ? index : homeStart();
 }
+// Lists below Home start with a Back row, so the dial alone can go back without a Menu button. Inserting it keeps
+// the same item highlighted, so entering a list still lands on its first real item.
 function ensureBackRow(page) {
   if (
     !page ||
@@ -448,7 +475,7 @@ const trackTransition = new window.TrackTransition($('#radialNow'), {
   reducedMotion: () => reducedMotion.matches,
 });
 const visibilityState = { invisible: false, minimized: false };
-const radialView = window.TurnbitFeatures.createRadialView({
+const radialView = createRadialView({
   $,
   preferences,
   nav,
@@ -478,14 +505,8 @@ const radialView = window.TurnbitFeatures.createRadialView({
 const {
   radialColor,
   radialColorName,
-  applyRadialColors,
-  radialRowDetail,
   radialMiniPlayer,
-  syncRadialGlow,
-  updateSmokeShape,
-  currentMiniIndices,
   backdropActive,
-  splitActive,
   wideMenu,
   backdropLayoutName,
   menuBackgroundName,
@@ -496,25 +517,23 @@ const {
   rewindMenuToSource,
   browseFromPlayer,
   updateBackdropControls,
-  updateBackdropInfo,
   drawRadial,
 } = radialView;
 function playbackModes() {
   return {
     liked: demo ? demoLikes.has(index) : playback?.liked,
-    shuffle: demo ? demoShuffle : !!playback?.shuffle_state,
-    repeat: demo ? demoRepeat : playback?.repeat_state || 'off',
+    shuffle: demo ? demoShuffle : !!playback?.shuffle,
+    repeat: demo ? demoRepeat : playback?.repeat || 'off',
   };
 }
 
-const playbackView = window.TurnbitFeatures.createPlaybackView({
+const playbackView = createPlaybackView({
   $,
   preferences,
   nav,
   radial,
   visibilityState,
   getState: getPlaybackView,
-  demos,
   duration,
   currentProgress,
   time,
@@ -524,8 +543,7 @@ const playbackView = window.TurnbitFeatures.createPlaybackView({
   playbackModes,
   updateBackdropControls,
 });
-const { renderPlaybackIndicators, syncGamingMode, renderProgress } =
-  playbackView;
+const { syncGamingMode, renderProgress } = playbackView;
 function isCurrentSong(...args) {
   return playbackView.isCurrentSong(...args);
 }
@@ -534,36 +552,30 @@ function render(...args) {
   syncInputContext();
   return playbackView.render(...args);
 }
-function acceptPlayback(data) {
-  if (data?.recoveredDevice) {
-    if (preferences.preferredDevice?.id !== data.recoveredDevice.id)
-      savePreferences({ preferredDevice: data.recoveredDevice });
-    return;
-  }
-  if (data?.recoveryMessage) return message(data.recoveryMessage);
-  if (data?.error) return message(data.error);
+// A normalized playback snapshot from the backend (src/app/playback-model.js), or null.
+function acceptPlayback(state) {
   if (
-    playback?.item?.uri &&
-    data?.item?.uri &&
-    playback.item.uri !== data.item.uri
+    playback?.track?.id &&
+    state?.track?.id &&
+    playback.track.id !== state.track.id
   ) {
     transportHold.cancel();
     seekControl.reset(0);
   }
   const wasLikePending = !!playback?.likedPending;
-  playback = data;
-  playing = !!data?.is_playing;
+  playback = state;
+  playing = !!state?.playing;
   // Keep cached Liked Songs current when the playing song's like flips (in turnbit or on another device).
   // Only a flip counts: an old liked song reporting liked:true must not jump to the top of the list.
-  libraryController.acceptPlayback(data);
-  if (data?.likeError) message(data.likeError);
+  libraryController.acceptPlayback(state);
+  if (state?.likeError) message(state.likeError);
   else if (
     wasLikePending &&
-    !data?.likedPending &&
-    typeof data?.liked === 'boolean'
+    !state?.likedPending &&
+    typeof state?.liked === 'boolean'
   )
     message(
-      data.liked
+      state.liked
         ? 'Added to Liked Songs · confirmed by Spotify'
         : 'Removed from Liked Songs · confirmed by Spotify',
     );
@@ -573,23 +585,38 @@ function acceptPlayback(data) {
     seekControl.pending === null &&
     Date.now() >= seekControl.protectedUntil
   ) {
-    progress = data?.progress_ms || 0;
+    // The position was measured at observedAt; a playing song has moved on since.
+    const elapsed = state?.playing
+      ? Math.max(0, Date.now() - (state.observedAt ?? Date.now()))
+      : 0;
+    progress = Math.min(
+      state?.track?.durationMs || 0,
+      (state?.positionMs || 0) + elapsed,
+    );
     updated = Date.now();
   }
-  const deviceId = data?.device?.id;
+  const deviceId = state?.device?.id;
   if (deviceId && volumeDeviceId && deviceId !== volumeDeviceId)
     volumeControl.reset(volume);
   if (deviceId) volumeDeviceId = deviceId;
-  if (Number.isFinite(data?.device?.volume_percent))
-    volumeControl.acceptRemote(data.device.volume_percent);
+  if (Number.isFinite(state?.device?.volume))
+    volumeControl.acceptRemote(state.device.volume);
   followSkippedSong();
   render();
+}
+function playbackEvent(event) {
+  if (event.type === 'state') acceptPlayback(event.state);
+  else if (event.type === 'device-recovered') {
+    if (preferences.preferredDevice?.id !== event.device.id)
+      savePreferences({ preferredDevice: event.device });
+  } else if (event.type === 'notice' || event.type === 'error')
+    message(event.message);
 }
 // Backend owns refresh scheduling; screens request a snapshot on connection.
 async function refresh() {
   if (demo || !api) return;
   try {
-    await api.state();
+    await api.playback.refresh();
   } catch (e) {
     message(e.message);
   }
@@ -646,9 +673,7 @@ async function command(cmd, value) {
       }
       if (cmd === 'shuffle') demoShuffle = !demoShuffle;
       if (cmd === 'repeat')
-        demoRepeat = { off: 'context', context: 'track', track: 'off' }[
-          demoRepeat
-        ];
+        demoRepeat = { off: 'all', all: 'one', one: 'off' }[demoRepeat];
       message(
         cmd === 'like'
           ? demoLikes.has(index)
@@ -657,7 +682,7 @@ async function command(cmd, value) {
           : cmd === 'shuffle'
             ? 'Shuffle ' + (demoShuffle ? 'on' : 'off')
             : 'Repeat: ' +
-              { off: 'off', context: 'all', track: 'one song' }[demoRepeat],
+              { off: 'off', all: 'all', one: 'one song' }[demoRepeat],
       );
       render();
       return true;
@@ -690,7 +715,7 @@ async function command(cmd, value) {
     render();
   }
   try {
-    const result = await api.command(cmd, value);
+    const result = await api.playback.command(cmd, value);
     if (result?.message) message(result.message);
     return true;
   } catch (e) {
@@ -791,7 +816,7 @@ function rotate(delta) {
     return;
   }
   if (nav.current.kind === 'volume' || nav.current.kind === 'now')
-    return changeVolume(volume + delta * 2);
+    return changeVolume(volume + delta * INPUT_STEPS.volumeDial);
   nav.current.awaitingFirst = false;
   const previous = nav.current.selected;
   nav.move(delta);
@@ -820,7 +845,7 @@ function returnToSongList() {
     selectPlayingSong();
     return;
   }
-  const uri = playback?.context?.uri;
+  const uri = playback?.context?.id;
   nav.goHome();
   if (/^spotify:playlist:[a-zA-Z0-9]{22}$/.test(uri || ''))
     showLibrary('playlist', {
@@ -830,28 +855,6 @@ function returnToSongList() {
     });
   else showLibrary('songs');
   selectPlayingSong();
-}
-function showMusic() {
-  push({
-    title: 'Music',
-    rows: [
-      {
-        label: 'Playlists',
-        action: 'playlists',
-        icon: 'playlists',
-        branch: true,
-      },
-      {
-        label: 'Liked Songs',
-        action: 'songs',
-        icon: 'liked-songs',
-        branch: true,
-      },
-    ],
-    hint: demo
-      ? 'Demo library · no audio'
-      : 'Songs are your Spotify Liked Songs',
-  });
 }
 // Value pickers: each key carries its own range, step, and unit.
 function valueSpec(key) {
@@ -909,12 +912,7 @@ function textAlign() {
   return preferences.radialSide;
 }
 
-// Settings are grouped by task: Settings > category > setting. Rows marked with › open one more screen to pick a
-// value (volume, colors, devices, interface). Each category's subtitle says what is inside.
-
-// Open Settings at the category holding a matching row, with that row highlighted (used by tests and shortcuts).
-
-const settingsController = window.TurnbitFeatures.createSettingsController({
+const settingsController = createSettingsController({
   resetSettings,
   $,
   preferences,
@@ -945,21 +943,12 @@ const settingsController = window.TurnbitFeatures.createSettingsController({
   openSettings,
 });
 const {
-  displayName,
-  verticalName,
-  layoutRows,
-  showLayout,
-  radialSettingsRows,
   settingsRows,
   showSettings,
   showSettingsGroup,
   showSetting,
   showTransparency,
   showDevices,
-  coldStartName,
-  showColdStart,
-  showColdStartPlaylists,
-  refreshColdStartSetting,
 } = settingsController;
 const settingsGroups = settingsController.settingsGroups;
 
@@ -1067,12 +1056,6 @@ async function toggleWindowMode() {
   }
 }
 
-// Load more is a shortcut row: press it, or rest on it (Hover Shortcuts) to load the next page.
-
-// Redraw a Liked Songs page from the cache, keeping the highlighted song selected if it is still there.
-
-// Show cached Liked Songs at once, then check Spotify's first page unless it was checked in the last 30 seconds.
-
 function lastSongListRow() {
   return {
     label: 'Last Song List',
@@ -1084,16 +1067,14 @@ function lastSongListRow() {
   };
 }
 
-// Returning from Now Playing turns the song list to the playing song, so nobody has to search for it.
-// A list that is still loading does this once its songs arrive.
-
-const libraryController = window.TurnbitFeatures.createLibraryController({
+const libraryController = createLibraryController({
   $,
   preferences,
   nav,
   api,
   getState: getPlaybackView,
   demos,
+  demoTrack,
   time,
   drawNavigation,
   push,
@@ -1109,26 +1090,14 @@ const libraryController = window.TurnbitFeatures.createLibraryController({
   createCache: () => new window.LikedSongsCache(),
 });
 const {
-  demoLibrary,
-  playable,
   moreRow,
-  libraryRows,
-  showCachedSongs,
-  likedSongPages,
-  syncLikedSongPages,
-  refreshLikedSongs,
   loadLibrary,
-  rememberSongList,
   openLastSongList,
   selectPlayingSong,
   followSkippedSong,
   followIdleSong,
   showLibrary,
 } = libraryController;
-
-// Spotify cannot resume an empty player, so Play needs a source of its own for a cold start.
-
-// Choosing a source can be two pages deep; return to Playback with its summary up to date.
 
 function finishSongSelection() {
   if (nowPlayingAuto()) showNow();
@@ -1158,13 +1127,13 @@ async function playRow(row) {
   }
   const value =
     row.action === 'play-playlist'
-      ? { contextUri: row.playlist.uri }
+      ? { contextId: row.playlist.uri }
       : row.contextUri
-        ? { contextUri: row.contextUri, position: row.position }
-        : { uri: row.item.uri };
+        ? { contextId: row.contextUri, position: row.position }
+        : { trackId: row.track.id };
   // A known song is shown at once; the main process reverts it if Spotify rejects the request.
-  if (row.action === 'song' && row.item) {
-    value.item = row.item;
+  if (row.action === 'song' && row.track) {
+    value.track = row.track;
     const request = command('play-item', value);
     if (sourcePath) nav.musicPath = sourcePath;
     finishSongSelection();
@@ -1264,19 +1233,8 @@ async function selectItem(fromDial = false) {
       nav.back();
       drawNavigation();
       break;
-    case 'song-list':
-      returnToSongList();
-      break;
     case 'last-song-list':
       openLastSongList();
-      break;
-    case 'back-now':
-      nav.back();
-      drawNavigation();
-      render();
-      break;
-    case 'music':
-      showMusic();
       break;
     case 'now':
       showNow();
@@ -1337,7 +1295,7 @@ const transportHold = new window.TransportHold(
     seek(currentProgress() + delta);
   },
 );
-// Keyboard & Mouse Mode (main process overlay): scroll moves, left click selects, right click goes back, middle click plays or pauses.
+// What the main process needs to know to handle hardware keys without this view.
 function syncInputContext() {
   const value = {
     demo,
@@ -1352,6 +1310,7 @@ function syncInputContext() {
   syncInputContext.key = key;
   api?.inputContext(value);
 }
+// Keyboard & Mouse Mode (main process overlay): scroll moves, left click selects, right click goes back, middle click plays or pauses.
 function syncMouseMode() {
   api
     ?.mouseMode?.(preferences.mouseModeKey)
@@ -1500,9 +1459,14 @@ function handleHardwareEvent(event) {
     return;
   }
   if (cmd === 'volume-up' || cmd === 'volume-down')
-    return changeVolume(volume + (cmd === 'volume-up' ? 5 : -5));
+    return changeVolume(
+      volume + (cmd === 'volume-up' ? 1 : -1) * INPUT_STEPS.volumeKey,
+    );
   if (cmd === 'seek-forward' || cmd === 'seek-back')
-    return seek(currentProgress() + (cmd === 'seek-forward' ? 10000 : -10000));
+    return seek(
+      currentProgress() +
+        (cmd === 'seek-forward' ? 1 : -1) * INPUT_STEPS.seekMs,
+    );
   command(cmd);
 }
 document.querySelectorAll('[data-command]').forEach((b) => {
@@ -1557,9 +1521,11 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowUp') rotate(-1);
   if (e.key === 'ArrowDown') rotate(1);
   if (e.key === 'ArrowLeft')
-    e.shiftKey ? seek(currentProgress() - 10000) : command('previous');
+    e.shiftKey
+      ? seek(currentProgress() - INPUT_STEPS.seekMs)
+      : command('previous');
   if (e.key === 'ArrowRight')
-    e.shiftKey ? seek(currentProgress() + 10000) : command('next');
+    e.shiftKey ? seek(currentProgress() + INPUT_STEPS.seekMs) : command('next');
   if (e.key === 'Escape' || e.key === 'Backspace') menuBack();
 });
 $('#settings').addEventListener('toggle', syncVisibility);
@@ -1671,8 +1637,8 @@ if (api) {
       }
     })
     .catch(() => {});
-  api.onState((data) => {
-    if (!demo) acceptPlayback(data);
+  api.playback.onEvent((event) => {
+    if (!demo) playbackEvent(event);
   });
   api.onAuth((auth) => {
     if (auth.error) {
@@ -1696,7 +1662,7 @@ if (api) {
     }
   });
   api.onDeviceEvent(hardwareEvent);
-  api.onBridgeError(message);
+  api.onBridgeError(hardwareError);
   api.onMouseMode?.(mouseModeEvent);
   syncMouseMode();
   api
@@ -1711,14 +1677,12 @@ if (api) {
       render();
     })
     .catch((e) => message(e.message));
-  setInterval(async () => {
-    try {
-      const h = await api.hardware();
-      if (h.error) message(h.error);
-    } catch (e) {
-      message(e.message);
-    }
-  }, 3000);
+  // The bridge reports a failure once as it happens (onBridgeError). That can be
+  // before this view exists, so ask once on load as well.
+  api
+    .hardware()
+    .then((status) => hardwareError(status.error))
+    .catch((error) => hardwareError(error.message));
   api.onVisibility?.((state) => {
     const wasHidden = visibilityState.invisible || visibilityState.minimized;
     Object.assign(visibilityState, state);
@@ -1847,3 +1811,81 @@ $('#radialSongList').onclick = returnToSongList;
 
 $('#radialColorSave').onclick = () => selectItem();
 $('#radialColorCancel').onclick = menuBack;
+
+// Harness surface. The scripts/verify-*.js harnesses and smoke.js drive the app
+// by evaluating code in this window, and this is the complete list of what they
+// may reach. A module keeps everything else private, so a harness that needs
+// something new adds it here.
+Object.assign(window, {
+  $,
+  api,
+  demos,
+  preferences,
+  reducedMotion,
+  root,
+  nav,
+  idle,
+  dialOverlay,
+  radial,
+  trackTransition,
+  visibilityState,
+  volumeControl,
+  demoLikes,
+  settingsGroups,
+  WINDOW_MIN_OPACITY,
+  noteActivity,
+  time,
+  duration,
+  currentProgress,
+  message,
+  drawNavigation,
+  acceptPlayback,
+  refresh,
+  command,
+  seek,
+  rotate,
+  push,
+  selectItem,
+  menuBack,
+  openSettings,
+  showNow,
+  showLibrary,
+  openLastSongList,
+  followIdleSong,
+  moreRow,
+  valueSpec,
+  settingsRows,
+  showSettings,
+  showSettingsGroup,
+  showSetting,
+  showTransparency,
+  savePreferences,
+  syncMouseMode,
+  hardwareEvent,
+  radialColor,
+  backdropActive,
+  dismissDialOverlay,
+  browseFromPlayer,
+});
+// State the harnesses read and set directly.
+for (const [name, get, set] of [
+  // verify-gaming wraps render to count full redraws, so internal calls must see the wrapper.
+  ['render', () => render, (value) => (render = value)],
+  ['demo', () => demo, (value) => (demo = value)],
+  ['index', () => index, (value) => (index = value)],
+  ['playing', () => playing, (value) => (playing = value)],
+  ['progress', () => progress, (value) => (progress = value)],
+  ['volume', () => volume, (value) => (volume = value)],
+  ['playback', () => playback, (value) => (playback = value)],
+  ['updated', () => updated, (value) => (updated = value)],
+  ['pinned', () => pinned, (value) => (pinned = value)],
+  ['demoQueue', () => demoQueue, (value) => (demoQueue = value)],
+  ['demoShuffle', () => demoShuffle, (value) => (demoShuffle = value)],
+  ['demoRepeat', () => demoRepeat, (value) => (demoRepeat = value)],
+  [
+    'lastVisualActivity',
+    () => lastVisualActivity,
+    (value) => (lastVisualActivity = value),
+  ],
+])
+  Object.defineProperty(window, name, { get, set, configurable: true });

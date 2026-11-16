@@ -20,8 +20,8 @@ only for the external Ulanzi plugin; there is no frontend server to deploy.
 | `src/media-session.js`, `src/mac-media-session.js` | The Spotify desktop app's local controls: Windows media sessions through a PowerShell helper, macOS through AppleScript. Both expose the same `state`, `current()`, and `command()` |
 | `renderer/bootstrap.mjs` | Explicit imports for frontend dependencies and feature factories |
 | `renderer/features/` | Settings and library controllers, playback rendering, and the radial view |
-| `renderer/client/` | IPC clients and adapters for the existing screens |
-| `renderer/renderer.js` | Existing interface composition, navigation coordination, demo state, and control bindings |
+| `renderer/client/` | The application settings client |
+| `renderer/renderer.js` | ES module that composes the interface: navigation coordination, demo state, control bindings, and the harness surface |
 | `ulanzi-plugin/` | External device plugin and vendor SDK |
 
 Application modules must not import Electron, desktop implementations, Spotify
@@ -102,6 +102,10 @@ its old recovery values once. Backend settings then win over stale browser copie
 Quick edits are serialized, and outdated acknowledgements cannot replace newer
 frontend edits. Failed writes restore the frontend's backend-owned values.
 
+Electron names the profile folder after the app. `src/desktop/profile.js` keeps a
+profile created under the app's first name (`desktop-ulanzi-ipod-poc`) in use when
+no `turnbit` folder exists, and never replaces a profile path set on purpose.
+
 Presentation preferences remain in browser storage (including legacy `dialpod`
 migrations and paused-interface preferences). Native window placement retains its
 existing files and formats. Encrypted Spotify sessions and endpoint cooldown files
@@ -126,11 +130,19 @@ The tray and pointer/keyboard client also use the same application playback serv
 
 ## Existing interfaces
 
-Feature modules load through explicit imports in `bootstrap.mjs`. The coordinator
-remains a classic script so the shipped interfaces and existing desktop harnesses
-retain their named entry points during migration. Playback and library adapters
-translate normalized contracts into the fields those screens already use. New
-interfaces should consume the normalized preload APIs directly.
+`bootstrap.mjs` imports the classic helper scripts (which publish their entry
+points on `window` and are also required by unit tests), then `renderer.js`, an ES
+module that imports the feature factories. Views read the normalized contracts
+directly: `playback` is a `PlaybackState`, a song row carries a `PlaybackTrack` in
+`row.track`, and library pages are `{items, total, nextOffset}`. Demo songs are
+converted to the same track shape, so no view has a demo-only branch for metadata.
+A playlist row keeps a small reference `{id, uri, name}`, because saved preferences
+(Last Song List, the cold-start playlist) store that shape.
+
+The harnesses drive the app by evaluating code in the window. Because a module's
+bindings are private, `renderer.js` ends with the harness surface: one explicit list
+of the functions, objects, and state variables harnesses may reach. Add to that list
+when a harness needs something new.
 
 The iPod and Zune interfaces are archived on `archive/ipod-zune-interfaces`
 (commit `c73554c`), including their dedicated assets and suites. Main ships only
@@ -145,8 +157,13 @@ unrelated preference data are retained. The retired screen markup and input bind
   Waits for state changes instead of fixed menu delays; failures include the
   current page and renderer errors. No real Spotify account or device is used.
 
-- `npm run check`: ESLint (including dependency rules) and unit/contract tests.
-- `npm run format:check`: consistent source formatting. `npm run format` applies it.
+- `npm run check`: ESLint (including dependency rules), the formatting check, and
+  unit/contract tests. CI runs this on every push and pull request
+  (`.github/workflows/check.yml`). `npm run format` applies the formatting.
+- `npm run test:harnesses`: smoke plus every offline `scripts/verify-*.js` harness in
+  turn, with a pass/fail summary. `verify-studio.js` is excluded because it needs a
+  running Ulanzi Studio. Harnesses require `scripts/harness-env.js` first so a covered
+  window keeps animating.
 - `npm run test:playback`: real Electron composition with a fake Spotify network
   boundary, normalized IPC/library, backend settings, renderer reload/crash recovery,
   and hardware playback without a renderer. Uses a temporary profile and no real credentials.

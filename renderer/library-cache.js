@@ -23,33 +23,35 @@ class LikedSongsCache {
   // because a new like shifts every position after it.
   applyFirstPage(data) {
     const items = data?.items || [],
-      uri = (entry) => (entry?.track || entry?.item)?.uri;
+      id = (entry) => entry?.track?.id;
     const same =
       !!this.items &&
       this.total === data?.total &&
       items.length <= this.items.length &&
-      items.every((entry, i) => uri(entry) === uri(this.items[i]));
+      items.every((entry, i) => id(entry) === id(this.items[i]));
     this.fetchedAt = this.now();
     if (same) return false;
     this.items = items.slice();
-    this.next = !!data?.next;
+    this.next = data?.nextOffset != null;
     this.total = data?.total ?? items.length;
     return true;
   }
   appendPage(offset, data) {
     if (!this.items || offset !== this.items.length) return;
     this.items.push(...(data?.items || []));
-    this.next = !!data?.next;
+    this.next = data?.nextOffset != null;
   }
-  setLiked(item, liked) {
-    if (!this.items || !item?.uri) return false;
+  setLiked(track, liked) {
+    if (!this.items || !track?.id) return false;
     const index = this.items.findIndex(
-      (entry) => (entry?.track || entry?.item)?.uri === item.uri,
+      (entry) => entry?.track?.id === track.id,
     );
     if (liked && index < 0) {
       this.items.unshift({
-        added_at: new Date(this.now()).toISOString(),
-        track: item,
+        kind: 'track',
+        track,
+        position: 0,
+        playable: true,
       });
       this.total++;
       return true;

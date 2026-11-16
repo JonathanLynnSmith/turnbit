@@ -1,3 +1,4 @@
+require('./harness-env');
 // Confirms Window Mode actually changes the live OS window (frame, dock/taskbar) and
 // that toggling destroys/recreates mainWindow exactly once without crashing.
 const {app,BrowserWindow}=require('electron');

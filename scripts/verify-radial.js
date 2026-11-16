@@ -1,3 +1,4 @@
+require('./harness-env');
 const {app,BrowserWindow,screen}=require('electron');
 const path=require('node:path'),assert=require('node:assert/strict'),fs=require('node:fs');
 app.disableHardwareAcceleration();app.setPath('userData',path.join(app.getPath('temp'),'turnbit-radial-test'));
@@ -23,9 +24,9 @@ app.whenReady().then(async()=>{
     const bounds=window.getBounds(),area=screen.getDisplayMatching(bounds).bounds;assert.equal(bounds.x+bounds.width,area.x+area.width);
     await js(`nav.reset(root());showLibrary('songs');`);await wait(400);await turn(1);
     await check(`radial.nodes.get(2).lastChild.textContent==='turnbit demo · 3:07'`);
-    await js(`nav.current.rows[2].item.artists=[{name:'First artist'},{name:'Second artist'}];drawNavigation();`);
+    await js(`nav.current.rows[2].track.artists=['First artist','Second artist'];drawNavigation();`);
     await check(`radial.nodes.get(2).lastChild.textContent==='First artist, Second artist · 3:07'`);
-    await js(`delete nav.current.rows[2].item.artists;drawNavigation();`);await select();
+    await js(`nav.current.rows[2].track.artists=['turnbit demo'];drawNavigation();`);await select();
     await check(`nav.current.kind==='now' && index===1 && playing`);
     await wait(350);
     await check(`(()=>{const host=document.querySelector('#radial').getBoundingClientRect(),bar=document.querySelector('#radialSeek').getBoundingClientRect(),text=document.querySelector('.radial-track').getBoundingClientRect(),art=document.querySelector('.radial-art').getBoundingClientRect();return Math.abs(bar.left-host.left-30)<2 && Math.abs(text.left-bar.left)<2 && Math.abs(art.right-bar.right)<2 && bar.width>370;})()`);
@@ -40,8 +41,8 @@ app.whenReady().then(async()=>{
     await js(`trackTransition.reducedMotion=()=>reducedMotion.matches;index=1;render();`);await wait(450);
     await js(`document.querySelector('#radialVolume').value=64;document.querySelector('#radialVolume').dispatchEvent(new Event('input'));`);await check(`volume===64 && document.querySelector('#radialVolumeValue').textContent==='64%'`);
     await js(`document.querySelector('#radialSeek').value=30000;document.querySelector('#radialSeek').dispatchEvent(new Event('change'));`);await check(`currentProgress()>=30000 && currentProgress()<32000`);
-    await js(`window.savedDemo=demo;demo=false;playback={item:{name:'Artwork check',artists:[{name:'Test artist'}],duration_ms:187000,album:{name:'Test album',images:[{url:'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><rect width="300" height="300" fill="#37665c"/></svg>')}]}}};render();`);
-    await check(`!document.querySelector('#radialArt').hidden && document.querySelector('#radialArt').src===playback.item.album.images[0].url && document.querySelector('#radialTitle').textContent==='Artwork check'`);
+    await js(`window.savedDemo=demo;demo=false;playback={track:{title:'Artwork check',artists:['Test artist'],durationMs:187000,album:{title:'Test album',artwork:[{url:'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><rect width="300" height="300" fill="#37665c"/></svg>')}]}}};render();`);
+    await check(`!document.querySelector('#radialArt').hidden && document.querySelector('#radialArt').src===playback.track.album.artwork[0].url && document.querySelector('#radialTitle').textContent==='Artwork check'`);
     await js(`demo=true;playback=null;volume=50;render();`);
     await turn(1);await check(`volume===52`);await select();await check(`nav.current.libraryKind==='songs'`);
     await check(`document.querySelectorAll('.radial-label.has-mini').length===1 && radial.nodes.get(2).classList.contains('has-mini') && radial.nodes.get(2).querySelector('.mini-times').lastChild.textContent==='3:07' && !radial.nodes.get(2).querySelector('small').textContent.includes('Playing')`);
@@ -118,10 +119,10 @@ app.whenReady().then(async()=>{
     await command({type:'command',command:'like'});await check(`document.querySelector('#actionNotice').textContent.includes('Liked Songs') && !document.querySelector('#actionNotice').hidden && nav.current.kind==='list'`);
     await command({type:'command',command:'shuffle'});await check(`demoShuffle && document.querySelector('#actionNotice').textContent==='Shuffle on'`);
     await command({type:'command',command:'shuffle'});await check(`!demoShuffle`);
-    for(const mode of ['context','track','off']){await command({type:'command',command:'repeat'});await check(`demoRepeat==='${mode}'`);}
+    for(const mode of ['all','one','off']){await command({type:'command',command:'repeat'});await check(`demoRepeat==='${mode}'`);}
     await js(`showNow();render();`);await check(`document.querySelector('#radialNow [data-mode=like]').dataset.active==='true'`);
     await command({type:'command',command:'like'});await check(`document.querySelector('#radialNow [data-mode=like]').dataset.active==='false' && nav.current.kind==='now'`);
-    await js(`demo=false;playback={item:{uri:'spotify:track:aaaaaaaaaaaaaaaaaaaaaa',name:'Indicator check',artists:[{name:'Artist'}],album:{name:'Album'},duration_ms:200000},liked:true,shuffle_state:true,repeat_state:'track'};render();`);
+    await js(`demo=false;playback={track:{id:'spotify:track:aaaaaaaaaaaaaaaaaaaaaa',title:'Indicator check',artists:['Artist'],album:{title:'Album'},durationMs:200000},liked:true,shuffle:true,repeat:'one'};render();`);
     await check(`document.querySelectorAll('#radialNow .playback-indicators [data-active=true]').length===3 && getComputedStyle(document.querySelector('#radialNow .repeat-one')).display!=='none'`);
     await wait(600);try{fs.writeFileSync(path.join(__dirname,'../artifacts/turnbit-playback-icons.png'),(await window.webContents.capturePage()).toPNG());}catch{}
     await js(`savePreferences({keepOnTop:false,idlePinned:false});pinned=false;api.pin(false);`);

@@ -1,3 +1,4 @@
+require('./harness-env');
 // Offline end-to-end check of the interface shipped on main.
 const { app, BrowserWindow } = require('electron');
 const assert = require('node:assert/strict');
@@ -121,7 +122,7 @@ async function main() {
   await until(async () => {
     if (win.webContents.isLoading()) return false;
     return run(
-      `typeof window.TurnbitFeatures==='object' && typeof api!=='undefined' && typeof preferences!=='undefined' && typeof radial!=='undefined'`,
+      `typeof api!=='undefined' && typeof preferences!=='undefined' && typeof radial!=='undefined'`,
     );
   }, 'renderer bootstrap');
   await expect(`demo && nav.current.title==='turnbit'`, 'offline demo Home');

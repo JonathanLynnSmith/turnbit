@@ -1,3 +1,4 @@
+require('./harness-env');
 // Isolated Electron render and gesture checks; never uses the real Spotify session.
 const {app,BrowserWindow,screen}=require('electron');
 const path=require('node:path'),fs=require('node:fs'),assert=require('node:assert/strict');

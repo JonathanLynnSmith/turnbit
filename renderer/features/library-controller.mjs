@@ -5,6 +5,7 @@ export function createLibraryController({
   api,
   getState,
   demos,
+  demoTrack,
   time,
   drawNavigation,
   push,
@@ -23,6 +24,8 @@ export function createLibraryController({
   let lastLiked = null,
     lastSongListPage = null,
     pendingSkipFollow = null;
+  // Pages use the library contract: {items, total, nextOffset}. Demo pages add
+  // the demo index each entry plays.
   function demoLibrary(kind, playlist) {
     if (kind === 'playlists')
       return {
@@ -30,24 +33,29 @@ export function createLibraryController({
           { id: 'demo-night', name: 'After Hours', demoIndexes: [0, 1] },
           { id: 'demo-sunday', name: 'Slow Days', demoIndexes: [2] },
         ],
-        next: null,
+        nextOffset: null,
       };
     const indexes = playlist?.demoIndexes || demos.map((_, i) => i);
     return {
-      items: indexes.map((i) => ({ item: demos[i], demoIndex: i })),
-      next: null,
+      items: indexes.map((i) => ({
+        kind: 'track',
+        track: demoTrack(i),
+        demoIndex: i,
+      })),
+      nextOffset: null,
     };
   }
-  function playable(item) {
-    return (
-      item &&
-      !item.is_local &&
-      item.is_playable !== false &&
-      !item.restrictions &&
-      /^spotify:(track|episode):[A-Za-z0-9]{22}$/.test(item.uri || '')
-    );
+  // The playlist a row opens or plays. Saved preferences keep this shape.
+  function playlistReference(entry) {
+    return entry.kind === 'collection'
+      ? {
+          id: entry.id,
+          uri: entry.playbackId,
+          name: entry.title,
+          artwork: entry.artwork,
+        }
+      : entry;
   }
-  const PAGE_SIZE = 20;
   function moreRow(offset) {
     return {
       label: 'Load more',
@@ -60,37 +68,39 @@ export function createLibraryController({
   function libraryRows(page, items, offset) {
     const { demo } = getState();
     return items.map((entry, i) => {
-      if (page.libraryKind === 'playlists')
+      if (page.libraryKind === 'playlists') {
+        const playlist = playlistReference(entry);
         return {
-          label: entry.name || 'Untitled playlist',
+          label: playlist.name || 'Untitled playlist',
           action: 'playlist',
-          playlist: entry,
+          playlist,
           branch: true,
         };
-      const item = entry.item || entry.track;
+      }
+      const track = entry.track;
       return {
-        label: item?.name || 'Unavailable item',
+        label: track?.title || 'Unavailable item',
         action: 'song',
-        item,
+        track,
         position: offset + i,
         contextUri: page.playlist?.uri,
         demoIndex: entry.demoIndex,
         queue: page.playlist?.demoIndexes,
-        disabled: !demo && !playable(item),
-        detail: time(demo ? item.duration : item?.duration_ms || 0),
+        disabled: !demo && (!track || entry.playable === false),
+        detail: time(track?.durationMs || 0),
       };
     });
   }
   function showCachedSongs(page, data) {
-    const selectedUri = page.rows[page.selected]?.item?.uri,
+    const selectedId = page.rows[page.selected]?.track?.id,
       items = data.items || [];
     page.total = data.total;
     page.rows = libraryRows(page, items, 0);
     if (data.next) page.rows.push(moreRow(items.length));
     if (!page.rows.length)
       page.rows = [{ label: 'No items found', disabled: true }];
-    const index = selectedUri
-      ? page.rows.findIndex((row) => row.item?.uri === selectedUri)
+    const index = selectedId
+      ? page.rows.findIndex((row) => row.track?.id === selectedId)
       : -1;
     page.selected =
       index >= 0 ? index : Math.min(page.selected, page.rows.length - 1);
@@ -115,7 +125,11 @@ export function createLibraryController({
     if (likedSongs.isFresh() || page.refreshing) return;
     page.refreshing = true;
     try {
-      if (likedSongs.applyFirstPage(await api.library('songs', undefined, 0)))
+      if (
+        likedSongs.applyFirstPage(
+          await api.library.page({ kind: 'songs', offset: 0 }),
+        )
+      )
         syncLikedSongPages();
     } catch (e) {
       if (nav.current === page) message(e.message);
@@ -156,7 +170,11 @@ export function createLibraryController({
     try {
       const data = demo
         ? demoLibrary(page.libraryKind, page.playlist)
-        : await api.library(page.libraryKind, page.playlist?.id, offset);
+        : await api.library.page({
+            kind: page.libraryKind,
+            id: page.playlist?.id,
+            offset,
+          });
       page.total = data.total;
       if (!demo && page.libraryKind === 'songs') {
         if (offset) likedSongs.appendPage(offset, data);
@@ -164,8 +182,7 @@ export function createLibraryController({
       }
       const rows = libraryRows(page, data.items || [], offset);
       page.rows = [...baseRows, ...rows];
-      if (data.next)
-        page.rows.push(moreRow(offset + (data.items?.length || PAGE_SIZE)));
+      if (data.nextOffset != null) page.rows.push(moreRow(data.nextOffset));
       if (offset && rows.length) page.selected = baseRows.length;
       // The Back row is not an item: an empty list still says so.
       if (!page.rows.some((row) => row.action !== 'nav-back'))
@@ -237,7 +254,7 @@ export function createLibraryController({
     const { demo, index, playback } = getState();
 
     const pending = pendingSkipFollow,
-      key = demo ? 'demo:' + index : playback?.item?.uri;
+      key = demo ? 'demo:' + index : playback?.track?.id;
     if (!pending) return;
     if (Date.now() > pending.until || pending.page !== nav.current) {
       pendingSkipFollow = null;
@@ -275,10 +292,10 @@ export function createLibraryController({
       page.loading ||
       $('#settings').open ||
       !ready ||
-      !(demo ? playing || progress > 0 : playback?.item)
+      !(demo ? playing || progress > 0 : playback?.track)
     )
       return;
-    const key = demo ? 'demo:' + index : playback?.item?.uri,
+    const key = demo ? 'demo:' + index : playback?.track?.id,
       last = followIdleSong.last;
     if (last?.page === page && last.rows === page.rows && last.key === key)
       return;
@@ -313,7 +330,6 @@ export function createLibraryController({
   }
   return {
     demoLibrary,
-    playable,
     moreRow,
     libraryRows,
     showCachedSongs,
@@ -331,26 +347,26 @@ export function createLibraryController({
       const { demo, index, playback } = getState();
       pendingSkipFollow = {
         page: nav.current,
-        key: demo ? 'demo:' + index : playback?.item?.uri,
+        key: demo ? 'demo:' + index : playback?.track?.id,
         until: Date.now() + 20000,
       };
     },
-    acceptPlayback(data) {
+    acceptPlayback(state) {
       const { demo } = getState();
       if (
         !demo &&
-        data?.item?.uri &&
-        !data.provisional &&
-        !data.likedPending &&
-        typeof data.liked === 'boolean'
+        state?.track?.id &&
+        !state.provisional &&
+        !state.likedPending &&
+        typeof state.liked === 'boolean'
       ) {
         if (
-          lastLiked?.uri === data.item.uri &&
-          lastLiked.liked !== data.liked &&
-          likedSongs.setLiked(data.item, data.liked)
+          lastLiked?.id === state.track.id &&
+          lastLiked.liked !== state.liked &&
+          likedSongs.setLiked(state.track, state.liked)
         )
           syncLikedSongPages();
-        lastLiked = { uri: data.item.uri, liked: data.liked };
+        lastLiked = { id: state.track.id, liked: state.liked };
       }
     },
     clear() {

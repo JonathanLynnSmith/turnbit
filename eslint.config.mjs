@@ -4,9 +4,9 @@ export default [
   {
     files: ['src/**/*.js', 'renderer/**/*.{js,mjs}', 'scripts/**/*.js', 'test/**/*.js', 'ulanzi-plugin/com.turnbit.spotify.ulanziPlugin/app.js'],
     languageOptions: { ecmaVersion: 'latest', sourceType: 'commonjs', globals: { ...globals.node, ...globals.browser } },
-    rules: { 'no-undef': 'error', 'no-unreachable': 'error', 'no-dupe-args': 'error', 'no-dupe-keys': 'error', 'valid-typeof': 'error' }
+    rules: { 'no-undef': 'error', 'no-unreachable': 'error', 'no-dupe-args': 'error', 'no-dupe-keys': 'error', 'valid-typeof': 'error', 'no-unused-vars': ['error', { args: 'none', caughtErrors: 'none', ignoreRestSiblings: true }] }
   },
-  { files: ['**/*.mjs'], languageOptions: { sourceType: 'module' } },
+  { files: ['**/*.mjs', 'renderer/renderer.js'], languageOptions: { sourceType: 'module' } },
   { files: ['src/app/**/*.js'], rules: {
     'no-restricted-modules': ['error', { paths: ['electron'], patterns: ['**/desktop/**', '**/integrations/**', '**/renderer/**'] }],
     'no-restricted-globals': ['error', 'window', 'document', 'localStorage']

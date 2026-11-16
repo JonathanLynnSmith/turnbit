@@ -1,3 +1,4 @@
+require('./harness-env');
 // Offline visual checks for menu icons and the experimental title treatment.
 const { app, BrowserWindow } = require('electron');
 const assert = require('node:assert/strict');

@@ -1,3 +1,4 @@
+require('./harness-env');
 const {app,BrowserWindow}=require('electron');
 const path=require('node:path'),assert=require('node:assert/strict');
 app.disableHardwareAcceleration();app.setPath('userData',path.join(app.getPath('temp'),'turnbit-load-more-test'));
@@ -11,7 +12,7 @@ app.whenReady().then(async()=>{try{
   const click=async()=>{await post({type:'command',command:'center-down'});await post({type:'command',command:'center-up'});await post({type:'command',command:'center-click'});await wait(450);};
   const page=()=>js(`({count:nav.current.rows.length,highlighted:nav.current.rows[nav.current.selected]?.label,selected:nav.current.selected,last:nav.current.rows.at(-1)?.label,hold:document.body.dataset.backHold})`);
   // Demo songs have no second page, so add a Load more row by hand; loading it appends the demo songs again.
-  const songs=async(style,prefs='')=>{await js(`savePreferences({interfaceStyle:'${style}',hoverBack:true,nowPlayingOpens:'manual',idlePinned:false,visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:10}${prefs}});demo=true;nav.reset(root());showMusic();showLibrary('songs');`);await wait(300);
+  const songs=async(style,prefs='')=>{await js(`savePreferences({interfaceStyle:'${style}',hoverBack:true,nowPlayingOpens:'manual',idlePinned:false,visibility:{mode:'off',opacity:100,idleOpacity:0,timeout:10}${prefs}});demo=true;nav.reset(root());push({title:'Music',rows:[{label:'Playlists',action:'playlists',icon:'playlists',branch:true},{label:'Liked Songs',action:'songs',icon:'liked-songs',branch:true}]});showLibrary('songs');`);await wait(300);
     await js(`nav.current.rows.push(moreRow(3));nav.current.selected=nav.current.rows.length-2;drawNavigation();`);await wait(150);};
 
   for(const style of ['radial']){

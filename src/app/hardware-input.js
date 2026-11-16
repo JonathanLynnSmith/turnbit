@@ -1,5 +1,6 @@
 const { ValueControl } = require('../core/value-control');
 const { TransportHold } = require('../core/transport-hold');
+const { INPUT_STEPS } = require('../core/input-steps');
 
 // Application commands execute here even when the renderer is being recreated.
 // The view reports its presentation policy; navigation and demo behavior stay in
@@ -122,14 +123,18 @@ function createHardwareInput({
             : (playback.getState()?.device?.volume ?? 50);
         targetVolume = Math.max(
           0,
-          Math.min(100, current + (command === 'volume-up' ? 5 : -5)),
+          Math.min(
+            100,
+            current +
+              (command === 'volume-up' ? 1 : -1) * INPUT_STEPS.volumeKey,
+          ),
         );
         volumeAt = now();
         volumeWrites.set(targetVolume);
         return;
       }
       if (command === 'seek-forward' || command === 'seek-back')
-        return seek(command === 'seek-forward' ? 10000 : -10000);
+        return seek((command === 'seek-forward' ? 1 : -1) * INPUT_STEPS.seekMs);
       if (
         ['toggle', 'next', 'previous', 'like', 'shuffle', 'repeat'].includes(
           command,
