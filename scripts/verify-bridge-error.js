@@ -43,7 +43,7 @@ async function main() {
       `(()=>{const n=document.querySelector('#actionNotice');return n&&!n.hidden?n.textContent:''})()`,
     );
   await until(
-    async () => /bridge unavailable/i.test(await notice()),
+    async () => /Dial connection unavailable/.test(await notice()),
     'the bridge error was not shown',
   );
   await run(`message()`);

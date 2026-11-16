@@ -344,8 +344,98 @@ function hardwareError(text) {
   shownHardwareError = text;
   message(text);
 }
+// Electron prefixes a rejected request with its channel name; people should see only the reason.
+const plainText = (text) =>
+  String(text || '').replace(
+    /^Error invoking remote method '[^']*': (?:[A-Za-z]*Error: )?/,
+    '',
+  );
+// Problems that do not fix themselves stay on screen until they are resolved or
+// dismissed, each with its next step. Everything else is a notice that times out
+// (message, below). The backend names the kind of problem in the error's code.
+const PROBLEM_ACTIONS = {
+  'no-device': ['Choose a device', () => showDevices()],
+  'nothing-queued': [
+    'Choose what Play starts',
+    () => showSetting((row) => row.action === 'cold-start'),
+  ],
+  offline: ['Try again', () => refresh()],
+  'spotify-down': ['Try again', () => refresh()],
+  denied: ['Reconnect Spotify', () => openSettings()],
+  disconnected: ['Connect Spotify', () => openSettings()],
+  // A rate limit has nothing to press: it ends on its own, at problem.until.
+  'rate-limited': null,
+};
+let problem = null,
+  dismissedProblem = null;
+function drawProblem() {
+  let notice = $('#problemNotice');
+  if (!notice) {
+    notice = document.createElement('div');
+    notice.id = 'problemNotice';
+    notice.setAttribute('role', 'alert');
+    notice.hidden = true;
+    const text = document.createElement('span');
+    text.className = 'problem-text';
+    const action = document.createElement('button');
+    action.type = 'button';
+    action.className = 'problem-action';
+    action.onclick = () => {
+      const run = PROBLEM_ACTIONS[problem?.code]?.[1];
+      // Acting on it answers it; if the cause is still there, the next failure brings it back.
+      problem = null;
+      drawProblem();
+      run?.();
+    };
+    const dismiss = document.createElement('button');
+    dismiss.type = 'button';
+    dismiss.className = 'problem-dismiss';
+    dismiss.setAttribute('aria-label', 'Dismiss');
+    dismiss.textContent = '×';
+    dismiss.onclick = () => {
+      dismissedProblem = problem;
+      problem = null;
+      drawProblem();
+    };
+    notice.append(text, action, dismiss);
+    document.body.append(notice);
+  }
+  const action = PROBLEM_ACTIONS[problem?.code];
+  notice.querySelector('.problem-text').textContent = problem?.text || '';
+  notice.querySelector('.problem-action').textContent = action?.[0] || '';
+  notice.querySelector('.problem-action').hidden = !action;
+  notice.hidden = !problem;
+  document.body.dataset.problem = String(!!problem);
+  // The timed notice sits clear of the problem, however many lines it takes.
+  document.body.style.setProperty(
+    '--problem-height',
+    (problem ? notice.offsetHeight : 0) + 'px',
+  );
+  // The same words are not shown twice.
+  const timed = $('#actionNotice');
+  if (problem && timed && timed.textContent === problem.text)
+    timed.hidden = true;
+}
+function showProblem({ code, message: text, until }) {
+  text = plainText(text);
+  // A problem the user dismissed stays dismissed while it keeps being reported.
+  if (dismissedProblem?.code === code && dismissedProblem.text === text) return;
+  if (problem?.code === code && problem.text === text) return;
+  problem = { code, text, until };
+  drawProblem();
+}
+// Called when something shows the cause is gone; without codes, clears any problem.
+function resolveProblems(codes) {
+  if (dismissedProblem && (!codes || codes.includes(dismissedProblem.code)))
+    dismissedProblem = null;
+  if (!problem || (codes && !codes.includes(problem.code))) return;
+  problem = null;
+  drawProblem();
+}
 let noticeTimer;
 function message(text = '') {
+  text = plainText(text);
+  if (text && text === problem?.text) return;
   let notice = $('#actionNotice');
   if (!notice) {
     notice = document.createElement('div');
@@ -554,6 +644,10 @@ function render(...args) {
 }
 // A normalized playback snapshot from the backend (src/app/playback-model.js), or null.
 function acceptPlayback(state) {
+  // Any answer means Spotify was reached; a device or a song means there is something to play on.
+  resolveProblems(['offline', 'spotify-down', 'disconnected']);
+  if (state?.device || state?.track)
+    resolveProblems(['no-device', 'nothing-queued']);
   if (
     playback?.track?.id &&
     state?.track?.id &&
@@ -609,7 +703,9 @@ function playbackEvent(event) {
   else if (event.type === 'device-recovered') {
     if (preferences.preferredDevice?.id !== event.device.id)
       savePreferences({ preferredDevice: event.device });
-  } else if (event.type === 'notice' || event.type === 'error')
+  } else if (event.type === 'error' && event.code in PROBLEM_ACTIONS)
+    showProblem(event);
+  else if (event.type === 'notice' || event.type === 'error')
     message(event.message);
 }
 // Backend owns refresh scheduling; screens request a snapshot on connection.
@@ -716,6 +812,7 @@ async function command(cmd, value) {
   }
   try {
     const result = await api.playback.command(cmd, value);
+    resolveProblems(['no-device', 'nothing-queued', 'denied']);
     if (result?.message) message(result.message);
     return true;
   } catch (e) {
@@ -1588,6 +1685,7 @@ $('#connectionForm').onsubmit = async (e) => {
 $('#logout').onclick = async () => {
   try {
     libraryController.clear();
+    resolveProblems();
     transportHold.cancel();
     seekControl.reset(0);
     volumeControl.reset(volume);
@@ -1646,6 +1744,7 @@ if (api) {
       $('#settingsMessage').textContent = auth.error;
       return;
     }
+    resolveProblems();
     if (auth.connected) {
       demo = false;
       $('#settingsMessage').textContent = 'Connected.';
@@ -1739,6 +1838,8 @@ setInterval(() => {
     )
   )
     drawNavigation();
+  if (problem?.until && Date.now() >= problem.until)
+    resolveProblems([problem.code]);
   followIdleSong();
   syncGamingMode();
   renderProgress();
@@ -1840,6 +1941,7 @@ Object.assign(window, {
   message,
   drawNavigation,
   acceptPlayback,
+  playbackEvent,
   refresh,
   command,
   seek,

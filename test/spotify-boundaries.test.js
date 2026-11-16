@@ -88,3 +88,45 @@ test('a second unauthorized response is surfaced rather than retried indefinitel
   await assert.rejects(http.api('/me/player'), error => error.status === 401);
   assert.equal(calls, 2);
 });
+
+test('failures say what kind they are, so a lasting one can stay on screen', async () => {
+  const { SpotifyHttp } = require('../src/integrations/spotify/http');
+  const auth = { ensureToken: async () => 'token', refreshToken: 'refresh', invalidateAccessToken() {} };
+  const kind = async (fetch) => {
+    try {
+      await new SpotifyHttp({ auth, fetch, wait: async () => {} }).api('/me/player/pause', { method: 'PUT' });
+    } catch (error) {
+      return error;
+    }
+  };
+  const status = (code, headers) => async () => new Response('{}', { status: code, headers });
+  assert.equal((await kind(status(404))).code, 'no-device');
+  assert.equal((await kind(status(403))).code, 'denied');
+  assert.equal((await kind(status(503))).code, 'spotify-down');
+  const limited = await kind(status(429, { 'retry-after': '60' }));
+  assert.equal(limited.code, 'rate-limited');
+  assert.ok(limited.until > Date.now(), 'a rate limit says when it ends');
+  const offline = await kind(async () => {
+    throw new TypeError('fetch failed');
+  });
+  assert.equal(offline.code, 'offline');
+  assert.equal(offline.message, "Can't reach Spotify. Check your internet connection.");
+});
+
+test('the playback service passes the kind of failure to its listeners', async () => {
+  const { createPlaybackService } = require('../src/app/playback-service');
+  const service = createPlaybackService({
+    capabilities: {},
+    subscribe: () => () => {},
+    read: async () => {
+      throw Object.assign(new Error('No device'), { code: 'no-device' });
+    },
+    command: async () => {},
+  });
+  const events = [];
+  service.subscribe((event) => events.push(event));
+  service.setConnected(true);
+  await service.refresh().catch(() => {});
+  service.dispose();
+  assert.deepEqual(events.at(-1), { type: 'error', message: 'No device', code: 'no-device' });
+});

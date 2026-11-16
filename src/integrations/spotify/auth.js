@@ -150,7 +150,9 @@ class SpotifyAuth {
   async ensureToken() {
     if (this.token && Date.now() < this.expiresAt) return this.token;
     if (!this.refreshToken)
-      throw new Error('Connect Spotify to control playback.');
+      throw Object.assign(new Error('Connect Spotify to control playback.'), {
+        code: 'disconnected',
+      });
     if (!this.refreshing)
       this.refreshing = this.request(`${ACCOUNTS}/api/token`, {
         method: 'POST',

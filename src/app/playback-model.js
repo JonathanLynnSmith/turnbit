@@ -45,8 +45,14 @@
  *
  * @typedef {{type: 'state', state: PlaybackState|null}|
  *   {type: 'notice', message: string}|
- *   {type: 'error', message: string}|
+ *   {type: 'error', message: string, code?: PlaybackErrorCode, until?: number}|
  *   {type: 'device-recovered', device: {id: string, name: string, type: string}}} PlaybackEvent
+ *
+ * An error's code names a failure that lasts until something changes: no device
+ * to play on, nothing queued for Play to resume, a rate limit (until = when it
+ * ends, epoch milliseconds), no connection, the provider being down, access
+ * denied, or not connected. Errors without a code are momentary.
+ * @typedef {'no-device'|'nothing-queued'|'rate-limited'|'offline'|'spotify-down'|'denied'|'disconnected'} PlaybackErrorCode
  *
  * @typedef {Object} PlaybackProvider
  * @property {PlaybackCapabilities} capabilities Static support; state capabilities may narrow it.

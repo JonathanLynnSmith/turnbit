@@ -24,7 +24,7 @@ const cooldownError = (group, at) =>
     new Error(
       `Spotify rate limit: ${groupLabel(group)} paused until ${untilText(at)}.`,
     ),
-    { status: 429 },
+    { status: 429, code: 'rate-limited', until: at },
   );
 
 // Owns network policy, endpoint cooldowns, and safe read retries.
@@ -56,10 +56,19 @@ class SpotifyHttp {
     }
   }
   async request(url, options = {}) {
-    const response = await this.fetch(url, {
-      ...options,
-      signal: AbortSignal.timeout(15000),
-    });
+    let response;
+    try {
+      response = await this.fetch(url, {
+        ...options,
+        signal: AbortSignal.timeout(15000),
+      });
+    } catch {
+      // No connection, DNS failure, or a timeout: the request never got an answer.
+      throw Object.assign(
+        new Error("Can't reach Spotify. Check your internet connection."),
+        { code: 'offline' },
+      );
+    }
     // TURNBIT_DEBUG_API=1 (or the older DIALPOD_DEBUG_API) logs every Spotify call, so throttling (429 + Retry-After) and call volume are visible.
     if (process.env.TURNBIT_DEBUG_API || process.env.DIALPOD_DEBUG_API) {
       this.debugCalls = (this.debugCalls || [])
@@ -93,6 +102,11 @@ class SpotifyHttp {
               `Spotify HTTP ${response.status}`),
       );
       error.status = response.status;
+      // The kind of failure, so the view can keep a lasting one on screen with its next step.
+      error.code =
+        { 403: 'denied', 404: 'no-device', 429: 'rate-limited' }[
+          response.status
+        ] || (serverError ? 'spotify-down' : undefined);
       if (response.status === 429)
         error.retryAfter = Math.max(
           1,

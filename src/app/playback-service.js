@@ -3,7 +3,7 @@ const { createPlaybackDispatcher } = require('./playback-dispatcher');
 // Provider contract: read() -> Turnbit snapshot, command(name, value),
 // subscribe(listener) -> unsubscribe, and a capabilities object. Provider events
 // are {type:'state', state}, {type:'notice', message}, {type:'device-recovered',
-// device}, or {type:'error', message}. No provider payloads cross this boundary.
+// device}, or {type:'error', message, code?, until?}. No provider payloads cross this boundary.
 /** @param {import("./playback-model").PlaybackProvider} provider */
 function createPlaybackService(
   provider,
@@ -27,6 +27,13 @@ function createPlaybackService(
   const publish = (event) => {
     for (const listener of listeners) listener(copy(event));
   };
+  // code names the kind of failure; until is when a rate limit ends.
+  const failure = (error) => ({
+    type: 'error',
+    message: error.message,
+    ...(error.code ? { code: error.code } : {}),
+    ...(error.until ? { until: error.until } : {}),
+  });
   function accept(event) {
     if (!connected || disposed) return;
     if (event.type === 'state') {
@@ -91,8 +98,7 @@ function createPlaybackService(
         return copy(state);
       })
       .catch((error) => {
-        if (session === generation && !disposed)
-          publish({ type: 'error', message: error.message });
+        if (session === generation && !disposed) publish(failure(error));
         throw error;
       })
       .finally(() => {
@@ -129,8 +135,7 @@ function createPlaybackService(
         schedule(commandRefreshMs);
       return result;
     } catch (error) {
-      if (session === generation && !disposed)
-        publish({ type: 'error', message: error.message });
+      if (session === generation && !disposed) publish(failure(error));
       throw error;
     }
   });

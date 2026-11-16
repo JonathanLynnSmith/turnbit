@@ -65,10 +65,13 @@ function createSpotifyRecovery({
       }
     }
     if (!device)
-      throw new Error(
-        getSettings().preferredDevice
-          ? 'Preferred Spotify device is unavailable. Open Spotify on that device or choose another preferred device.'
-          : 'No Spotify device is available. Open Spotify or select a preferred device in Settings.',
+      throw Object.assign(
+        new Error(
+          getSettings().preferredDevice
+            ? 'Preferred Spotify device is unavailable. Open Spotify on that device or choose another preferred device.'
+            : 'No Spotify device is available. Open Spotify or select a preferred device in Settings.',
+        ),
+        { code: 'no-device' },
       );
     await api('/me/player', {
       method: 'PUT',
@@ -192,8 +195,11 @@ function createSpotifyRecovery({
         );
       cold = await coldStartPlay();
       if (!cold)
-        throw new Error(
-          'Nothing was playing. Start a song in Spotify, or choose what Play should start in Settings → Playback.',
+        throw Object.assign(
+          new Error(
+            'Nothing was playing. Start a song in Spotify, or choose what Play should start in Settings → Playback.',
+          ),
+          { code: 'nothing-queued' },
         );
       try {
         return started(await send(cold.body));

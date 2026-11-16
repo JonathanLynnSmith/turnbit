@@ -59,6 +59,14 @@ Snapshots use `track.title`, `track.artists`, `track.durationMs`, `playing`,
 matching. Capability flags describe supported controls. Full JSDoc contracts are
 in `src/app/playback-model.js`.
 
+An `error` event may carry a `code` naming a failure that lasts until something
+changes: `no-device`, `nothing-queued`, `rate-limited` (with `until`, when it ends),
+`offline`, `spotify-down`, `denied`, or `disconnected`. The integration sets it where
+the error is created and the service passes it on. The view keeps a coded error on
+screen as a problem with its next step until it is resolved or dismissed; an error
+without a code is a notice that times out. What resolves each problem is decided in
+one place, `resolveProblems` in `renderer.js`.
+
 Polling is 5 seconds for active/local playback, 15 seconds when paused or remote
 playback is idle, and 30 seconds when hidden. Track-end checks do not repeatedly
 query a lagging provider. Disconnect clears state and timers; old queued commands
@@ -102,9 +110,10 @@ its old recovery values once. Backend settings then win over stale browser copie
 Quick edits are serialized, and outdated acknowledgements cannot replace newer
 frontend edits. Failed writes restore the frontend's backend-owned values.
 
-Electron names the profile folder after the app. `src/desktop/profile.js` keeps a
-profile created under the app's first name (`desktop-ulanzi-ipod-poc`) in use when
-no `turnbit` folder exists, and never replaces a profile path set on purpose.
+Electron names the profile folder after the app, and creates it before app code
+runs. `src/desktop/profile.js` therefore uses the folder from the app's first name
+(`desktop-ulanzi-ipod-poc`) whenever that folder exists, and never replaces a profile
+path set on purpose.
 
 Presentation preferences remain in browser storage (including legacy `dialpod`
 migrations and paused-interface preferences). Native window placement retains its

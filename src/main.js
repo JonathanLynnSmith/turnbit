@@ -163,7 +163,11 @@ else {
       Number(bridgePort || 4765),
     );
     bridge.on('error', (error) => {
-      bridgeError = `D100H bridge unavailable: ${error.message}`;
+      // Shown to everyone, with or without a dial, so say what still works.
+      bridgeError =
+        error.code === 'EADDRINUSE'
+          ? 'Dial connection unavailable: another app is using its port. Keyboard and mouse still work.'
+          : `Dial connection unavailable (${error.message}). Keyboard and mouse still work.`;
       send('bridge-error', bridgeError);
     });
     desktop.initialize();
@@ -207,7 +211,7 @@ else {
       },
     });
     tray = createTray({
-      isVisible: () => !!desktop.window?.isVisible(),
+      isVisible: () => desktop.hasWindow && desktop.window.isVisible(),
       show: desktop.show,
       hide: desktop.hide,
       command: (command) => playback.command(command).catch(() => {}),

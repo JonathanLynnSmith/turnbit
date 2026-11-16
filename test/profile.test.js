@@ -15,11 +15,7 @@ test('an existing profile under the old app name stays in use after the rename',
   );
 });
 
-test('a new install, or one that already has the new folder, uses the new folder', () => {
-  assert.equal(
-    legacyProfile({ current, appData, name: 'turnbit', exists: existing() }),
-    null,
-  );
+test('the old folder wins even though Electron has already created the new one', () => {
   assert.equal(
     legacyProfile({
       current,
@@ -27,6 +23,13 @@ test('a new install, or one that already has the new folder, uses the new folder
       name: 'turnbit',
       exists: existing(current, legacy),
     }),
+    legacy,
+  );
+});
+
+test('a machine that never had the old folder uses the new one', () => {
+  assert.equal(
+    legacyProfile({ current, appData, name: 'turnbit', exists: existing(current) }),
     null,
   );
 });

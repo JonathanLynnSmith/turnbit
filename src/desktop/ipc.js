@@ -55,6 +55,15 @@ function registerDesktopIpc({
   activity,
   input,
 }) {
+  // Only the current window may call in. A window that is closing can still
+  // deliver a message after it is destroyed (switching Window Mode replaces the
+  // window), and reading webContents from a destroyed window throws.
+  const fromWindow = (event) => {
+    const window = desktop.window;
+    return (
+      !!window && !window.isDestroyed() && event.sender === window.webContents
+    );
+  };
   const handlers = {
     'spotify:configure': (_, id) => spotify.configure(id),
     'spotify:login': () => spotify.login(),
@@ -88,21 +97,19 @@ function registerDesktopIpc({
     });
   for (const [channel, handle] of Object.entries(handlers))
     ipcMain.handle(channel, (event, ...args) => {
-      if (event.sender !== desktop.window?.webContents)
-        throw new Error('Unknown desktop client.');
+      if (!fromWindow(event)) throw new Error('Unknown desktop client.');
       return handle(event, ...args);
     });
   const onPresentation = (event, hidden) => {
-    if (event.sender === desktop.window?.webContents)
-      presentation(hidden === true);
+    if (fromWindow(event)) presentation(hidden === true);
   };
   const onActivity = (event) => {
-    if (event.sender === desktop.window?.webContents) activity();
+    if (fromWindow(event)) activity();
   };
   ipcMain.on('playback:presentation', onPresentation);
   ipcMain.on('app:activity', onActivity);
   const onContext = (event, value) => {
-    if (event.sender === desktop.window?.webContents) input?.setContext(value);
+    if (fromWindow(event)) input?.setContext(value);
   };
   ipcMain.on('input:context', onContext);
   return () => {
