@@ -29,33 +29,141 @@ export function createSettingsController({
   openSettings,
 }) {
   let knownDisplays = [];
-  // Each category answers one question, in the order most apps use: General (when Now Playing opens
-  // and how turnbit sits on the desktop, in either mode), Playback (what plays and where), Controls
-  // (how the dial and buttons respond), Appearance (how it looks), then what only Window or Widget has.
+  // Settings answer four questions, in the order most apps use. A setting that
+  // only applies to the window or to the widget appears in whichever is in use.
   const settingsGroups = [
     {
       id: 'general',
       label: 'General',
-      detail: 'Now Playing, transparency, and pinning',
+      detail: 'Now Playing, visibility, and startup',
     },
     {
       id: 'playback',
       label: 'Playback',
-      detail: 'Spotify, devices, and volume',
+      detail: 'What plays, and on which device',
     },
     { id: 'controls', label: 'Controls', detail: 'Dial, mouse, and sounds' },
-    { id: 'appearance', label: 'Appearance', detail: 'Layout and colors' },
     {
-      id: 'window',
-      label: 'Window',
-      detail: 'Dial menu timeout and background',
-    },
-    {
-      id: 'widget',
-      label: 'Widget',
-      detail: 'Placement, click through, and background',
+      id: 'appearance',
+      label: 'Appearance',
+      detail: 'Layout, colors, and background',
     },
   ];
+  // What Reset to Defaults can restore. Window and Widget stay separate scopes,
+  // so resetting one leaves the other's look alone.
+  const resetScopes = [
+    ['all', 'Everything', 'Every setting. Your Spotify connection is kept.'],
+    ['general', 'General', 'Now Playing, visibility, and startup.'],
+    ['playback', 'Playback', 'What Play starts and the preferred device.'],
+    ['controls', 'Controls', 'Dial, mouse, and sound settings.'],
+    ['appearance', 'Appearance', 'Menu shape, side, colors, and layout.'],
+    ['window', 'Window', 'The window menu: its timeout and background.'],
+    [
+      'widget',
+      'Widget',
+      'Widget size, position, click through, and background. Returns to the window.',
+    ],
+  ];
+  // One line per setting, shown while it is highlighted. Looked up by the row's
+  // key, then its action; a function gets the row when the wording depends on it.
+  const HELP = {
+    'window-mode':
+      'Window is an ordinary window. Widget floats at the edge of your screen.',
+    connect: 'Connect or disconnect your Spotify account.',
+    'reset-page': 'Put settings back the way they came.',
+    'now-playing-opens':
+      'Automatically: opens when you press Play, pick a song, or stop browsing. Only When Asked: stays where you are.',
+    pin: 'Keeps turnbit above other windows.',
+    visibility:
+      'Make turnbit see-through all the time, or fade it out when you are not using it.',
+    'idle-pin': () =>
+      preferences.windowMode
+        ? 'Stops the menu closing on its own after the Menu Timeout.'
+        : 'Stops the widget fading out and switching to Now Playing while idle.',
+    gamingMode:
+      'Stops decorative animation while you are not using turnbit, leaving more for games.',
+    'start-at-login': 'Opens turnbit when you sign in to your computer.',
+    menuTimeout:
+      'Seconds without input before the menu closes and Now Playing returns.',
+    mousePassthrough:
+      'Clicks pass through the widget to whatever is behind it. Use the dial or keyboard to control turnbit.',
+    'cold-start': 'What Play starts when Spotify has nothing loaded.',
+    'preferred-devices':
+      'The device turnbit reconnects to after playback has gone idle.',
+    autoLaunchSpotify: 'Starts the Spotify app when no device is available.',
+    devices: 'Move what is playing to another Spotify device.',
+    volume: 'Change the volume of the current device.',
+    reverseDial: 'Swaps which way the dial moves through a list.',
+    'double-press':
+      'What pressing the dial twice quickly does: go back one level, or go Home.',
+    hoverBack:
+      'Resting for a second on Back, Now Playing, or Load more runs it. A ring shows the countdown.',
+    'mouse-mode-key':
+      'Hold this shortcut to use the mouse: scroll to move, click to select, right-click to go back.',
+    clicker: 'Plays a soft click as you move through a list.',
+    radialCurve: 'Bows the menu along a curve. Off shows a straight list.',
+    'radial-side': () =>
+      preferences.windowMode
+        ? 'Which side of the window the menu opens on.'
+        : 'Which edge of the screen the widget sits on.',
+    primaryHue: 'Color of text and controls.',
+    accentHue: 'Color of the playing song and of controls that are on.',
+    nowPlayingBackdrop:
+      'Shows the full-window player with large artwork. Off shows only the menu.',
+    'backdrop-layout':
+      'Overlay covers the player while you browse. Split View puts the menu beside it.',
+    'menu-background-page': 'The panel and haze behind the window menu.',
+    'menu-background':
+      "Matching shares the player's background. Black, Glass, and Cover Color give the menu its own panel.",
+    'radial-layout':
+      'Which screen the widget is on, and how much of it it takes.',
+    'widget-background-page': 'The haze behind the widget.',
+    windowBackground: 'How dark the haze behind the menu is. 0% turns it off.',
+    radialBackground:
+      'How dark the haze behind the widget is. 0% turns it off.',
+    windowSmokeHue: 'Color of the haze behind the menu.',
+    widgetSmokeHue: 'Color of the haze behind the widget.',
+    'radial-display': 'Which screen the widget sits on.',
+    radialWidthPct: "How much of the screen's width the widget takes.",
+    radialHeight: "How much of the screen's height the widget takes.",
+    'radial-vertical':
+      'Where the widget sits when it is shorter than the screen.',
+    'visibility-mode':
+      'Off, Always see-through, or Idle Fade, which fades turnbit out when you stop using it.',
+    opacity: 'How solid turnbit is. Lower is more see-through.',
+    idleOpacity: 'How solid turnbit is after it fades. 0% hides it completely.',
+    timeout: 'Seconds without input before turnbit fades.',
+    dialOnlyWake:
+      'Play, Next, and Previous work without waking turnbit. Turning or pressing the dial wakes it.',
+    'cold-start-mode': (row) =>
+      ({
+        last: 'Continue what Spotify played last.',
+        liked: 'Start your Liked Songs.',
+        off: 'Play does nothing until you start something in Spotify.',
+      })[row.mode],
+    'cold-start-playlists': 'Start a playlist you pick.',
+  };
+  function withHelp(rows) {
+    for (const row of rows) {
+      if (row.help) continue;
+      const help = HELP[row.key] ?? HELP[row.action];
+      const text = typeof help === 'function' ? help(row) : help;
+      if (text) row.help = text;
+    }
+    return rows;
+  }
+  // Every page this controller opens gets its rows' descriptions.
+  const openPage = push;
+  push = (page) =>
+    openPage(page.rows ? { ...page, rows: withHelp(page.rows) } : page);
+  // Start at Login belongs to the operating system; ask once and keep the answer.
+  let startAtLogin = null;
+  api?.startAtLogin?.().then(
+    (value) => {
+      startAtLogin = value === true;
+    },
+    () => {},
+  );
   function displayName(id) {
     if (id == null) return 'Automatic';
     const display = knownDisplays.find((item) => item.id === id);
@@ -183,7 +291,7 @@ export function createSettingsController({
     const colorKey = mode + 'SmokeHue';
     return [
       {
-        label: 'Smoky Background',
+        label: 'Background Darkness',
         action: 'radial-background',
         key,
         detail: preferences[key] ? preferences[key] + '%' : 'Off',
@@ -200,14 +308,8 @@ export function createSettingsController({
       },
     ];
   }
-  const resetRow = (group) => ({
-    label: 'Reset to Defaults',
-    action: 'reset-settings',
-    group,
-    branch: true,
-  });
   function settingsRows(group) {
-    return [...groupRows(group), resetRow(group)];
+    return withHelp(groupRows(group));
   }
   function groupRows(group) {
     const toggle = (label, key) => ({
@@ -216,6 +318,7 @@ export function createSettingsController({
       key,
       detail: preferences[key] ? 'On' : 'Off',
     });
+    const inWindow = preferences.windowMode;
     switch (group) {
       case 'general':
         return [
@@ -229,18 +332,51 @@ export function createSettingsController({
             action: 'pin',
             detail: getState().pinned ? 'On' : 'Off',
           },
-          { label: 'Transparency', action: 'visibility', branch: true },
           {
-            label: preferences.windowMode ? 'Pin Dial Menu' : 'Pin Widget',
+            label: 'Transparency',
+            action: 'visibility',
+            detail: transparencyName(),
+            branch: true,
+            showDetail: true,
+          },
+          {
+            label: inWindow ? 'Keep Menu Open' : 'Stay Visible',
             action: 'idle-pin',
             detail: preferences.idlePinned ? 'On' : 'Off',
           },
-          toggle('Gaming Mode', 'gamingMode'),
+          toggle('Pause Animations When Idle', 'gamingMode'),
+          ...(startAtLogin === null
+            ? []
+            : [
+                {
+                  label: 'Start at Login',
+                  action: 'start-at-login',
+                  detail: startAtLogin ? 'On' : 'Off',
+                },
+              ]),
+          ...(inWindow
+            ? [
+                {
+                  label: 'Menu Timeout',
+                  action: 'menu-timeout',
+                  key: 'menuTimeout',
+                  detail: valueText('menuTimeout', preferences.menuTimeout),
+                  branch: true,
+                  showDetail: true,
+                },
+              ]
+            : [toggle('Mouse Click Through', 'mousePassthrough')]),
         ];
       case 'playback':
+        // What you set once, then the two things you do now.
         return [
-          { label: 'Volume', action: 'volume', branch: true },
-          { label: 'Playback Device', action: 'devices', branch: true },
+          {
+            label: 'What Play Starts',
+            action: 'cold-start',
+            detail: coldStartName(),
+            branch: true,
+            showDetail: true,
+          },
           {
             label: 'Preferred Device',
             action: 'preferred-devices',
@@ -248,15 +384,9 @@ export function createSettingsController({
             branch: true,
             showDetail: true,
           },
-          {
-            label: 'When Nothing Is Playing',
-            action: 'cold-start',
-            detail: coldStartName(),
-            branch: true,
-            showDetail: true,
-          },
           toggle('Open Spotify Automatically', 'autoLaunchSpotify'),
-          { label: 'Spotify Account', action: 'connect', branch: true },
+          { label: 'Playback Device', action: 'devices', branch: true },
+          { label: 'Volume', action: 'volume', branch: true },
         ];
       case 'controls':
         return [
@@ -266,9 +396,9 @@ export function createSettingsController({
             action: 'double-press',
             detail: preferences.doublePress === 'home' ? 'Home' : 'Back',
           },
-          toggle('Hover Shortcuts', 'hoverBack'),
+          toggle('Rest to Activate', 'hoverBack'),
           {
-            label: 'Mouse Mode Key',
+            label: 'Mouse Mode Shortcut',
             action: 'mouse-mode-key',
             detail: mouseModeKeys[preferences.mouseModeKey],
           },
@@ -281,68 +411,90 @@ export function createSettingsController({
       case 'appearance':
         return [
           ...radialSettingsRows(),
-          // The window player's own look, only in Window Mode.
-          ...(preferences.windowMode
-            ? [toggle('Now Playing Backdrop', 'nowPlayingBackdrop')]
-            : []),
-          ...(backdropActive()
+          ...(inWindow
             ? [
+                toggle('Large Now Playing Screen', 'nowPlayingBackdrop'),
+                ...(backdropActive()
+                  ? [
+                      {
+                        label: 'Menu Layout',
+                        action: 'backdrop-layout',
+                        detail: backdropLayoutName(),
+                      },
+                    ]
+                  : []),
                 {
-                  label: 'Dial Menu Layout',
-                  action: 'backdrop-layout',
-                  detail: backdropLayoutName(),
+                  label: 'Menu Background',
+                  action: 'menu-background-page',
+                  branch: true,
                 },
               ]
-            : []),
-        ];
-      case 'window':
-        return [
-          {
-            label: 'Dial Menu Timeout',
-            action: 'menu-timeout',
-            key: 'menuTimeout',
-            detail: valueText('menuTimeout', preferences.menuTimeout),
-            branch: true,
-            showDetail: true,
-          },
-          {
-            label: 'Menu Background',
-            action: 'menu-background-page',
-            branch: true,
-          },
-        ];
-      case 'widget':
-        return [
-          {
-            label: 'Widget Mode',
-            action: 'window-mode',
-            detail: preferences.windowMode ? 'Off' : 'On',
-          },
-          { label: 'Size & Position', action: 'radial-layout', branch: true },
-          toggle('Mouse Click Through', 'mousePassthrough'),
-          {
-            label: 'Background',
-            action: 'widget-background-page',
-            branch: true,
-          },
+            : [
+                {
+                  label: 'Size & Position',
+                  action: 'radial-layout',
+                  branch: true,
+                },
+                {
+                  label: 'Background',
+                  action: 'widget-background-page',
+                  branch: true,
+                },
+              ]),
         ];
     }
     return [];
   }
+  function transparencyName() {
+    return { off: 'Off', always: 'Always', idle: 'Idle Fade' }[
+      visibilityNow().mode
+    ];
+  }
+  // Settings opens with the two things that shape everything else, then the
+  // categories, then one reset.
+  function rootRows() {
+    return [
+      {
+        label: 'Display',
+        action: 'window-mode',
+        detail: preferences.windowMode ? 'Window' : 'Widget',
+      },
+      {
+        label: 'Spotify Account',
+        action: 'connect',
+        detail: getState().demo ? 'Not connected' : 'Connected',
+        branch: true,
+        showDetail: true,
+      },
+      ...settingsGroups.map((group) => ({
+        label: group.label,
+        action: 'settings-group',
+        group: group.id,
+        detail: group.detail,
+        branch: true,
+      })),
+      { label: 'Reset to Defaults', action: 'reset-page', branch: true },
+    ];
+  }
   function showSettings() {
+    const rows = rootRows();
+    // Open on the first category, not on the Display switch.
     push({
       title: 'Settings',
-      rows: [
-        ...settingsGroups.map((group) => ({
-          label: group.label,
-          action: 'settings-group',
-          group: group.id,
-          detail: group.detail,
-          branch: true,
-        })),
-        resetRow('all'),
-      ],
-      hint: 'Choose a category · Menu to return',
+      rows,
+      selected: rows.findIndex((row) => row.action === 'settings-group'),
+    });
+  }
+  function showResetPage() {
+    push({
+      title: 'Reset to Defaults',
+      rows: resetScopes.map(([group, label, help]) => ({
+        label,
+        action: 'reset-settings',
+        group,
+        help,
+        branch: true,
+      })),
     });
   }
   function showSettingsGroup(id) {
@@ -352,6 +504,12 @@ export function createSettingsController({
   }
   function showSetting(match) {
     showSettings();
+    const top = nav.current.rows.findIndex(match);
+    if (top >= 0) {
+      nav.current.selected = top;
+      drawNavigation();
+      return true;
+    }
     const inside = (row) => subPages[row.action]?.rows().some(match);
     const group = settingsGroups.find((item) =>
       settingsRows(item.id).some((row) => match(row) || inside(row)),
@@ -416,7 +574,7 @@ export function createSettingsController({
           ? []
           : [
               {
-                label: 'Dial Only Wake',
+                label: 'Stay Hidden for Media Buttons',
                 action: 'playback-preference',
                 key: 'dialOnlyWake',
                 detail: preferences.dialOnlyWake ? 'On' : 'Off',
@@ -429,7 +587,7 @@ export function createSettingsController({
           : value.mode === 'always'
             ? preferences.windowMode
               ? `Fixed opacity · stays at least ${WINDOW_MIN_OPACITY}% in Window Mode`
-              : 'Fixed opacity · 0% wakes on D100H input'
+              : 'Fixed opacity · 0% wakes on dial input'
             : 'Select Mode to enable transparency',
     });
   }
@@ -489,7 +647,7 @@ export function createSettingsController({
   function showColdStart() {
     const mark = (mode) => (preferences.coldStart === mode ? '✓' : '');
     push({
-      title: 'When Nothing Is Playing',
+      title: 'What Play Starts',
       rows: [
         {
           label: 'Last Session',
@@ -573,12 +731,15 @@ export function createSettingsController({
   let resetting = false;
   async function select(row) {
     switch (row.action) {
+      case 'reset-page':
+        showResetPage();
+        break;
       case 'reset-settings':
         push({
           title:
             row.group === 'all'
               ? 'Reset All Settings?'
-              : `Reset ${settingsGroups.find((group) => group.id === row.group)?.label}?`,
+              : `Reset ${resetScopes.find(([group]) => group === row.group)?.[1]}?`,
           visibilitySettings: true,
           rows: [
             { label: 'Cancel', action: 'reset-cancel' },
@@ -599,15 +760,11 @@ export function createSettingsController({
         resetting = true;
         try {
           if (await resetSettings(row.group)) {
-            nav.back();
-            if (row.group === 'all') {
+            // Leave the confirmation and the scope list; reopen Settings with fresh values.
+            while (nav.stack.length > 1 && nav.current.title !== 'Settings')
               nav.back();
-              showSettings();
-            } else {
-              const page = nav.current;
-              page.rows = settingsRows(row.group);
-              page.selected = 0;
-            }
+            if (nav.current.title === 'Settings') nav.back();
+            showSettings();
             revealDialOverlay();
             drawNavigation();
             message('Defaults restored');
@@ -630,6 +787,10 @@ export function createSettingsController({
           })
         ) {
           nav.back();
+          const summary = nav.current.rows?.find(
+            (item) => item.action === 'visibility',
+          );
+          if (summary) summary.detail = transparencyName();
           showTransparency();
         }
         break;
@@ -641,6 +802,7 @@ export function createSettingsController({
       case 'menu-timeout':
         push({
           title: row.label,
+          help: row.help,
           kind: 'visibility',
           visibilitySettings: true,
           key: row.key,
@@ -676,6 +838,7 @@ export function createSettingsController({
       case 'visibility-adjust':
         push({
           title: row.label,
+          help: row.help,
           kind: 'visibility',
           visibilitySettings: true,
           key: row.key,
@@ -693,6 +856,15 @@ export function createSettingsController({
         break;
       case 'pin':
         await togglePin();
+        break;
+      case 'start-at-login':
+        try {
+          startAtLogin = (await api.startAtLogin(!startAtLogin)) === true;
+          row.detail = startAtLogin ? 'On' : 'Off';
+          drawNavigation();
+        } catch (error) {
+          message(error.message);
+        }
         break;
       case 'window-mode':
         await toggleWindowMode();
@@ -764,6 +936,7 @@ export function createSettingsController({
       case 'radial-color':
         push({
           title: row.label,
+          help: row.help,
           kind: 'color',
           visibilitySettings: true,
           key: row.key,
@@ -773,6 +946,7 @@ export function createSettingsController({
       case 'radial-background':
         push({
           title: row.label,
+          help: row.help,
           kind: 'visibility',
           visibilitySettings: true,
           key: row.key,

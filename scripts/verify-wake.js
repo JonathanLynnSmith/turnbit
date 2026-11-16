@@ -16,7 +16,7 @@ app.whenReady().then(async()=>{
     await sleep();await post({type:'dial',delta:1});assert.ok(window.getOpacity()>.99);assert.equal(await js(`nav.current.selected`),1,'waking keeps the selection');
     await post({type:'dial',delta:1});assert.equal(await js(`nav.current.selected`),2,'the next turn moves');
     await sleep();await command('center-down');await command('center-up');await command('center-click');await wait(400);assert.equal(await js(`nav.current.title`),'Background','a press while asleep only wakes');
-    await command('center-down');await command('center-up');await command('center-click');await wait(400);assert.equal(await js(`nav.current.title`),'Smoky Background','the next press selects');
+    await command('center-down');await command('center-up');await command('center-click');await wait(400);assert.equal(await js(`nav.current.title`),'Background Darkness','the next press selects');
     await sleep();await command('menu-down');await wait(600);await command('menu-up');assert.equal(await js(`nav.current.title`),'Background','Back while asleep only wakes');
     await command('menu-down');await command('menu-up');assert.equal(await js(`nav.current.title`),'Widget','the next Back goes up a level');
     await sleep();await command('toggle');assert.equal(await js(`nav.current.kind`),'now');

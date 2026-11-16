@@ -34,7 +34,7 @@ app.whenReady().then(async()=>{try{
   await wait(300);
   await js(`nav.reset(root())`);
   await js(`showSetting(row=>row.key==='gamingMode')`);
-  assert.equal((await page()).highlighted,'Gaming Mode','Settings opens on the toggle');
+  assert.equal((await page()).highlighted,'Pause Animations When Idle','Settings opens on the toggle');
   const before=await js(`preferences.gamingMode`);
   await press();await wait(60);await press();await wait(450);
   assert.equal((await page()).title,'General','a fast double press on a toggle stays on the page');

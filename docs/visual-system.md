@@ -99,7 +99,7 @@ assistive technology; interactive controls keep explicit accessible names.
 Use `--tb-ease` for view movement. Motion communicates selection, navigation, or a
 song change; do not add idle movement for decoration. Reduced Motion removes
 spatial movement and repeating animation while retaining brief color/opacity
-feedback. Playing bars hold still. Existing Gaming Mode still pauses idle effects.
+feedback. Playing bars hold still. Pause Animations When Idle still pauses idle effects.
 
 ## Review and checks
 

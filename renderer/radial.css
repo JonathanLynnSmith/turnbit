@@ -193,7 +193,7 @@ body[data-align=right] .radial-mini .mini-times{justify-content:flex-end}
 body[data-align=right] .radial-label.has-mini>span.scrolling-title{text-align:left}
 /* Brief hardware-action feedback; hidden between commands. */
 #actionNotice{display:none}
-body[data-interface=radial] #actionNotice:not([hidden]){display:block;position:fixed;bottom:44px;left:72px;max-width:360px;color:#e0eee8;font:400 12px/1.6 var(--tb-font-ui);text-shadow:0 2px 8px #000;pointer-events:none;animation:mini-reveal .2s ease-out}
+body[data-interface=radial] #actionNotice:not([hidden]){display:block;position:fixed;bottom:calc(44px + var(--help-height,0px));left:72px;max-width:360px;color:#e0eee8;font:400 12px/1.6 var(--tb-font-ui);text-shadow:0 2px 8px #000;pointer-events:none;animation:mini-reveal .2s ease-out}
 body[data-interface=radial][data-edge=right] #actionNotice{left:auto;right:72px;text-align:right}
 
 .playback-indicators{display:flex;align-items:center;gap:14px;margin-top:12px;margin-bottom:6px}
@@ -389,10 +389,19 @@ body[data-backdrop-active=true][data-backdrop-split=true][data-dial-overlay=true
 body[data-backdrop-active=true][data-backdrop-split=true][data-edge=right] .radial-mini .mini-cover{left:auto;right:-72px}
 /* Notices sit below the centered breadcrumb, scaled with the window player. */
 body[data-backdrop-active=true] #actionNotice:not([hidden]){zoom:var(--ui-scale,1);top:74px;bottom:auto;left:50%;right:auto;translate:-50% 0;z-index:4;max-width:min(520px,calc(100% - 48px));margin-top:9px;padding:var(--tb-space-2) var(--tb-space-4);border-radius:var(--tb-radius-round);background:var(--tb-surface);box-shadow:inset 0 0 0 1px var(--tb-border),var(--tb-shadow-surface);color:var(--tb-text,var(--tb-ink));font:500 13px/1.4 var(--tb-font-ui);text-align:center;text-shadow:none;text-wrap:balance;animation:notice-in .32s var(--tb-ease)}
+/* The highlighted setting's description sits at the foot of the menu (--help-height is measured by
+   radial-view.mjs); notices and problems stack above it. In the window it stays in the menu's third,
+   and goes away with the menu. */
+#settingHelp{display:none}
+body[data-interface=radial] #settingHelp:not([hidden]){display:block;position:fixed;bottom:44px;left:72px;width:min(360px,calc(100% - 144px));margin:0;z-index:3;color:var(--tb-text,var(--tb-ink));opacity:.8;font:400 12px/1.5 var(--tb-font-ui);text-shadow:var(--tb-text-protection);text-align:left;pointer-events:none}
+body[data-interface=radial][data-edge=right] #settingHelp{left:auto;right:72px;text-align:right}
+body[data-backdrop-active=true] #settingHelp:not([hidden]){zoom:var(--ui-scale,1);left:48px;bottom:40px;width:min(340px,calc(33.333% - 72px));font-size:13px}
+body[data-backdrop-active=true][data-edge=right] #settingHelp:not([hidden]){left:auto;right:48px}
+body[data-backdrop-active=true]:not([data-dial-overlay=true]) #settingHelp{display:none}
 /* A problem stays until it is resolved or dismissed, with its next step. The timed notice above moves
    clear of it (--problem-height is measured by renderer.js). Widget first, then the window player. */
 #problemNotice{display:none}
-body[data-interface=radial] #problemNotice:not([hidden]){display:flex;align-items:center;gap:10px;position:fixed;bottom:44px;left:72px;max-width:360px;z-index:4;padding:8px 8px 8px 14px;border-radius:var(--tb-radius-control);background:var(--tb-surface);box-shadow:inset 0 0 0 1px var(--tb-border),var(--tb-shadow-surface);color:var(--tb-text,var(--tb-ink));font:500 12px/1.4 var(--tb-font-ui);text-align:left}
+body[data-interface=radial] #problemNotice:not([hidden]){display:flex;align-items:center;gap:10px;position:fixed;bottom:calc(44px + var(--help-height,0px));left:72px;max-width:360px;z-index:4;padding:8px 8px 8px 14px;border-radius:var(--tb-radius-control);background:var(--tb-surface);box-shadow:inset 0 0 0 1px var(--tb-border),var(--tb-shadow-surface);color:var(--tb-text,var(--tb-ink));font:500 12px/1.4 var(--tb-font-ui);text-align:left}
 body[data-interface=radial][data-edge=right] #problemNotice{left:auto;right:72px}
 #problemNotice .problem-text{flex:1;min-width:0}
 #problemNotice button{flex:none;border:0;border-radius:var(--tb-radius-round);font:inherit;color:inherit;cursor:pointer}
@@ -401,7 +410,7 @@ body[data-interface=radial][data-edge=right] #problemNotice{left:auto;right:72px
 #problemNotice .problem-dismiss{width:24px;height:24px;padding:0;background:none;font-size:16px;line-height:1;opacity:.7}
 #problemNotice .problem-dismiss:hover{opacity:1}
 #problemNotice button:focus-visible{outline:2px solid var(--tb-accent);outline-offset:2px}
-body[data-interface=radial][data-problem=true] #actionNotice:not([hidden]){bottom:calc(52px + var(--problem-height,0px))}
+body[data-interface=radial][data-problem=true] #actionNotice:not([hidden]){bottom:calc(52px + var(--problem-height,0px) + var(--help-height,0px))}
 body[data-backdrop-active=true] #problemNotice:not([hidden]){zoom:var(--ui-scale,1);top:74px;bottom:auto;left:50%;right:auto;translate:-50% 0;max-width:min(600px,calc(100% - 48px));margin-top:9px;font-size:13px}
 body[data-backdrop-active=true][data-problem=true] #actionNotice:not([hidden]){top:calc(82px + var(--problem-height,0px));bottom:auto}
 @keyframes notice-in{from{opacity:0;translate:-50% -8px}to{opacity:1;translate:-50% 0}}

@@ -78,25 +78,30 @@ async function main() {
   );
   assert.equal(await run(`$('#windowViewLabel').textContent`), 'SETTINGS');
   await shot('settings-defaults-categories');
-  await run(`showSettingsGroup('widget');`);
   assert.equal(
     await run(`nav.current.rows.find(r=>r.action==='window-mode').label`),
-    'Widget Mode',
+    'Display',
   );
   assert.equal(
     await run(`nav.current.rows.find(r=>r.action==='window-mode').detail`),
-    'Off',
+    'Window',
   );
-  assert.equal(
-    await run(`nav.current.rows.some(r=>r.action==='widget-background-page')`),
-    true,
+  // Only the display in use lists its settings.
+  await run(`showSettingsGroup('appearance');`);
+  assert.deepEqual(
+    await run(
+      `['menu-background-page','widget-background-page'].map(action=>nav.current.rows.some(r=>r.action===action))`,
+    ),
+    [true, false],
   );
   await shot('settings-widget-section');
   // Confirmed section resets leave unrelated values and navigation history alone.
   await run(
-    `savePreferences({menuTimeout:25,accentHue:330,windowBackground:65,radialBackground:15,lastSongList:{kind:'songs',name:'Liked Songs'}});nav.reset(root());browseFromPlayer();showSettings();showSettingsGroup('window');`,
+    `savePreferences({menuTimeout:25,accentHue:330,windowBackground:65,radialBackground:15,lastSongList:{kind:'songs',name:'Liked Songs'}});nav.reset(root());browseFromPlayer();showSettings();`,
   );
-  await choose(`r=>r.action==='reset-settings'`);
+  // One reset on Settings opens the list of what can be reset.
+  await choose(`r=>r.action==='reset-page'`);
+  await choose(`r=>r.action==='reset-settings'&&r.group==='window'`);
   assert.equal(
     await run(`nav.current.rows[nav.current.selected].action`),
     'reset-cancel',
@@ -107,11 +112,11 @@ async function main() {
     25,
     'cancel changes nothing',
   );
-  await choose(`r=>r.action==='reset-settings'`);
+  await choose(`r=>r.action==='reset-settings'&&r.group==='window'`);
   await shot('settings-reset-confirmation');
   await choose(`r=>r.action==='confirm-reset'`);
   await until(() =>
-    run(`preferences.menuTimeout===3&&nav.current.settingsGroup==='window'`),
+    run(`preferences.menuTimeout===3&&nav.current.title==='Settings'`),
   );
   assert.deepEqual(
     await run(
@@ -189,12 +194,13 @@ async function main() {
     `$('#radialColorPalette button[data-hue="-1"]').click();$('#radialColorSave').click();`,
   );
   assert.equal((await pixel())[0], 0, 'black background is supported');
-  await run(`nav.reset(root());showSettings();showSettingsGroup('widget');`);
+  await run(`nav.reset(root());showSettings();`);
   assert.equal(
     await run(`nav.current.rows.find(r=>r.action==='window-mode').detail`),
-    'On',
+    'Widget',
   );
-  await choose(`r=>r.action==='reset-settings'`);
+  await choose(`r=>r.action==='reset-page'`);
+  await choose(`r=>r.action==='reset-settings'&&r.group==='widget'`);
   old = win;
   void choose(`r=>r.action==='confirm-reset'`).catch(() => {});
   await until(() => {
@@ -220,6 +226,7 @@ async function main() {
   await run(
     `savePreferences({menuTimeout:45,accentHue:330,hoverBack:false,mouseModeKey:'off',coldStart:'off',autoLaunchSpotify:false});nav.reset(root());browseFromPlayer();showSettings();`,
   );
+  await choose(`r=>r.action==='reset-page'`);
   await choose(`r=>r.action==='reset-settings'&&r.group==='all'`);
   await choose(`r=>r.action==='confirm-reset'`);
   await until(() =>

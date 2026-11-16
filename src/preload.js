@@ -44,6 +44,7 @@ contextBridge.exposeInMainWorld('turnbit', {
   mouseMode: (key) => ipcRenderer.invoke('app:mouse-mode', key),
   hardware: () => ipcRenderer.invoke('app:hardware'),
   pin: (value) => ipcRenderer.invoke('app:pin', value),
+  startAtLogin: (value) => ipcRenderer.invoke('app:start-at-login', value),
   windowMode: (value) => ipcRenderer.invoke('app:window-mode', value),
   openExternal: (url) => ipcRenderer.invoke('app:open-external', url),
   spotifyDesktopInstalled: () => ipcRenderer.invoke('app:spotify-installed'),

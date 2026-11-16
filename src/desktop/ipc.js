@@ -54,6 +54,7 @@ function registerDesktopIpc({
   presentation,
   activity,
   input,
+  startAtLogin,
 }) {
   // Only the current window may call in. A window that is closing can still
   // deliver a message after it is destroyed (switching Window Mode replaces the
@@ -83,6 +84,8 @@ function registerDesktopIpc({
     'app:displays': () => desktop.displays(),
     'app:visibility': (_, ...args) => desktop.visibility(...args),
     'app:pin': (_, value) => desktop.pin(value),
+    // With a boolean, sets it; either way answers with the current state.
+    'app:start-at-login': (_, value) => startAtLogin(value),
     'app:mouse-mode': (_, key) => mouseMode.setKey(key),
     'app:minimize': () => desktop.minimize(),
     'app:close': () => desktop.hide(),

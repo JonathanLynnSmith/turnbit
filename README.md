@@ -54,7 +54,7 @@ Next, [connect Spotify](#connect-spotify) and, if you have one, [set up the D100
 1. In the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard), create an app and select **Web API**.
 2. Add this redirect URI exactly: `http://127.0.0.1:43821/callback`
 3. Under **User Management**, add the Spotify account you will use.
-4. In turnbit, open **Settings > Playback > Spotify Account**, paste your app's **Client ID**, and select **Connect Spotify**.
+4. In turnbit, open **Settings > Spotify Account**, paste your app's **Client ID**, and select **Connect Spotify**.
 5. Approve access in your browser, then start a song in Spotify.
 
 > [!NOTE]
@@ -104,9 +104,8 @@ Every list starts with a **Back** row, so the dial alone gets you everywhere. Re
 ### Window Mode
 
 turnbit opens as a regular window with a large Now Playing screen. Turning the dial brings in the menu; it goes away again after a few seconds without navigation.
-Choose **Dial Menu Layout > Split View** to keep the player on screen beside the menu, as in the GIF
-above. Prefer a transparent widget docked to your screen edge? Turn on **Settings > Widget > Widget
-Mode**. Details: [Window Mode](docs/window-mode.md).
+Choose **Settings > Appearance > Menu Layout > Split View** to keep the player on screen beside the menu, as in the GIF
+above. Prefer a transparent widget docked to your screen edge? Set **Settings > Display** to Widget. Details: [Window Mode](docs/window-mode.md).
 
 ### Keyboard and mouse
 
@@ -116,7 +115,7 @@ and **Shift + Left/Right** to seek 10 seconds.
 
 No dial nearby? Hold **Ctrl + Alt + Z** anywhere: scroll to move, left-click to select, right-click to
 go back, middle-click to play or pause. Tap the shortcut instead of holding it to leave the mode on;
-tap again or press **Esc** to turn it off. You can change the shortcut in **Settings > Controls > Mouse Mode Key**.
+tap again or press **Esc** to turn it off. You can change the shortcut in **Settings > Controls > Mouse Mode Shortcut**.
 
 If turnbit is fully transparent and you lose track of it, press **Ctrl + Alt + Shift + D**.
 
@@ -124,9 +123,9 @@ If turnbit is fully transparent and you lose track of it, press **Ctrl + Alt + S
 
 turnbit saves every setting between restarts. A few worth knowing about:
 
-- **Preferred Device** and **When Nothing Is Playing** decide where music plays and what Play starts
+- **Preferred Device** and **What Play Starts** decide where music plays and what Play starts
 - **Screen Edge**, **Curved Menu**, and the colour settings change how the menu looks
-- **Transparency** and **Gaming Mode** keep the widget out of the way while you work or play
+- **Transparency** and **Pause Animations When Idle** keep the widget out of the way while you work or play
 
 See [all settings](docs/settings.md).
 
@@ -136,11 +135,11 @@ See [all settings](docs/settings.md).
 | --- | --- |
 | "No Spotify device is available" | Start a song in Spotify, choose a Preferred Device, or turn on Open Spotify Automatically. A phone or speaker must be on and online; turnbit cannot wake it |
 | Music starts on the wrong device | Set **Settings > Playback > Preferred Device** to pin it to one |
-| "Nothing was playing" | Play had nothing to start. Pick a source in **Settings > Playback > When Nothing Is Playing** |
+| "Nothing was playing" | Play had nothing to start. Pick a source in **Settings > Playback > What Play Starts** |
 | "Retry loading" on Liked Songs | Spotify may be rate-limiting your library. The message shows when it will clear |
 | A playlist's songs will not load | Spotify only lists songs in playlists you own or collaborate on. **Play this playlist** still works |
 | The D100H does nothing | Make sure Ulanzi Studio is running and the device is paired, then run `npm run studio:restart` |
-| Like asks for permission | Reconnect in **Settings > Playback > Spotify Account** to grant the newer permissions |
+| Like asks for permission | Reconnect in **Settings > Spotify Account** to grant the newer permissions |
 
 For more, see [How turnbit works](docs/how-it-works.md), including how to log every Spotify call.
 

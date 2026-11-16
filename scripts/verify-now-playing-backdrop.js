@@ -201,7 +201,7 @@ async function main(){
 
   // Dial Menu Timeout: how long the menu stays before the idle timeout puts it away.
   await run(`savePreferences({menuTimeout:8});`);
-  assert.equal(await run(`settingsRows('window').find(row=>row.action==='menu-timeout')?.detail`),'8 sec','the Window menu offers the timeout, showing the current value');
+  assert.equal(await run(`settingsRows('general').find(row=>row.action==='menu-timeout')?.detail`),'8 sec','General offers the menu timeout in Window Mode, showing the current value');
   await run(`nav.reset(root());showSetting(row=>row.action==='menu-timeout');selectItem();`);await wait(250);
   assert.equal(await run(`[nav.current.kind,nav.current.key,nav.current.value]`).then(v=>v.join(':')),'visibility:menuTimeout:8','it opens a seconds slider on the current value');
   await run(`nav.current.value=2;selectItem();`);await wait(250);

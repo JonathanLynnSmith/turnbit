@@ -767,6 +767,31 @@ export function createRadialView({
         (Number(slider.value) / Number(slider.max)) * 100 + '%',
       );
   }
+  // The highlighted setting's description, at the foot of the menu. A value page
+  // (a colour, a percentage) keeps showing the description of what it edits.
+  let shownHelp = null;
+  function syncSettingHelp() {
+    let help = $('#settingHelp');
+    if (!help) {
+      help = document.createElement('p');
+      help.id = 'settingHelp';
+      help.setAttribute('role', 'note');
+      help.hidden = true;
+      document.body.append(help);
+    }
+    const page = nav.current;
+    const text =
+      (page.kind === 'list' ? page.rows[page.selected]?.help : page.help) || '';
+    if (text === shownHelp) return;
+    shownHelp = text;
+    help.textContent = text;
+    help.hidden = !text;
+    // Notices and problems stack above it (radial.css).
+    document.body.style.setProperty(
+      '--help-height',
+      (text ? help.offsetHeight + 10 : 0) + 'px',
+    );
+  }
   let nativeLayoutKey = null;
   function syncNativeLayout() {
     const layout = radialLayoutNow();
@@ -788,6 +813,7 @@ export function createRadialView({
     ensureHomeLayout(nav.current);
     if (visibilityState.invisible || visibilityState.minimized) return;
     const page = nav.current;
+    syncSettingHelp();
     const previewingSmoke =
       ['windowBackground', 'windowSmokeHue'].includes(page.key) &&
       ['color', 'visibility'].includes(page.kind);

@@ -1,13 +1,13 @@
 # Window Mode
 
 By default turnbit is an ordinary window: it has a title bar, a taskbar or Dock icon, native minimize
-and full screen, and it remembers its size and position. Turn on **Settings > Widget > Widget Mode** to
+and full screen, and it remembers its size and position. Set **Settings > Display** to Widget to
 use the alternative, a floating, transparent widget docked to the edge of your screen. The choice is
 saved, so an existing install keeps the mode it was last switched to.
 
 ## The window player
 
-With **Now Playing Backdrop** on (the default), the window opens on a large Now Playing screen:
+With **Large Now Playing Screen** on (the default), the window opens on a large Now Playing screen:
 album art, the track, and play/pause, previous/next, like, shuffle, repeat, seek, and volume.
 Everything on it works with the mouse. Hardware playback buttons work whether or not the menu is up.
 The header keeps Browse on the left, the turnbit name in the center, and the Spotify logo
@@ -21,15 +21,15 @@ Browsing fetches songs and playlists in batches of 20. Rest on **Load more** or 
 the next batch beneath the items already in the dial menu.
 
 Turn the dial, press it, click **Browse**, press Up/Down, or scroll to bring in the dial menu. An
-opening press only opens the menu; the next press selects. After **Dial Menu Timeout** (3 seconds by
+opening press only opens the menu; the next press selects. After **Menu Timeout** (3 seconds by
 default, 1 to 600) without navigation, the menu goes away again and Now Playing returns, keeping your
 page and selection for next time. Selecting a song, choosing **Now Playing**, or clicking the empty
-browsing area also returns to the player. **General > Pin Dial Menu** keeps the menu open; value and
+browsing area also returns to the player. **General > Keep Menu Open** keeps the menu open; value and
 colour pickers stay open while you edit them.
 
 The menu rewinds to the list the playing song was chosen from and highlights that song, so wandering into Playlists or Settings does not cost you your place: the next
 press reopens the music you are listening to. On the timeout the rewind is something to watch. The same
-**Dial Menu Timeout** decides when it starts, so at 3 seconds nothing moves for 3 seconds; then the
+**Menu Timeout** decides when it starts, so at 3 seconds nothing moves for 3 seconds; then the
 song list flows in while the menu is still up, and the menu goes once the switch has been seen.
 Turning the dial or pressing during that moment keeps the menu open on the list it rewound to.
 A close you ask for — **Now Playing**, the empty browsing area, or choosing a song — puts the player
@@ -38,7 +38,7 @@ chosen from a list there is nothing to return to, and the menu keeps its page.
 
 ## Overlay and Split View
 
-**Dial Menu Layout** chooses how the menu shares the window.
+**Menu Layout** chooses how the menu shares the window.
 
 - **Overlay** (the default) shows one view at a time. The player fades out while you browse and fades
   back when the menu goes.
@@ -66,7 +66,7 @@ When the player's own column is narrower than 640 px it stacks the artwork above
 background, so both views read as one surface. The others give the menu its own panel on its side
 that comes and goes with it: **Black** is solid and casts a shadow across the player, **Glass** is a
 lighter frosted pane, and **Cover Color** tints the panel with a colour sampled from the playing
-song's cover. In Split View the panel's edge is the seam. The same page holds the window menu's **Smoky Background** and **Background Color**.
+song's cover. In Split View the panel's edge is the seam. The same page holds the window menu's **Background Darkness** and **Background Color**.
 
 ## Look and feel
 

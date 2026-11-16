@@ -26,7 +26,7 @@ const { createBridge } = require('./bridge');
 const { DisplayWake } = require('./display-wake');
 const { MediaSession } = require('./media-session');
 const { MacMediaSession } = require('./mac-media-session');
-const { createTray } = require('./tray');
+const { createTray, opensAtLogin, setOpensAtLogin } = require('./tray');
 const { MouseMode } = require('./mouse-mode');
 
 const APP_ID = 'com.turnbit.app';
@@ -199,6 +199,13 @@ else {
             : settings.get(),
       },
       hardwareStatus: () => ({ ...bridge?.status(), error: bridgeError }),
+      startAtLogin: (value) => {
+        if (typeof value === 'boolean') {
+          setOpensAtLogin(value);
+          tray?.refresh();
+        }
+        return opensAtLogin();
+      },
       mouseMode,
       shell,
       presentation: (hidden) => {

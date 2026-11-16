@@ -20,20 +20,20 @@ app.whenReady().then(async()=>{try{
     await js(`savePreferences({interfaceStyle:'${style}'});`);
     assert.deepEqual(await js(`[preferences.interfaceStyle,document.body.dataset.interface,Object.hasOwn(JSON.parse(localStorage.getItem('turnbit-preferences')),'interfaceStyle')]`),[undefined,'radial',false],`${style} selection is dropped and turnbit stays`);
   }
-  assert.equal(await labels(),'General, Playback, Controls, Appearance, Window, Widget','six categories in the usual app order');
-  assert.equal(await js(`nav.current.rows.find(r=>r.label==='Playback').detail`),'Spotify, devices, and volume','categories have subtitles');
+  assert.equal(await labels(),'Display, Spotify Account, General, Playback, Controls, Appearance, Reset to Defaults','Display and the account, four categories in the usual app order, then one reset');
+  assert.equal(await js(`nav.current.rows.find(r=>r.label==='Playback').detail`),'What plays, and on which device','categories have subtitles');
   assert.equal((await page()).highlighted,'General','Settings opens on the first category');
+  // This harness runs as the widget, so the widget's own settings are the ones listed.
   const expected={
-    general:'Now Playing Opens, Keep on Top, Transparency, Pin Widget, Gaming Mode',
-    playback:'Volume, Playback Device, Preferred Device, When Nothing Is Playing, Open Spotify Automatically, Spotify Account',
-    controls:'Reverse Dial Direction, Dial Double-Press, Hover Shortcuts, Mouse Mode Key, Click Sounds',
-    appearance:'Curved Menu, Screen Edge, Text Color, Accent Color',
-    window:'Dial Menu Timeout, Menu Background',
-    widget:'Widget Mode, Size & Position, Mouse Click Through, Background'};
+    general:'Now Playing Opens, Keep on Top, Transparency, Stay Visible, Pause Animations When Idle, Start at Login, Mouse Click Through',
+    playback:'What Play Starts, Preferred Device, Open Spotify Automatically, Playback Device, Volume',
+    controls:'Reverse Dial Direction, Dial Double-Press, Rest to Activate, Mouse Mode Shortcut, Click Sounds',
+    appearance:'Curved Menu, Screen Edge, Text Color, Accent Color, Size & Position, Background'};
   for(const [id,want] of Object.entries(expected)){
     await js(`nav.reset(root());showSettings();nav.current.selected=nav.current.rows.findIndex(r=>r.group==='${id}');drawNavigation();`);await click();
     assert.equal(await labels(),want,`${id} contents`);assert.equal((await page()).depth,3,`${id}: settings are two levels below Home`);
     assert.equal(await js(`nav.current.rows.filter(r=>r.action!=='nav-back'&&!r.branch&&!r.detail).length`),0,`${id}: every on/off setting shows its value`);
+    assert.equal(await js(`nav.current.rows.filter(r=>r.action!=='nav-back'&&!r.help).length`),0,`${id}: every setting has a description`);
   }
   let p;
   // Toggling inside a category updates and saves; Back returns to the category you came from.
@@ -57,5 +57,5 @@ app.whenReady().then(async()=>{try{
   await js(`savePreferences({radialSide:'left'});`);
   const all=await js(`settingsGroups.flatMap(g=>settingsRows(g.id).map(r=>r.label)).join('|')`);
   for(const old of ['Apperance','Clicker','Primary Color','Screen edge'])assert.ok(!all.split('|').includes(old),`old label "${old}" is gone`);
-  console.log('Settings: six categories with subtitles, two levels deep, Appearance contains only turnbit settings, toggles save, back lands on the category, clearer labels, Curved Menu straightens the list, menu text follows the menu side.');app.quit();
+  console.log('Settings: Display and the account, four categories with subtitles, one reset, a description for every setting, two levels deep, Appearance contains only turnbit settings, toggles save, back lands on the category, clearer labels, Curved Menu straightens the list, menu text follows the menu side.');app.quit();
 }catch(error){console.error(error);app.exit(1);}});

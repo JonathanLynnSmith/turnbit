@@ -59,7 +59,7 @@ app.whenReady().then(async()=>{
     assert.equal(await window.webContents.executeJavaScript(`window.turnbit.windowMode()`),true,'new window reports windowMode() true');
 
     assert.equal(await window.webContents.executeJavaScript(`getComputedStyle($('#windowMove')).display`),'none','widget move handle is hidden in Window Mode');
-    assert.equal(await window.webContents.executeJavaScript(`settingsRows('window').some(row=>row.action==='radial-layout')`),false,'widget sizing settings are hidden in Window Mode');
+    assert.equal(await window.webContents.executeJavaScript(`settingsGroups.flatMap(g=>settingsRows(g.id)).some(row=>row.action==='radial-layout')`),false,'widget sizing settings are hidden in Window Mode');
     // Dial Menu Layout: whether the menu overlays the player or takes its own half of the window.
     assert.equal(await window.webContents.executeJavaScript(`settingsRows('appearance').find(row=>row.action==='backdrop-layout')?.detail`),'Overlay','Window Mode offers the menu layout, starting on Overlay');
     // Split View needs at least 960px; narrower windows fall back to the overlay.
@@ -104,7 +104,7 @@ app.whenReady().then(async()=>{
     // way to minimize, full screen or close it, so click-through and a full fade never apply here.
     await window.webContents.executeJavaScript(`savePreferences({mousePassthrough:true});`);await wait(150);
     assert.equal(window.isFocusable(),true,'click-through cannot lock the mouse out of Window Mode');
-    assert.equal(await window.webContents.executeJavaScript(`settingsRows('window').some(row=>row.key==='mousePassthrough')`),false,'Mouse Click Through is hidden in Window Mode');
+    assert.equal(await window.webContents.executeJavaScript(`settingsGroups.flatMap(g=>settingsRows(g.id)).some(row=>row.key==='mousePassthrough')`),false,'Mouse Click Through is hidden in Window Mode');
     await window.webContents.executeJavaScript(`savePreferences({nowPlayingBackdrop:false,visibility:{mode:'always',opacity:0,idleOpacity:0,timeout:10}});`);await wait(900);
     assert.ok(window.getOpacity()>=0.2,'Window Mode never fades below the grabbable floor');
     assert.equal(window.isFocusable(),true,'a faded Window Mode window still takes the mouse');
@@ -113,7 +113,7 @@ app.whenReady().then(async()=>{
     previous=window;window.webContents.executeJavaScript(`window.turnbit.windowMode(false)`).catch(()=>{});
     window=await waitForNewWindow(previous);await wait(800);
     assert.equal(window.isFocusable(),false,'click-through applies again once back in Widget Mode');
-    assert.equal(await window.webContents.executeJavaScript(`settingsRows('widget').some(row=>row.key==='mousePassthrough')`),true,'Mouse Click Through returns in Widget Mode');
+    assert.equal(await window.webContents.executeJavaScript(`settingsGroups.flatMap(g=>settingsRows(g.id)).some(row=>row.key==='mousePassthrough')`),true,'Mouse Click Through returns in Widget Mode');
     await window.webContents.executeJavaScript(`savePreferences({mousePassthrough:false,visibility:{mode:'off',opacity:100,idleOpacity:20,timeout:10}});`);await wait(150);
     console.log('Window Mode toggles the live OS window (frame + dock/taskbar), keeps the mouse in control, and survives recreation. Passed.');
     app.quit();

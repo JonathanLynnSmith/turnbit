@@ -21,7 +21,7 @@
 - If you start a song after Spotify has gone idle, turnbit reconnects to your Preferred Device
   (opening Spotify first, if you allow it) and tries the song again.
 - Spotify can only resume a player that already has a song loaded, so Play alone does nothing after a
-  fresh start. turnbit gives it something to play instead, from **When Nothing Is Playing**: the
+  fresh start. turnbit gives it something to play instead, from **What Play Starts**: the
   context your last session was in, your Liked Songs, or a playlist you pick. That costs at most one
   extra Spotify call, and the Liked Songs list is reused for ten minutes.
 
