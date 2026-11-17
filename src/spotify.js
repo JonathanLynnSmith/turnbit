@@ -382,7 +382,8 @@ class SpotifyClient {
   library(kind, id, offset = 0) {
     if (!Number.isInteger(offset) || offset < 0 || offset > 100000)
       throw new Error('Invalid library page.');
-    const paging = `limit=20&offset=${offset}`;
+    // 50 is the most Spotify returns per page for playlists, Liked Songs, and playlist items.
+    const paging = `limit=50&offset=${offset}`;
     if (kind === 'playlists') return this.api(`/me/playlists?${paging}`);
     if (kind === 'songs') return this.api(`/me/tracks?${paging}`);
     if (

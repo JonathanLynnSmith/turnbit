@@ -130,3 +130,26 @@ test('the playback service passes the kind of failure to its listeners', async (
   service.dispose();
   assert.deepEqual(events.at(-1), { type: 'error', message: 'No device', code: 'no-device' });
 });
+
+test('a denied library page explains itself in the message, and pages ask for 50 items', async () => {
+  const { createSpotifyLibraryProvider } = require('../src/integrations/spotify/library-provider');
+  const denied = createSpotifyLibraryProvider({
+    library: async () => {
+      throw Object.assign(new Error('Spotify denied access.'), { status: 403 });
+    },
+  });
+  await assert.rejects(
+    denied.page({ kind: 'playlist', id: 'a'.repeat(22), offset: 0 }),
+    /Spotify denied browsing\. Reconnect for library permissions/,
+  );
+  const failing = createSpotifyLibraryProvider({
+    library: async () => {
+      throw new Error('Spotify is having trouble right now.');
+    },
+  });
+  await assert.rejects(failing.page({ kind: 'songs', offset: 0 }), /having trouble/);
+  const full = createSpotifyLibraryProvider({
+    library: async () => ({ items: [], total: 120, next: 'more', limit: 50 }),
+  });
+  assert.equal((await full.page({ kind: 'songs', offset: 50 })).nextOffset, 100);
+});

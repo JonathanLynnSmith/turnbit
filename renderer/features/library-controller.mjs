@@ -192,12 +192,7 @@ export function createLibraryController({
         ...baseRows,
         { label: 'Retry loading', action: 'retry', offset, branch: true },
       ];
-      if (nav.current === page)
-        message(
-          e.status === 403
-            ? 'Spotify denied browsing. Reconnect for library permissions; playlist contents require ownership or collaboration.'
-            : e.message,
-        );
+      if (nav.current === page) message(e.message);
     } finally {
       page.loading = false;
       page.selected = Math.min(

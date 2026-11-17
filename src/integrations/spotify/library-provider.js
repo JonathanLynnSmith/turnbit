@@ -2,7 +2,20 @@ const { normalizeTrack } = require('./track');
 function createSpotifyLibraryProvider(client) {
   return {
     async page({ kind, id, offset }) {
-      const raw = await client.library(kind, id, offset);
+      let raw;
+      try {
+        raw = await client.library(kind, id, offset);
+      } catch (error) {
+        // Said here because only the message crosses to the view; the status code does not.
+        if (error.status === 403)
+          throw Object.assign(
+            new Error(
+              'Spotify denied browsing. Reconnect for library permissions; playlist contents require ownership or collaboration.',
+            ),
+            { status: 403, code: 'denied' },
+          );
+        throw error;
+      }
       const items = (raw?.items || []).map((entry, index) => {
         if (kind === 'playlists')
           return {
@@ -31,7 +44,9 @@ function createSpotifyLibraryProvider(client) {
       return {
         items,
         total: raw?.total ?? items.length,
-        nextOffset: raw?.next ? offset + (raw.items?.length || 20) : null,
+        nextOffset: raw?.next
+          ? offset + (raw.items?.length || raw.limit || 50)
+          : null,
       };
     },
   };
